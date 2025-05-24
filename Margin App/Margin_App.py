@@ -76,6 +76,57 @@ enhanced_css = load_css() + """
         box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15);
     }
     
+    /* Parameter explanation cards */
+    .param-card {
+        background: linear-gradient(135deg, #f8f9fa 0%, #ffffff 100%);
+        border: 2px solid #e9ecef;
+        border-radius: 15px;
+        padding: 1.5rem;
+        margin: 1rem 0;
+        transition: all 0.3s ease;
+        box-shadow: 0 5px 15px rgba(0, 0, 0, 0.08);
+    }
+    
+    .param-card:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 8px 25px rgba(0, 0, 0, 0.12);
+        border-color: #3498db;
+    }
+    
+    .param-title {
+        font-size: 1.1rem;
+        font-weight: 600;
+        color: #2c3e50;
+        margin: 0 0 0.5rem 0;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+    
+    .param-value {
+        font-size: 1.3rem;
+        font-weight: 700;
+        color: #3498db;
+        margin: 0.5rem 0;
+    }
+    
+    .param-description {
+        font-size: 0.9rem;
+        color: #6c757d;
+        line-height: 1.4;
+        margin: 0;
+    }
+    
+    .leverage-card {
+        background: linear-gradient(135deg, #e8f5e8 0%, #f0f8f0 100%);
+        border: 2px solid #27ae60;
+    }
+    
+    .investment-card {
+        background: linear-gradient(135deg, #e3f2fd 0%, #f1f8fe 100%);
+        border: 2px solid #2196f3;
+    }
+    
     /* Metric styling */
     .metric-container {
         background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
@@ -121,6 +172,10 @@ enhanced_css = load_css() + """
         .card {
             padding: 1rem;
             margin: 1rem 0;
+        }
+        
+        .param-card {
+            padding: 1rem;
         }
         
         .stTabs [data-baseweb="tab-list"] {
@@ -202,12 +257,68 @@ if spy_df is not None and vti_df is not None:
         with input_col:
             st.subheader("📊 Investment Parameters")
             
-            # ETF selection first
-            etf_selection = st.selectbox(
-                "Select ETF",
-                ["SPY", "VTI"],
-                help="Choose the ETF you want to analyze"
-            )
+            # Account type toggle
+            st.markdown("### 🏦 Account Type")
+            account_col1, account_col2 = st.columns(2)
+            
+            with account_col1:
+                if st.button(
+                    "🏛️ Reg-T Account",
+                    use_container_width=True,
+                    key="reg_t_btn"
+                ):
+                    st.session_state.account_type = 'reg_t'
+            
+            with account_col2:
+                if st.button(
+                    "💼 Portfolio Margin Account", 
+                    use_container_width=True,
+                    key="portfolio_btn"
+                ):
+                    st.session_state.account_type = 'portfolio'
+            
+            # Set default account type if not set
+            if 'account_type' not in st.session_state:
+                st.session_state.account_type = 'reg_t'
+            
+            account_type = st.session_state.account_type
+            
+            # Display selected account with checkmark
+            if account_type == 'reg_t':
+                st.success("✅ **Reg-T Account Selected**: Standard margin account with 2:1 maximum leverage")
+                max_leverage = 2.0
+                default_leverage = 2.0
+                default_initial_margin = 50.0
+            else:
+                st.success("✅ **Portfolio Margin Account Selected**: Advanced account with up to 7:1 leverage")
+                max_leverage = 7.0
+                default_leverage = 4.0
+                default_initial_margin = 25.0
+            
+            st.markdown("---")
+            
+            # ETF and Position selection in two columns
+            etf_col1, etf_col2 = st.columns(2)
+            
+            with etf_col1:
+                st.markdown("**Select ETF**")
+                etf_selection = st.selectbox(
+                    "Select ETF",
+                    ["SPY", "VTI"],
+                    help="Choose the ETF you want to analyze",
+                    label_visibility="collapsed"
+                )
+            
+            with etf_col2:
+                st.markdown("**Select Position**")
+                position_type = st.radio(
+                    "Position Type",
+                    ["Long", "Short"],
+                    index=0,
+                    help="Choose whether you're buying (long) or selling short",
+                    label_visibility="collapsed",
+                    horizontal=True
+                )
             
             # Get current price for selected ETF
             if etf_selection == "SPY" and not spy_df.empty:
@@ -222,35 +333,119 @@ if spy_df is not None and vti_df is not None:
             
             st.info(f"💲 Current {etf_selection} Price: **${current_price:.2f}**")
             
+            st.markdown("**Initial Investment Amount ($)**")
             investment_amount = st.number_input(
                 "Initial Investment Amount ($)",
                 min_value=1000,
                 value=10000,
                 step=1000,
-                help="Total amount you want to invest (including margin)"
+                help="Total amount you want to invest (including margin)",
+                label_visibility="collapsed"
             )
             
-            margin_percentage = st.slider(
-                "Margin Percentage (%)",
-                min_value=0,
-                max_value=100,
-                value=50,
-                help="Percentage of your position funded with borrowed money"
+            # Investment Amount Card - right below the input
+            st.markdown(f"""
+            <div class="param-card investment-card" style="padding: 1rem; margin: 0.5rem 0;">
+                <div class="param-title" style="font-size: 1rem;">
+                    💰 Investment Amount
+                </div>
+                <div class="param-value" style="font-size: 1.1rem;">${investment_amount:,.0f}</div>
+                <div class="param-description" style="font-size: 0.85rem;">
+                    This is the total position size you want to control, including both your own cash and borrowed funds. 
+                    A larger investment amount increases both potential profits and risks.
+                </div>
+            </div>
+            """, unsafe_allow_html=True)
+            
+            # Initialize slider values in session state
+            if f'leverage_{account_type}' not in st.session_state:
+                st.session_state[f'leverage_{account_type}'] = default_leverage
+                st.session_state[f'initial_margin_{account_type}'] = default_initial_margin
+            
+            # Leverage parameter
+            st.markdown("**Leverage**")
+            leverage = st.slider(
+                "Leverage",
+                min_value=1.0,
+                max_value=max_leverage,
+                value=st.session_state[f'leverage_{account_type}'],
+                step=0.1,
+                help="Multiplier for your investment",
+                label_visibility="collapsed",
+                key=f"leverage_slider_{account_type}"
             )
+            
+            # Calculate corresponding initial margin
+            initial_margin_from_leverage = (1 / leverage) * 100
+            
+            # Leverage Card - right below the slider
+            margin_percentage = ((leverage - 1) / leverage) * 100
+            st.markdown(f"""
+            <div class="param-card leverage-card" style="padding: 1rem; margin: 0.5rem 0;">
+                <div class="param-title" style="font-size: 1rem;">
+                    ⚡ Leverage
+                </div>
+                <div class="param-value" style="font-size: 1.1rem;">{leverage:.1f}x ({margin_percentage:.1f}% borrowed)</div>
+                <div class="param-description" style="font-size: 0.85rem;">
+                    Leverage multiplies your buying power. {leverage:.1f}x leverage means you control {leverage:.1f} times 
+                    your cash investment. Higher leverage amplifies both gains and losses significantly.
+                </div>
+            </div>
+            """, unsafe_allow_html=True)
+            
+            # Initial Margin parameter
+            st.markdown("**Initial Margin**")
+            initial_margin = st.slider(
+                "Initial Margin",
+                min_value=(1/max_leverage)*100,  # Minimum based on max leverage
+                max_value=100.0,
+                value=initial_margin_from_leverage,
+                step=0.1,
+                help="Percentage of position value you must provide upfront",
+                label_visibility="collapsed",
+                key=f"initial_margin_slider_{account_type}"
+            )
+            
+            # Calculate corresponding leverage from initial margin
+            leverage_from_margin = 1 / (initial_margin / 100)
+            
+            # Sync the values - use whichever changed most recently
+            if abs(leverage - st.session_state.get(f'last_leverage_{account_type}', leverage)) > 0.05:
+                # Leverage was changed, update initial margin
+                st.session_state[f'leverage_{account_type}'] = leverage
+                st.session_state[f'initial_margin_{account_type}'] = initial_margin_from_leverage
+                final_leverage = leverage
+                final_initial_margin = initial_margin_from_leverage
+            else:
+                # Initial margin was changed, update leverage
+                st.session_state[f'leverage_{account_type}'] = leverage_from_margin
+                st.session_state[f'initial_margin_{account_type}'] = initial_margin
+                final_leverage = leverage_from_margin
+                final_initial_margin = initial_margin
+            
+            st.session_state[f'last_leverage_{account_type}'] = final_leverage
+            
+            # Initial Margin Card - right below the slider
+            st.markdown(f"""
+            <div class="param-card" style="background: linear-gradient(135deg, #e8f5e8 0%, #f0f8f0 100%); border: 2px solid #27ae60; padding: 1rem; margin: 0.5rem 0;">
+                <div class="param-title" style="font-size: 1rem;">
+                    📋 Initial Margin
+                </div>
+                <div class="param-value" style="font-size: 1.1rem;">{final_initial_margin:.1f}%</div>
+                <div class="param-description" style="font-size: 0.85rem;">
+                    The percentage of the position value you must provide upfront. Lower initial margin means higher leverage. 
+                    This is the minimum cash required to open your position.
+                </div>
+            </div>
+            """, unsafe_allow_html=True)
+            
+            # Use final synchronized values
+            leverage = final_leverage
             
             # Advanced settings in expandable section
             with st.expander("⚙️ Advanced Settings", expanded=False):
                 col_a, col_b = st.columns(2)
                 with col_a:
-                    maintenance_margin = st.slider(
-                        "Maintenance Margin (%)",
-                        min_value=25,
-                        max_value=40,
-                        value=30,
-                        help="Minimum equity percentage required"
-                    )
-                    
-                with col_b:
                     interest_rate = st.slider(
                         "Annual Interest Rate (%)",
                         min_value=1.0,
@@ -259,21 +454,53 @@ if spy_df is not None and vti_df is not None:
                         step=0.1,
                         help="Cost of borrowing money on margin"
                     )
+                    
+                with col_b:
+                    holding_period = st.slider(
+                        "Expected Holding Period (months)",
+                        min_value=1,
+                        max_value=60,
+                        value=12,
+                        help="How long you plan to hold the position"
+                    )
                 
-                holding_period = st.slider(
-                    "Expected Holding Period (months)",
-                    min_value=1,
-                    max_value=60,
-                    value=12,
-                    help="How long you plan to hold the position"
-                )
+                # Advanced settings parameter cards
+                st.markdown("### ⚙️ Advanced Parameters")
+                
+                adv_col1, adv_col2 = st.columns(2)
+                
+                with adv_col1:
+                    st.markdown(f"""
+                    <div class="param-card" style="background: linear-gradient(135deg, #ffebee 0%, #fff5f5 100%); border: 2px solid #f44336; padding: 1rem; margin: 0.5rem 0;">
+                        <div class="param-title" style="font-size: 1rem;">
+                            💸 Interest Rate
+                        </div>
+                        <div class="param-value" style="font-size: 1.1rem;">{interest_rate}%</div>
+                        <div class="param-description" style="font-size: 0.85rem;">
+                            Annual cost of borrowing money on margin. This is charged on the borrowed portion of your investment.
+                        </div>
+                    </div>
+                    """, unsafe_allow_html=True)
+                
+                with adv_col2:
+                    st.markdown(f"""
+                    <div class="param-card" style="background: linear-gradient(135deg, #f3e5f5 0%, #faf2fc 100%); border: 2px solid #9c27b0; padding: 1rem; margin: 0.5rem 0;">
+                        <div class="param-title" style="font-size: 1rem;">
+                            📅 Holding Period
+                        </div>
+                        <div class="param-value" style="font-size: 1.1rem;">{holding_period} months</div>
+                        <div class="param-description" style="font-size: 0.85rem;">
+                            Expected time you'll hold the position. Affects total interest costs and scenario analysis.
+                        </div>
+                    </div>
+                    """, unsafe_allow_html=True)
         
         with results_col:
             st.subheader("📈 Calculation Results")
             
-            # Calculate basic margin metrics
-            cash_investment = investment_amount * (1 - margin_percentage/100)
-            margin_loan = investment_amount * (margin_percentage/100)
+            # Calculate basic margin metrics with correct leverage formula
+            cash_investment = investment_amount / leverage
+            margin_loan = investment_amount - cash_investment
             shares_purchased = investment_amount / current_price if current_price > 0 else 0
             
             # Display key metrics in an elegant format
@@ -300,10 +527,41 @@ if spy_df is not None and vti_df is not None:
                     f"At ${current_price:.2f}/share"
                 )
                 
+                # Calculate and display maintenance margin
+                if account_type == 'reg_t':
+                    maintenance_margin_pct = 25 if position_type == 'Long' else 30
+                else:  # portfolio margin
+                    maintenance_margin_pct = 15 if position_type == 'Long' else 20
+                
+                maintenance_margin_dollar = (maintenance_margin_pct / 100) * investment_amount
+                
+                # Maintenance Margin Card
+                st.markdown(f"""
+                <div class="metric-container" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); margin: 1rem 0;">
+                    <h3 style="margin: 0; font-size: 1.2rem;">🛡️ Maintenance Margin</h3>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-top: 1rem;">
+                        <div>
+                            <div style="font-size: 0.9rem; opacity: 0.8;">Percentage</div>
+                            <div style="font-size: 1.4rem; font-weight: bold;">{maintenance_margin_pct}%</div>
+                        </div>
+                        <div>
+                            <div style="font-size: 0.9rem; opacity: 0.8;">Dollar Amount</div>
+                            <div style="font-size: 1.4rem; font-weight: bold;">${maintenance_margin_dollar:,.0f}</div>
+                        </div>
+                    </div>
+                    <div style="margin-top: 1rem; font-size: 0.9rem; opacity: 0.9; line-height: 1.4;">
+                        <strong>What this means:</strong> You must keep at least ${maintenance_margin_dollar:,.0f} in your account 
+                        as equity. If your position loses value and your equity falls below this amount, your broker will 
+                        issue a "margin call" requiring you to deposit more money or sell some positions. This protects 
+                        both you and the broker from excessive losses.
+                    </div>
+                </div>
+                """, unsafe_allow_html=True)
+                
                 # Calculate margin call price and risk
-                if margin_percentage > 0:
+                if leverage > 1:  # Only if using leverage (borrowing money)
                     # More accurate margin call calculation
-                    equity_ratio = (100 - maintenance_margin) / 100
+                    equity_ratio = (100 - maintenance_margin_pct) / 100
                     margin_call_price = (margin_loan / shares_purchased) / equity_ratio
                     
                     if margin_call_price > 0 and margin_call_price < current_price:
@@ -328,7 +586,16 @@ if spy_df is not None and vti_df is not None:
                                 <strong>Price Drop Tolerance:</strong> {margin_call_drop:.1f}%
                             </p>
                         </div>
-                                                 """, unsafe_allow_html=True)
+                        """, unsafe_allow_html=True)
+                else:
+                    st.markdown(f"""
+                    <div class="risk-indicator" style="background: linear-gradient(135deg, #2ecc7120, #2ecc7110); border-left: 4px solid #2ecc71;">
+                        <h4 style="margin: 0; color: #2ecc71;">🟢 No Leverage Risk</h4>
+                        <p style="margin: 0.5rem 0 0 0; color: #2c3e50;">
+                            You're not using leverage, so there's no margin call risk.
+                        </p>
+                    </div>
+                    """, unsafe_allow_html=True)
         
         st.divider()
         
@@ -343,12 +610,12 @@ if spy_df is not None and vti_df is not None:
             bull_value = investment_amount * (1 + bull_gain/100)
             bull_interest_cost = (margin_loan * interest_rate/100) * (holding_period/12)
             bull_profit = bull_value - investment_amount - bull_interest_cost
-            bull_roi = (bull_profit / cash_investment) * 100
+            bull_roi = (bull_profit / cash_investment) * 100 if cash_investment > 0 else 0
             
             st.markdown(f"""
             <div style="background: linear-gradient(135deg, #2ecc7120, #2ecc7110); padding: 1rem; border-radius: 10px; border-left: 4px solid #2ecc71;">
                 <div style="color: #2ecc71; font-weight: bold; font-size: 1.1rem;">+${bull_profit:,.0f}</div>
-                <div style="color: #2c3e50; font-size: 0.9rem;">{bull_roi:.1f}% ROI</div>
+                <div style="color: #2c3e50; font-size: 0.9rem;">{bull_roi:.1f}% ROI on your ${cash_investment:,.0f}</div>
             </div>
             """, unsafe_allow_html=True)
         
@@ -357,12 +624,12 @@ if spy_df is not None and vti_df is not None:
             neutral_gain = 0
             neutral_interest_cost = (margin_loan * interest_rate/100) * (holding_period/12)
             neutral_profit = -neutral_interest_cost
-            neutral_roi = (neutral_profit / cash_investment) * 100
+            neutral_roi = (neutral_profit / cash_investment) * 100 if cash_investment > 0 else 0
             
             st.markdown(f"""
             <div style="background: linear-gradient(135deg, #f39c1220, #f39c1210); padding: 1rem; border-radius: 10px; border-left: 4px solid #f39c12;">
                 <div style="color: #f39c12; font-weight: bold; font-size: 1.1rem;">${neutral_profit:,.0f}</div>
-                <div style="color: #2c3e50; font-size: 0.9rem;">{neutral_roi:.1f}% ROI</div>
+                <div style="color: #2c3e50; font-size: 0.9rem;">{neutral_roi:.1f}% ROI on your ${cash_investment:,.0f}</div>
             </div>
             """, unsafe_allow_html=True)
         
@@ -372,12 +639,12 @@ if spy_df is not None and vti_df is not None:
             bear_value = investment_amount * (1 - bear_loss/100)
             bear_interest_cost = (margin_loan * interest_rate/100) * (holding_period/12)
             bear_loss_total = investment_amount - bear_value + bear_interest_cost
-            bear_roi = -(bear_loss_total / cash_investment) * 100
+            bear_roi = -(bear_loss_total / cash_investment) * 100 if cash_investment > 0 else 0
             
             st.markdown(f"""
             <div style="background: linear-gradient(135deg, #e74c3c20, #e74c3c10); padding: 1rem; border-radius: 10px; border-left: 4px solid #e74c3c;">
                 <div style="color: #e74c3c; font-weight: bold; font-size: 1.1rem;">-${bear_loss_total:,.0f}</div>
-                <div style="color: #2c3e50; font-size: 0.9rem;">{bear_roi:.1f}% ROI</div>
+                <div style="color: #2c3e50; font-size: 0.9rem;">{bear_roi:.1f}% ROI on your ${cash_investment:,.0f}</div>
             </div>
             """, unsafe_allow_html=True)
         
