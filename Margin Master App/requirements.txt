@@ -1,0 +1,7 @@
+streamlit==1.28.0
+pandas==2.1.1
+numpy==1.26.0
+plotly==5.18.0
+pillow==10.1.0
+datetime==5.2
+matplotlib==3.8.0 
