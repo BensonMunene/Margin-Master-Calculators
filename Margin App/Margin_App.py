@@ -205,7 +205,7 @@ st.markdown(get_app_header(), unsafe_allow_html=True)
 
 # Define directory paths
 local_dir = r"D:\Benson\aUpWork\Ben Ruff\Implementation\Data"
-github_dir = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "Data")
+github_dir = ("Data")
 
 # Choose which directory to use (True for local, False for GitHub)
 use_local = False
