@@ -208,7 +208,7 @@ local_dir = r"D:\Benson\aUpWork\Ben Ruff\Implementation\Data"
 github_dir = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "Data")
 
 # Choose which directory to use (True for local, False for GitHub)
-use_local = True
+use_local = False
 data_dir = local_dir if use_local else github_dir
 
 # Define default date range
@@ -336,31 +336,11 @@ spy_df, spy_dividends_df, vti_df, vti_dividends_df = load_data(data_dir)
 # Initialize session state more efficiently
 if 'initialized' not in st.session_state:
     st.session_state.account_type = 'reg_t'
-    # Initialize leverage and margin values for both account types
     st.session_state.leverage_reg_t = 2.0
     st.session_state.initial_margin_reg_t = 50.0
     st.session_state.leverage_portfolio = 4.0
     st.session_state.initial_margin_portfolio = 25.0
     st.session_state.initialized = True
-
-# Helper function to sync sliders
-def sync_sliders(account_type, max_leverage):
-    """Synchronize leverage and initial margin sliders"""
-    # Get current values from session state or set defaults
-    if account_type == 'reg_t':
-        default_leverage = 2.0
-        default_margin = 50.0
-    else:
-        default_leverage = 4.0
-        default_margin = 25.0
-    
-    # Initialize if not exists
-    if f'leverage_{account_type}' not in st.session_state:
-        st.session_state[f'leverage_{account_type}'] = default_leverage
-    if f'initial_margin_{account_type}' not in st.session_state:
-        st.session_state[f'initial_margin_{account_type}'] = default_margin
-    
-    return st.session_state[f'leverage_{account_type}'], st.session_state[f'initial_margin_{account_type}']
 
 # Check if data loaded successfully
 if spy_df is not None and vti_df is not None:
@@ -370,7 +350,9 @@ if spy_df is not None and vti_df is not None:
         "🧮 Margin Calculator",
         "📊 Market Overview", 
         "📈 Price Analysis", 
-        "💰 Dividend Analysis"
+        "💰 Dividend Analysis",
+        "🎲 Kelly Criterion",
+        "📊 Historical Backtest"
     ])
     
     with tabs[0]:
@@ -414,11 +396,13 @@ if spy_df is not None and vti_df is not None:
             if account_type == 'reg_t':
                 st.success("✅ **Reg-T Account Selected**: Standard margin account with 2:1 maximum leverage")
                 max_leverage = 2.0
-                default_leverage, default_margin = sync_sliders(account_type, max_leverage)
+                default_leverage = 2.0
+                default_initial_margin = 50.0
             else:
                 st.success("✅ **Portfolio Margin Account Selected**: Advanced account with up to 7:1 leverage")
                 max_leverage = 7.0
-                default_leverage, default_margin = sync_sliders(account_type, max_leverage)
+                default_leverage = 4.0
+                default_initial_margin = 25.0
             
             st.markdown("---")
             
@@ -492,64 +476,84 @@ if spy_df is not None and vti_df is not None:
             
             # Leverage parameter
             st.markdown("**Leverage**")
-            leverage, initial_margin = sync_sliders(account_type, max_leverage)
-            
-            # Create leverage slider
-            new_leverage = st.slider(
+            leverage = st.slider(
                 "Leverage",
                 min_value=1.0,
                 max_value=max_leverage,
-                value=leverage,
+                value=st.session_state.get(f'leverage_{account_type}', default_leverage),
                 step=0.1,
                 help="Multiplier for your investment",
                 label_visibility="collapsed",
                 key=f"leverage_slider_{account_type}"
             )
             
-            # Update leverage and calculate corresponding margin
-            if abs(new_leverage - leverage) > 0.01:  # More sensitive threshold
-                st.session_state[f'leverage_{account_type}'] = new_leverage
-                # Calculate corresponding initial margin: margin% = (1/leverage) * 100
-                st.session_state[f'initial_margin_{account_type}'] = (1 / new_leverage) * 100
-                st.rerun()
-            
-            leverage = new_leverage
+            # Calculate corresponding initial margin from leverage
+            initial_margin_from_leverage = (1 / leverage) * 100
             
             # Leverage Card - cached for performance
             st.markdown(generate_leverage_card(leverage), unsafe_allow_html=True)
             
             # Initial Margin parameter
             st.markdown("**Initial Margin**")
-            new_initial_margin = st.slider(
+            initial_margin = st.slider(
                 "Initial Margin",
                 min_value=(1/max_leverage)*100,  # Minimum based on max leverage
                 max_value=100.0,
-                value=initial_margin,
+                value=initial_margin_from_leverage,
                 step=0.1,
                 help="Percentage of position value you must provide upfront",
                 label_visibility="collapsed",
                 key=f"initial_margin_slider_{account_type}"
             )
             
-            # Update margin and calculate corresponding leverage
-            if abs(new_initial_margin - initial_margin) > 0.01:  # More sensitive threshold
-                st.session_state[f'initial_margin_{account_type}'] = new_initial_margin
-                # Calculate corresponding leverage: leverage = 1 / (margin% / 100)
-                st.session_state[f'leverage_{account_type}'] = 1 / (new_initial_margin / 100)
-                st.rerun()
+            # Calculate corresponding leverage from initial margin
+            leverage_from_margin = 1 / (initial_margin / 100)
             
-            initial_margin = new_initial_margin
+            # Synchronization logic - determine which slider was changed
+            if f'last_leverage_{account_type}' not in st.session_state:
+                st.session_state[f'last_leverage_{account_type}'] = default_leverage
+                st.session_state[f'last_initial_margin_{account_type}'] = default_initial_margin
+            
+            # Check which value changed more significantly
+            leverage_changed = abs(leverage - st.session_state[f'last_leverage_{account_type}']) > 0.05
+            margin_changed = abs(initial_margin - st.session_state[f'last_initial_margin_{account_type}']) > 0.05
+            
+            if leverage_changed and not margin_changed:
+                # Leverage was changed, use leverage value
+                final_leverage = leverage
+                final_initial_margin = initial_margin_from_leverage
+                st.session_state[f'last_leverage_{account_type}'] = final_leverage
+                st.session_state[f'last_initial_margin_{account_type}'] = final_initial_margin
+            elif margin_changed and not leverage_changed:
+                # Initial margin was changed, use margin value
+                final_leverage = leverage_from_margin
+                final_initial_margin = initial_margin
+                st.session_state[f'last_leverage_{account_type}'] = final_leverage
+                st.session_state[f'last_initial_margin_{account_type}'] = final_initial_margin
+            else:
+                # Use current values or default to leverage
+                final_leverage = leverage
+                final_initial_margin = initial_margin_from_leverage
+                st.session_state[f'last_leverage_{account_type}'] = final_leverage
+                st.session_state[f'last_initial_margin_{account_type}'] = final_initial_margin
+            
+            # Force rerun if values are out of sync to update the sliders
+            if abs(final_leverage - leverage) > 0.05 or abs(final_initial_margin - initial_margin) > 0.05:
+                st.rerun()
             
             # Initial Margin Card - using final synchronized values
             st.markdown(f"""
             <div class="param-card" style="background: linear-gradient(135deg, #e8f5e8 0%, #f0f8f0 100%); border: 2px solid #27ae60; padding: 1rem; margin: 0.5rem 0;">
                 <div class="param-title" style="font-size: 1rem;">📋 Initial Margin</div>
-                <div class="param-value" style="font-size: 1.1rem;">{initial_margin:.1f}%</div>
+                <div class="param-value" style="font-size: 1.1rem;">{final_initial_margin:.1f}%</div>
                 <div class="param-description" style="font-size: 0.85rem;">
                     The percentage of the position value you must provide upfront. Lower initial margin means higher leverage.
                 </div>
             </div>
             """, unsafe_allow_html=True)
+            
+            # Use synchronized leverage value for all calculations
+            leverage = final_leverage
             
             # Advanced settings in expandable section
             with st.expander("⚙️ Advanced Settings", expanded=False):
@@ -772,239 +776,63 @@ if spy_df is not None and vti_df is not None:
                 </div>
                 """, unsafe_allow_html=True)
                 
-                # Risk Assessment Gauge Chart - Professional Visualization
+                # Risk assessment - enhanced with specific format requested
                 if leverage > 1 and metrics['margin_call_price'] > 0 and metrics['margin_call_price'] < current_price:
-                    import plotly.graph_objects as go
-                    
-                    # Calculate risk metrics
-                    price_drop_tolerance = metrics['margin_call_drop']
-                    
-                    # Determine risk level and color
-                    if price_drop_tolerance < 15:
-                        risk_level = "High Risk"
-                        gauge_color = "#e74c3c"
-                    elif price_drop_tolerance < 25:
-                        risk_level = "Medium Risk" 
-                        gauge_color = "#f39c12"
+                    if metrics['margin_call_drop'] < 15:
+                        risk_level, risk_color = "🔴 High Risk", "#e74c3c"
+                    elif metrics['margin_call_drop'] < 25:
+                        risk_level, risk_color = "🟡 Medium Risk", "#f39c12"
                     else:
-                        risk_level = "Low Risk"
-                        gauge_color = "#2ecc71"
+                        risk_level, risk_color = "🟢 Lower Risk", "#2ecc71"
                     
-                    # Create gauge chart with reduced size and improved styling
-                    fig = go.Figure(go.Indicator(
-                        mode = "gauge+number",
-                        value = price_drop_tolerance,
-                        domain = {'x': [0.1, 0.9], 'y': [0, 1]},
-                        title = {'text': "Price Drop Tolerance", 'font': {'size': 14, 'color': '#2c3e50'}},
-                        number = {'suffix': "%", 'font': {'size': 28, 'color': gauge_color}},
-                        gauge = {
-                            'axis': {
-                                'range': [None, 50], 
-                                'tickwidth': 1, 
-                                'tickcolor': "#34495e",
-                                'tickmode': 'linear',
-                                'tick0': 0,
-                                'dtick': 5,
-                                'tickfont': {'size': 10}
-                            },
-                            'bar': {'color': gauge_color, 'thickness': 0.25},
-                            'bgcolor': "white",
-                            'borderwidth': 2,
-                            'bordercolor': "#bdc3c7",
-                            'steps': [
-                                {'range': [0, 15], 'color': "#ffcccb"},  # Light red for danger zone
-                                {'range': [15, 25], 'color': "#ffe4b5"},  # Light brown/orange for warning
-                                {'range': [25, 50], 'color': "#90ee90"}   # Light green for safe zone
-                            ],
-                            'threshold': {
-                                'line': {'color': "#e74c3c", 'width': 3},
-                                'thickness': 0.75,
-                                'value': 15
-                            }
-                        }
-                    ))
-                    
-                    fig.update_layout(
-                        height=220,  # Reduced height
-                        margin=dict(l=15, r=15, t=30, b=15),  # Reduced margins for compactness
-                        paper_bgcolor="rgba(0,0,0,0)",
-                        plot_bgcolor="rgba(0,0,0,0)",
-                        font={'color': "#2c3e50", 'family': "Arial"}
-                    )
-                    
-                    st.plotly_chart(fig, use_container_width=True)
-                    
-                    # Risk Analysis Text - Professional Insights
                     st.markdown(f"""
-                    <div style="background: linear-gradient(135deg, #f8f9fa 0%, #ffffff 100%); 
-                                border-left: 4px solid {gauge_color}; 
-                                padding: 1rem; 
-                                border-radius: 8px; 
-                                margin: 1rem 0;">
-                        <div style="color: #2c3e50; line-height: 1.6;">
-                            <strong>Risk Analysis:</strong> A {100 - price_drop_tolerance:.1f}% price drop would trigger a margin call at ${metrics['margin_call_price']:.2f}.<br>
-                            <strong>Safety Margin:</strong> Current position has {price_drop_tolerance:.1f}% downside protection before liquidation risk.<br>
-                            <strong>Liquidation Risk:</strong> {risk_level} - Monitor position closely {"if volatility increases" if price_drop_tolerance < 25 else "and maintain adequate cash reserves"}.
+                    <div class="risk-indicator" style="background: linear-gradient(135deg, {risk_color}20, {risk_color}10); border-left: 4px solid {risk_color};">
+                        <h4 style="margin: 0; color: {risk_color};">{risk_level}</h4>
+                        <p style="margin: 0.5rem 0 0 0; color: #2c3e50;">
+                            <strong>Margin Call at:</strong> ${metrics['margin_call_price']:.2f}<br>
+                            <strong>Price Drop Tolerance:</strong> {metrics['margin_call_drop']:.1f}%
+                        </p>
+                        <div style="margin: 1rem 0; padding: 0.75rem; background: rgba(255,255,255,0.7); border-radius: 8px; border-left: 3px solid {risk_color};">
+                            <div style="color: #2c3e50; font-size: 0.95rem;">
+                                A <strong style="color: {risk_color};">{metrics['margin_call_drop']:.1f}%</strong> price drop would trigger a margin call at <strong style="color: {risk_color};">${metrics['margin_call_price']:.2f}</strong>
+                            </div>
                         </div>
                     </div>
                     """, unsafe_allow_html=True)
-                    
-                    # Gauge Explanation Dropdown
-                    with st.expander("📊 How to Read This Gauge", expanded=False):
-                        st.markdown("""
-                        ### Understanding Your Risk Gauge
-                        
-                        **What does this gauge show?**
-                        This gauge displays how much the ETF price can drop before your broker forces you to sell (margin call).
-                        
-                        **Color Zones Explained:**
-                        - 🔴 **Red Zone (0-15%)**: High risk - The ETF only needs to drop a small amount to trigger a margin call
-                        - 🟡 **Orange Zone (15-25%)**: Moderate risk - You have some buffer, but should monitor closely  
-                        - 🟢 **Green Zone (25%+)**: Lower risk - You have substantial protection against price drops
-                        
-                        **The Numbers:**
-                        - **Current Value**: Shows your exact tolerance percentage
-                        - **Scale**: Goes from 0% (very risky) to 50% (much safer)
-                        - **Threshold Line**: Red line at 15% marks the danger zone
-                        
-                        **What should you do?**
-                        - If you're in the red zone, consider reducing leverage or adding more cash
-                        - Orange zone means stay alert and have backup funds ready
-                        - Green zone gives you breathing room, but always monitor your positions
-                        """)
                 else:
-                    # No leverage scenario - Show safe gauge
-                    import plotly.graph_objects as go
-                    
-                    fig = go.Figure(go.Indicator(
-                        mode = "gauge+number",
-                        value = 100,
-                        domain = {'x': [0.1, 0.9], 'y': [0, 1]},
-                        title = {'text': "Price Drop Tolerance", 'font': {'size': 14, 'color': '#2c3e50'}},
-                        number = {'suffix': "%", 'font': {'size': 28, 'color': '#2ecc71'}},
-                        gauge = {
-                            'axis': {
-                                'range': [None, 100], 
-                                'tickwidth': 1, 
-                                'tickcolor': "#34495e",
-                                'tickmode': 'linear',
-                                'tick0': 0,
-                                'dtick': 5,
-                                'tickfont': {'size': 10}
-                            },
-                            'bar': {'color': '#2ecc71', 'thickness': 0.25},
-                            'bgcolor': "white",
-                            'borderwidth': 2,
-                            'bordercolor': "#bdc3c7",
-                            'steps': [
-                                {'range': [0, 100], 'color': "#90ee90"}  # Light green for full safety
-                            ],
-                            'threshold': {
-                                'line': {'color': "#2ecc71", 'width': 3},
-                                'thickness': 0.75,
-                                'value': 100
-                            }
-                        }
-                    ))
-                    
-                    fig.update_layout(
-                        height=220,  # Reduced height
-                        margin=dict(l=15, r=15, t=30, b=15),  # Reduced margins
-                        paper_bgcolor="rgba(0,0,0,0)",
-                        plot_bgcolor="rgba(0,0,0,0)",
-                        font={'color': "#2c3e50", 'family': "Arial"}
-                    )
-                    
-                    st.plotly_chart(fig, use_container_width=True)
-                    
-                    st.markdown(f"""
-                    <div style="background: linear-gradient(135deg, #e8f5e8 0%, #f0f8f0 100%); 
-                                border-left: 4px solid #2ecc71; 
-                                padding: 1rem; 
-                                border-radius: 8px; 
-                                margin: 1rem 0;">
-                        <div style="color: #2c3e50; line-height: 1.6;">
-                            <strong>Risk Analysis:</strong> No leverage utilized - position is fully cash-backed with no margin call risk.<br>
-                            <strong>Safety Margin:</strong> 100% downside protection as no borrowed funds are employed in this position.<br>
-                            <strong>Liquidation Risk:</strong> None - Conservative approach provides maximum capital preservation and flexibility.
-                        </div>
+                    st.markdown("""
+                    <div class="risk-indicator" style="background: linear-gradient(135deg, #2ecc7120, #2ecc7110); border-left: 4px solid #2ecc71;">
+                        <h4 style="margin: 0; color: #2ecc71;">🟢 No Leverage Risk</h4>
+                        <p style="margin: 0.5rem 0 0 0; color: #2c3e50;">You're not using leverage, so there's no margin call risk.</p>
                     </div>
                     """, unsafe_allow_html=True)
-                    
-                    # Gauge Explanation Dropdown for no leverage
-                    with st.expander("📊 How to Read This Gauge", expanded=False):
-                        st.markdown("""
-                        ### Understanding Your Risk Gauge
-                        
-                        **What does this gauge show?**
-                        Since you're not using leverage, this gauge shows 100% - meaning you have complete protection.
-                        
-                        **Why 100%?**
-                        - You're using only your own money (no borrowed funds)
-                        - No broker can force you to sell regardless of price drops
-                        - Your maximum loss is limited to your investment amount
-                        
-                        **Benefits of No Leverage:**
-                        - ✅ No margin calls possible
-                        - ✅ No interest costs on borrowed money  
-                        - ✅ Complete control over when to buy/sell
-                        - ✅ Peace of mind during market volatility
-                        
-                        **When might you consider leverage?**
-                        - When you want to amplify potential gains
-                        - If you have strong conviction about direction
-                        - Only if you can handle increased risk and costs
-                        """)
         
         st.divider()
         
-        # Performance simulation section - optimized with sliders that trigger calculations
+        # Performance simulation section - coming soon
         st.subheader("🎯 Performance Simulation")
         
-        scenario_col1, scenario_col2, scenario_col3 = st.columns(3)
-        
-        with scenario_col1:
-            st.markdown("##### 📈 Bull Scenario")
-            bull_gain = st.slider("Price Increase (%)", 5, 50, 20, key="bull")
-            
-        with scenario_col2:
-            st.markdown("##### ➡️ Neutral Scenario")
-            st.markdown("*No price change*")
-            
-        with scenario_col3:
-            st.markdown("##### 📉 Bear Scenario")
-            bear_loss = st.slider("Price Decrease (%)", 5, 40, 15, key="bear")
-        
-        # Calculate scenarios using cached function
-        scenarios = calculate_scenarios(
-            investment_amount, metrics['margin_loan'], metrics['cash_investment'], 
-            interest_rate, holding_period, bull_gain, bear_loss
-        )
-        
-        # Display scenario results
-        with scenario_col1:
-            st.markdown(f"""
-            <div style="background: linear-gradient(135deg, #2ecc7120, #2ecc7110); padding: 1rem; border-radius: 10px; border-left: 4px solid #2ecc71;">
-                <div style="color: #2ecc71; font-weight: bold; font-size: 1.1rem;">+${scenarios['bull']['profit']:,.0f}</div>
-                <div style="color: #2c3e50; font-size: 0.9rem;">{scenarios['bull']['roi']:.1f}% ROI</div>
+        st.markdown("""
+        <div class="card" style="text-align: center; padding: 3rem;">
+            <h3 style="color: #667eea; margin-bottom: 1rem;">🚀 Coming Soon!</h3>
+            <p style="font-size: 1.2rem; color: #6c757d; margin-bottom: 1.5rem;">
+                Advanced performance simulation tools are under development.
+            </p>
+            <p style="color: #6c757d; line-height: 1.6;">
+                This section will feature sophisticated scenario analysis including:
+            </p>
+            <ul style="text-align: left; color: #6c757d; max-width: 500px; margin: 1rem auto;">
+                <li>Monte Carlo simulations</li>
+                <li>Historical volatility modeling</li>
+                <li>Custom scenario builder</li>
+                <li>Risk-adjusted return calculations</li>
+                <li>Interactive performance charts</li>
+            </ul>
+            <div style="margin-top: 2rem; padding: 1rem; background: linear-gradient(135deg, #f8f9fa, #e9ecef); border-radius: 10px;">
+                <small style="color: #6c757d;">Expected release: Q2 2025</small>
             </div>
-            """, unsafe_allow_html=True)
-        
-        with scenario_col2:
-            st.markdown(f"""
-            <div style="background: linear-gradient(135deg, #f39c1220, #f39c1210); padding: 1rem; border-radius: 10px; border-left: 4px solid #f39c12;">
-                <div style="color: #f39c12; font-weight: bold; font-size: 1.1rem;">${scenarios['neutral']['profit']:,.0f}</div>
-                <div style="color: #2c3e50; font-size: 0.9rem;">{scenarios['neutral']['roi']:.1f}% ROI</div>
-            </div>
-            """, unsafe_allow_html=True)
-        
-        with scenario_col3:
-            st.markdown(f"""
-            <div style="background: linear-gradient(135deg, #e74c3c20, #e74c3c10); padding: 1rem; border-radius: 10px; border-left: 4px solid #e74c3c;">
-                <div style="color: #e74c3c; font-weight: bold; font-size: 1.1rem;">-${scenarios['bear']['loss']:,.0f}</div>
-                <div style="color: #2c3e50; font-size: 0.9rem;">{scenarios['bear']['roi']:.1f}% ROI</div>
-            </div>
-            """, unsafe_allow_html=True)
+        </div>
+        """, unsafe_allow_html=True)
         
         st.markdown('</div>', unsafe_allow_html=True)
 
@@ -1171,6 +999,65 @@ if spy_df is not None and vti_df is not None:
                 st.pyplot(fig, clear_figure=True)
         else:
             st.info("No VTI dividend data available for the selected date range.")
+    
+    with tabs[4]:
+        # Kelly Criterion tab
+        st.markdown('<div class="main-container fade-in">', unsafe_allow_html=True)
+        st.header("🎲 Kelly Criterion")
+        
+        st.markdown("""
+        <div class="card" style="text-align: center; padding: 3rem;">
+            <h3 style="color: #667eea; margin-bottom: 1rem;">🚀 Coming Soon!</h3>
+            <p style="font-size: 1.2rem; color: #6c757d; margin-bottom: 1.5rem;">
+                Kelly Criterion bet sizing calculator is under development.
+            </p>
+            <p style="color: #6c757d; line-height: 1.6;">
+                This powerful tool will help you determine optimal position sizing based on:
+            </p>
+            <ul style="text-align: left; color: #6c757d; max-width: 500px; margin: 1rem auto;">
+                <li>Expected returns and probabilities</li>
+                <li>Win/loss ratios</li>
+                <li>Risk tolerance parameters</li>
+                <li>Portfolio optimization</li>
+                <li>Fractional Kelly calculations</li>
+            </ul>
+            <div style="margin-top: 2rem; padding: 1rem; background: linear-gradient(135deg, #f8f9fa, #e9ecef); border-radius: 10px;">
+                <small style="color: #6c757d;">Expected release: Q2 2025</small>
+            </div>
+        </div>
+        """, unsafe_allow_html=True)
+        
+        st.markdown('</div>', unsafe_allow_html=True)
+    
+    with tabs[5]:
+        # Historical Backtest tab
+        st.markdown('<div class="main-container fade-in">', unsafe_allow_html=True)
+        st.header("📊 Historical Backtest")
+        
+        st.markdown("""
+        <div class="card" style="text-align: center; padding: 3rem;">
+            <h3 style="color: #667eea; margin-bottom: 1rem;">🚀 Coming Soon!</h3>
+            <p style="font-size: 1.2rem; color: #6c757d; margin-bottom: 1.5rem;">
+                Historical performance backtesting is under development.
+            </p>
+            <p style="color: #6c757d; line-height: 1.6;">
+                This comprehensive tool will analyze how your margin strategy would have performed historically:
+            </p>
+            <ul style="text-align: left; color: #6c757d; max-width: 500px; margin: 1rem auto;">
+                <li>Backtest SPY/VTI margin strategies</li>
+                <li>Custom date range selection</li>
+                <li>Leverage impact analysis</li>
+                <li>Interest cost modeling</li>
+                <li>Margin call simulation</li>
+                <li>Performance vs buy-and-hold comparison</li>
+            </ul>
+            <div style="margin-top: 2rem; padding: 1rem; background: linear-gradient(135deg, #f8f9fa, #e9ecef); border-radius: 10px;">
+                <small style="color: #6c757d;">Expected release: Q2 2025</small>
+            </div>
+        </div>
+        """, unsafe_allow_html=True)
+        
+        st.markdown('</div>', unsafe_allow_html=True)
     
     # Footer with information
     st.markdown(app_footer(), unsafe_allow_html=True)

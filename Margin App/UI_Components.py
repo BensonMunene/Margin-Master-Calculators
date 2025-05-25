@@ -78,6 +78,12 @@ def load_css():
         .stTabs [data-baseweb="tab"]:nth-child(4) {
             border-top: 3px solid #8e44ad;  /* Purple for Margin Calculator */
         }
+        .stTabs [data-baseweb="tab"]:nth-child(5) {
+            border-top: 3px solid #e91e63;  /* Pink for Kelly Criterion */
+        }
+        .stTabs [data-baseweb="tab"]:nth-child(6) {
+            border-top: 3px solid #009688;  /* Teal for Historical Backtest */
+        }
         /* Selected tab colors */
         .stTabs [data-baseweb="tab"]:nth-child(1)[aria-selected="true"] {
             background-color: #27ae60 !important;
@@ -90,6 +96,12 @@ def load_css():
         }
         .stTabs [data-baseweb="tab"]:nth-child(4)[aria-selected="true"] {
             background-color: #8e44ad !important;
+        }
+        .stTabs [data-baseweb="tab"]:nth-child(5)[aria-selected="true"] {
+            background-color: #e91e63 !important;
+        }
+        .stTabs [data-baseweb="tab"]:nth-child(6)[aria-selected="true"] {
+            background-color: #009688 !important;
         }
         
         /* Table styling */
