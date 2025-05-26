@@ -812,27 +812,64 @@ if spy_df is not None and vti_df is not None:
         # Performance simulation section - coming soon
         st.subheader("🎯 Performance Simulation")
         
-        st.markdown("""
-        <div class="card" style="text-align: center; padding: 3rem;">
-            <h3 style="color: #667eea; margin-bottom: 1rem;">🚀 Coming Soon!</h3>
-            <p style="font-size: 1.2rem; color: #6c757d; margin-bottom: 1.5rem;">
-                Advanced performance simulation tools are under development.
+        # Coming soon expandable section
+        with st.expander("🚀 Coming Soon - Advanced Performance Simulation Tools", expanded=False):
+            st.markdown("### 📊 What's Coming")
+            
+            st.markdown("""
+            <p style="font-size: 1.1rem; color: #6c757d; margin-bottom: 1.5rem; line-height: 1.6;">
+                Advanced performance simulation tools are under development to provide sophisticated scenario analysis.
             </p>
-            <p style="color: #6c757d; line-height: 1.6;">
-                This section will feature sophisticated scenario analysis including:
-            </p>
-            <ul style="text-align: left; color: #6c757d; max-width: 500px; margin: 1rem auto;">
-                <li>Monte Carlo simulations</li>
-                <li>Historical volatility modeling</li>
-                <li>Custom scenario builder</li>
-                <li>Risk-adjusted return calculations</li>
-                <li>Interactive performance charts</li>
-            </ul>
-            <div style="margin-top: 2rem; padding: 1rem; background: linear-gradient(135deg, #f8f9fa, #e9ecef); border-radius: 10px;">
-                <small style="color: #6c757d;">Expected release: Q2 2025</small>
+            """, unsafe_allow_html=True)
+            
+            st.markdown("#### 🔧 Planned Features:")
+            
+            # Create columns for feature cards
+            col1, col2 = st.columns(2)
+            
+            with col1:
+                st.markdown("""
+                <div style="background: linear-gradient(135deg, #e3f2fd 0%, #f1f8fe 100%); border: 2px solid #2196f3; border-radius: 10px; padding: 1rem; margin-bottom: 1rem;">
+                    <h5 style="color: #1976d2; margin: 0 0 0.5rem 0;">🎲 Monte Carlo Simulations</h5>
+                    <p style="color: #6c757d; font-size: 0.9rem; margin: 0;">Run thousands of scenarios to understand potential outcomes and risk distributions.</p>
+                </div>
+                """, unsafe_allow_html=True)
+                
+                st.markdown("""
+                <div style="background: linear-gradient(135deg, #fff3e0 0%, #fafafa 100%); border: 2px solid #ff9800; border-radius: 10px; padding: 1rem; margin-bottom: 1rem;">
+                    <h5 style="color: #f57c00; margin: 0 0 0.5rem 0;">🛠️ Custom Scenario Builder</h5>
+                    <p style="color: #6c757d; font-size: 0.9rem; margin: 0;">Create your own market scenarios with custom parameters and stress tests.</p>
+                </div>
+                """, unsafe_allow_html=True)
+            
+            with col2:
+                st.markdown("""
+                <div style="background: linear-gradient(135deg, #e8f5e8 0%, #f0f8f0 100%); border: 2px solid #27ae60; border-radius: 10px; padding: 1rem; margin-bottom: 1rem;">
+                    <h5 style="color: #27ae60; margin: 0 0 0.5rem 0;">📈 Historical Volatility Modeling</h5>
+                    <p style="color: #6c757d; font-size: 0.9rem; margin: 0;">Analyze historical price movements to model future volatility patterns.</p>
+                </div>
+                """, unsafe_allow_html=True)
+                
+                st.markdown("""
+                <div style="background: linear-gradient(135deg, #f3e5f5 0%, #faf2fc 100%); border: 2px solid #9c27b0; border-radius: 10px; padding: 1rem; margin-bottom: 1rem;">
+                    <h5 style="color: #7b1fa2; margin: 0 0 0.5rem 0;">⚖️ Risk-Adjusted Returns</h5>
+                    <p style="color: #6c757d; font-size: 0.9rem; margin: 0;">Calculate Sharpe ratios, maximum drawdowns, and other risk metrics.</p>
+                </div>
+                """, unsafe_allow_html=True)
+            
+            st.markdown("""
+            <div style="background: linear-gradient(135deg, #ffebee 0%, #fff5f5 100%); border: 2px solid #f44336; border-radius: 10px; padding: 1rem; margin-bottom: 1rem;">
+                <h5 style="color: #d32f2f; margin: 0 0 0.5rem 0;">📊 Interactive Performance Charts</h5>
+                <p style="color: #6c757d; font-size: 0.9rem; margin: 0;">Visualize performance scenarios with interactive charts showing profit/loss distributions, probability cones, and stress test results.</p>
             </div>
-        </div>
-        """, unsafe_allow_html=True)
+            """, unsafe_allow_html=True)
+            
+            st.markdown("""
+            <div style="text-align: center; margin-top: 2rem; padding: 1rem; background: linear-gradient(135deg, #667eea, #764ba2); border-radius: 10px; color: white;">
+                <h5 style="margin: 0 0 0.5rem 0;">🗓️ Expected Release</h5>
+                <p style="margin: 0; font-size: 1.1rem; font-weight: 600;">Q2 2025</p>
+            </div>
+            """, unsafe_allow_html=True)
         
         st.markdown('</div>', unsafe_allow_html=True)
 
