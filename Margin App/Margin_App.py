@@ -474,86 +474,75 @@ if spy_df is not None and vti_df is not None:
             # Investment Amount Card - cached for performance
             st.markdown(generate_investment_card(investment_amount), unsafe_allow_html=True)
             
+            # Define predefined values for different account types
+            if account_type == 'reg_t':
+                leverage_options = [1.0, 1.5, 2.0]
+                initial_margin_options = [100.0, 66.67, 50.0]
+                default_leverage_index = 2  # 2.0x leverage (50% margin)
+            else:  # portfolio margin
+                leverage_options = [1.0, 1.5, 2.0, 2.5, 3.0, 3.5, 4.0, 4.5, 5.0, 5.5, 6.0, 6.5, 7.0]
+                initial_margin_options = [100.0, 66.67, 50.0, 40.0, 33.33, 28.57, 25.0, 22.22, 20.0, 18.18, 16.67, 15.38, 14.29]
+                default_leverage_index = 6  # 4.0x leverage (25% margin)
+            
+            # Initialize session state for selected indices
+            if f'leverage_index_{account_type}' not in st.session_state:
+                st.session_state[f'leverage_index_{account_type}'] = default_leverage_index
+            if f'margin_index_{account_type}' not in st.session_state:
+                st.session_state[f'margin_index_{account_type}'] = default_leverage_index
+            
             # Leverage parameter
             st.markdown("**Leverage**")
-            leverage = st.slider(
+            leverage_index = st.selectbox(
                 "Leverage",
-                min_value=1.0,
-                max_value=max_leverage,
-                value=st.session_state.get(f'leverage_{account_type}', default_leverage),
-                step=0.1,
+                range(len(leverage_options)),
+                index=st.session_state[f'leverage_index_{account_type}'],
+                format_func=lambda x: f"{leverage_options[x]:.1f}x",
                 help="Multiplier for your investment",
                 label_visibility="collapsed",
-                key=f"leverage_slider_{account_type}"
+                key=f"leverage_select_{account_type}"
             )
             
-            # Calculate corresponding initial margin from leverage
-            initial_margin_from_leverage = (1 / leverage) * 100
+            # Update margin index when leverage changes
+            if leverage_index != st.session_state[f'leverage_index_{account_type}']:
+                st.session_state[f'leverage_index_{account_type}'] = leverage_index
+                st.session_state[f'margin_index_{account_type}'] = leverage_index
+                st.rerun()
+            
+            leverage = leverage_options[leverage_index]
             
             # Leverage Card - cached for performance
             st.markdown(generate_leverage_card(leverage), unsafe_allow_html=True)
             
             # Initial Margin parameter
             st.markdown("**Initial Margin**")
-            initial_margin = st.slider(
+            margin_index = st.selectbox(
                 "Initial Margin",
-                min_value=(1/max_leverage)*100,  # Minimum based on max leverage
-                max_value=100.0,
-                value=initial_margin_from_leverage,
-                step=0.1,
+                range(len(initial_margin_options)),
+                index=st.session_state[f'margin_index_{account_type}'],
+                format_func=lambda x: f"{initial_margin_options[x]:.2f}%",
                 help="Percentage of position value you must provide upfront",
                 label_visibility="collapsed",
-                key=f"initial_margin_slider_{account_type}"
+                key=f"margin_select_{account_type}"
             )
             
-            # Calculate corresponding leverage from initial margin
-            leverage_from_margin = 1 / (initial_margin / 100)
-            
-            # Synchronization logic - determine which slider was changed
-            if f'last_leverage_{account_type}' not in st.session_state:
-                st.session_state[f'last_leverage_{account_type}'] = default_leverage
-                st.session_state[f'last_initial_margin_{account_type}'] = default_initial_margin
-            
-            # Check which value changed more significantly
-            leverage_changed = abs(leverage - st.session_state[f'last_leverage_{account_type}']) > 0.05
-            margin_changed = abs(initial_margin - st.session_state[f'last_initial_margin_{account_type}']) > 0.05
-            
-            if leverage_changed and not margin_changed:
-                # Leverage was changed, use leverage value
-                final_leverage = leverage
-                final_initial_margin = initial_margin_from_leverage
-                st.session_state[f'last_leverage_{account_type}'] = final_leverage
-                st.session_state[f'last_initial_margin_{account_type}'] = final_initial_margin
-            elif margin_changed and not leverage_changed:
-                # Initial margin was changed, use margin value
-                final_leverage = leverage_from_margin
-                final_initial_margin = initial_margin
-                st.session_state[f'last_leverage_{account_type}'] = final_leverage
-                st.session_state[f'last_initial_margin_{account_type}'] = final_initial_margin
-            else:
-                # Use current values or default to leverage
-                final_leverage = leverage
-                final_initial_margin = initial_margin_from_leverage
-                st.session_state[f'last_leverage_{account_type}'] = final_leverage
-                st.session_state[f'last_initial_margin_{account_type}'] = final_initial_margin
-            
-            # Force rerun if values are out of sync to update the sliders
-            if abs(final_leverage - leverage) > 0.05 or abs(final_initial_margin - initial_margin) > 0.05:
+            # Update leverage index when margin changes
+            if margin_index != st.session_state[f'margin_index_{account_type}']:
+                st.session_state[f'margin_index_{account_type}'] = margin_index
+                st.session_state[f'leverage_index_{account_type}'] = margin_index
                 st.rerun()
             
-            # Initial Margin Card - using final synchronized values
+            initial_margin = initial_margin_options[margin_index]
+            
+            # Initial Margin Card - using selected values
             st.markdown(f"""
             <div class="param-card" style="background: linear-gradient(135deg, #e8f5e8 0%, #f0f8f0 100%); border: 2px solid #27ae60; padding: 1rem; margin: 0.5rem 0;">
                 <div class="param-title" style="font-size: 1rem;">📋 Initial Margin</div>
-                <div class="param-value" style="font-size: 1.1rem;">{final_initial_margin:.1f}%</div>
+                <div class="param-value" style="font-size: 1.1rem;">{initial_margin:.2f}%</div>
                 <div class="param-description" style="font-size: 0.85rem;">
                     The percentage of the position value you must provide upfront. Lower initial margin means higher leverage.
                 </div>
             </div>
             """, unsafe_allow_html=True)
-            
-            # Use synchronized leverage value for all calculations
-            leverage = final_leverage
             
             # Advanced settings in expandable section
             with st.expander("⚙️ Advanced Settings", expanded=False):

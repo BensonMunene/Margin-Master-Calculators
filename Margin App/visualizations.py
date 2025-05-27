@@ -344,9 +344,7 @@ def plot_dividend_bars(df, title, symbol='Stock'):
                 opacity=0.9
             )
     
-    
-    
-    
+   
     # Add year labels at the top
     for year in years:
         year_data = df_plot[df_plot['Year'] == year]
