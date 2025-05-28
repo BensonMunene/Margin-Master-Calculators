@@ -1,0 +1,44 @@
+{% extends 'calculator/base.html' %}
+{% load static %}
+
+{% block title %}Kelly Criterion - ETF Margin Calculator{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <h2 class="mb-4">🎲 Kelly Criterion Calculator</h2>
+        <p class="lead">
+            The Kelly Criterion helps determine the optimal position size for investments based on win probability and expected returns.
+            It's particularly useful when managing leveraged investments.
+        </p>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-12">
+        <div class="card shadow-sm mb-4">
+            <div class="card-header bg-primary text-white">
+                <h3 class="card-title mb-0">Coming Soon</h3>
+            </div>
+            <div class="card-body text-center py-5">
+                <div class="display-1 mb-4">
+                    <i class="fas fa-tools"></i>
+                </div>
+                <h3>Kelly Criterion Calculator Under Development</h3>
+                <p class="lead mb-4">
+                    We're working on implementing a comprehensive Kelly Criterion calculator
+                    to help you optimize position sizing for margin trading strategies.
+                </p>
+                <div class="alert alert-info">
+                    <i class="fas fa-info-circle me-2"></i>
+                    Check back soon for updates. This feature will be available in the next release.
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<!-- No scripts needed for coming soon page -->
+{% endblock %}

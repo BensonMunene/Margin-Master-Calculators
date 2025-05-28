@@ -58,8 +58,7 @@ def plot_candlestick(df, title, symbol='Stock'):
             'font': {
                 'size': 18,
                 'color': '#2c3e50',
-                'family': 'Arial',
-                'weight': 'bold'
+                'family': 'Arial'
             },
             'y': 0.95,
             'x': 0.5,
@@ -336,7 +335,7 @@ def plot_dividend_bars(df, title, symbol='Stock'):
                 y=year_data['Dividends'].max() * 1.25,
                 text=f"${row['Dividends']:.2f}",
                 showarrow=False,
-                font=dict(size=13, color="#2c3e50", family="Arial", weight="bold"),
+                font=dict(size=13, color="#2c3e50", family="Arial"),
                 bgcolor="rgba(255, 255, 255, 0.85)",
                 bordercolor="#34495e",
                 borderwidth=1,
@@ -359,7 +358,7 @@ def plot_dividend_bars(df, title, symbol='Stock'):
                 showarrow=False,
                 xref="x",
                 yref="paper",
-                font=dict(size=13, color="#34495e", family="Arial", weight="bold"),
+                font=dict(size=13, color="#34495e", family="Arial"),
                 bgcolor="white",
                 bordercolor="#95a5a6",
                 borderwidth=1,

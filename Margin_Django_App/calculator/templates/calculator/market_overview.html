@@ -1,0 +1,88 @@
+{% extends 'calculator/base.html' %}
+{% load static %}
+
+{% block title %}Market Overview - ETF Margin Calculator{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <h2 class="mb-4">📊 Market Overview</h2>
+        <p class="lead">
+            View current market data and price charts for major ETFs. This overview helps you make informed decisions
+            about potential margin investments.
+        </p>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-12">
+        <div class="card shadow-sm mb-4">
+            <div class="card-header bg-primary text-white">
+                <h3 class="card-title mb-0">SPY - S&P 500 ETF</h3>
+            </div>
+            <div class="card-body">
+                {% if spy_chart %}
+                    {{ spy_chart | safe }}
+                {% else %}
+                    <div class="alert alert-warning">
+                        <i class="fas fa-exclamation-triangle me-2"></i>
+                        Unable to load SPY data. Please check that the data files are available.
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-12">
+        <div class="card shadow-sm mb-4">
+            <div class="card-header bg-success text-white">
+                <h3 class="card-title mb-0">VTI - Total Stock Market ETF</h3>
+            </div>
+            <div class="card-body">
+                {% if vti_chart %}
+                    {{ vti_chart | safe }}
+                {% else %}
+                    <div class="alert alert-warning">
+                        <i class="fas fa-exclamation-triangle me-2"></i>
+                        Unable to load VTI data. Please check that the data files are available.
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-12">
+        <div class="card shadow-sm mb-4">
+            <div class="card-header bg-info text-white">
+                <h3 class="card-title mb-0">About Market Data</h3>
+            </div>
+            <div class="card-body">
+                <p>
+                    This page provides an overview of key ETFs commonly used in margin trading strategies. The charts
+                    display monthly candlestick data to help you visualize long-term price trends.
+                </p>
+                <p>
+                    <strong>SPY (SPDR S&P 500 ETF Trust)</strong> tracks the S&P 500 index, which represents 500
+                    of the largest U.S. companies. It's one of the most liquid ETFs, making it ideal for margin trading.
+                </p>
+                <p>
+                    <strong>VTI (Vanguard Total Stock Market ETF)</strong> provides exposure to the entire U.S. 
+                    stock market, including small, mid, and large-cap stocks. It offers greater diversification
+                    than SPY.
+                </p>
+                <p class="text-muted">
+                    <small>
+                        <i class="fas fa-info-circle me-1"></i>
+                        Historical data is for educational purposes only and should not be used as the sole basis
+                        for investment decisions.
+                    </small>
+                </p>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

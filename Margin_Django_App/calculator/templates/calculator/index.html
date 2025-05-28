@@ -1,0 +1,567 @@
+{% extends 'calculator/base.html' %}
+{% load static %}
+
+{% block title %}ETF Margin Calculator{% endblock %}
+
+{% block extra_css %}
+<style>
+    /* Specific styles for calculator page */
+    .parameter-card {
+        background: linear-gradient(135deg, #f8f9fa 0%, #ffffff 100%);
+        border: 2px solid #e9ecef;
+        border-radius: 15px;
+        padding: 1.5rem;
+        margin: 1rem 0;
+        transition: all 0.3s ease;
+        box-shadow: 0 5px 15px rgba(0, 0, 0, 0.08);
+    }
+    
+    .parameter-card:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 8px 25px rgba(0, 0, 0, 0.12);
+        border-color: #3498db;
+    }
+    
+    .leverage-card {
+        background: linear-gradient(135deg, #e8f5e8 0%, #f0f8f0 100%);
+        border: 2px solid #27ae60;
+    }
+    
+    .investment-card {
+        background: linear-gradient(135deg, #e3f2fd 0%, #f1f8fe 100%);
+        border: 2px solid #2196f3;
+    }
+    
+    .metric-container {
+        background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+        border-radius: 15px;
+        padding: 1.5rem;
+        color: white;
+        text-align: center;
+        margin: 1rem 0;
+        transition: all 0.3s ease;
+    }
+    
+    .metric-container:hover {
+        transform: scale(1.02);
+    }
+    
+    .risk-indicator {
+        border-radius: 15px;
+        padding: 1.2rem;
+        margin: 1rem 0;
+        transition: all 0.3s ease;
+        backdrop-filter: blur(10px);
+    }
+    
+    .results-card {
+        background: white;
+        border-radius: 15px;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+        padding: 20px;
+        margin-bottom: 20px;
+    }
+    
+    .scenario-card {
+        border-radius: 10px;
+        padding: 15px;
+        margin-bottom: 15px;
+    }
+    
+    .bull-scenario {
+        background-color: #d4edda;
+        border: 1px solid #c3e6cb;
+    }
+    
+    .bear-scenario {
+        background-color: #f8d7da;
+        border: 1px solid #f5c6cb;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <h2 class="mb-4">🧮 Advanced Margin Calculator</h2>
+        <p class="lead">
+            Calculate potential returns, margin requirements, and risk metrics for ETF margin trading.
+            Adjust parameters to see how different leverage levels and market scenarios affect your investment.
+        </p>
+    </div>
+</div>
+
+<!-- Understanding Margin Trading Card -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card shadow-sm">
+            <div class="card-header bg-info text-white">
+                <h3 class="card-title mb-0">Understanding Margin Trading</h3>
+            </div>
+            <div class="card-body">
+                <p>
+                    Margin trading allows investors to borrow money from a broker to purchase securities. This calculator helps you understand:
+                </p>
+                <ul class="mb-3">
+                    <li><strong>Buying Power:</strong> How much you can invest using both your cash and borrowed funds</li>
+                    <li><strong>Leverage Effect:</strong> How margin can amplify both gains and losses</li>
+                    <li><strong>Margin Requirements:</strong> The minimum amount of equity you need to maintain</li>
+                </ul>
+                <div class="alert alert-warning">
+                    <strong>⚠️ Risk Warning:</strong> Margin trading involves higher risk than non-leveraged investing. Losses can exceed your initial investment.
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <!-- Input Parameters Column -->
+    <div class="col-md-5">
+        <div class="card shadow-sm mb-4">
+            <div class="card-header bg-primary text-white">
+                <h3 class="card-title mb-0">📊 Investment Parameters</h3>
+            </div>
+
+            <div class="card-body">
+                <form id="margin-calculator-form">
+                    <!-- Account Type -->
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">🏦 Account Type</label>
+                        <div class="d-flex">
+                            {% for value, label in account_types %}
+                            <div class="form-check me-4">
+                                <input class="form-check-input" type="radio" name="account_type" 
+                                       id="account_{{ value }}" value="{{ value }}" 
+                                       {% if forloop.first %}checked{% endif %}>
+                                <label class="form-check-label" for="account_{{ value }}">{{ label }}</label>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                    
+                    <!-- Position Type -->
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">📈 Position Type</label>
+                        <div class="d-flex">
+                            {% for value, label in position_types %}
+                            <div class="form-check me-4">
+                                <input class="form-check-input" type="radio" name="position_type" 
+                                       id="position_{{ value }}" value="{{ value }}" 
+                                       {% if forloop.first %}checked{% endif %}>
+                                <label class="form-check-label" for="position_{{ value }}">{{ label }}</label>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                    
+                    <!-- Investment Amount -->
+                    <div class="mb-3">
+                        <label for="investment_amount" class="form-label fw-bold">💵 Investment Amount ($)</label>
+                        <input type="number" class="form-control" id="investment_amount" 
+                               name="investment_amount" value="{{ investment_amount }}" min="1000" step="1000">
+                    </div>
+                    
+                    <!-- Investment Amount Card -->
+                    <div class="parameter-card investment-card mb-4">
+                        <h5 class="param-title"><i class="fas fa-money-bill-wave me-2"></i> Investment Amount</h5>
+                        <p class="param-value" id="investment-amount-display">${{ investment_amount|floatformat:2 }}</p>
+                        <p class="param-description">
+                            This is the total amount you're investing, combining both your cash and any margin loan.
+                            For margin accounts, this represents your buying power.
+                        </p>
+                    </div>
+                    
+                    <!-- Current Price -->
+                    <div class="mb-3">
+                        <label for="current_price" class="form-label fw-bold">🏷️ Current ETF Price ($)</label>
+                        <input type="number" class="form-control" id="current_price" 
+                               name="current_price" value="{{ current_price }}" step="0.01">
+                    </div>
+                    
+                    <!-- Leverage -->
+                    <div class="mb-3">
+                        <label for="leverage" class="form-label fw-bold">⚖️ Leverage</label>
+                        <select class="form-select" id="leverage" name="leverage">
+                            {% for option in leverage_options %}
+                            <option value="{{ option.value }}" {% if option.value == 2.0 %}selected{% endif %}>
+                                {{ option.label }}
+                            </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    
+                    <!-- Leverage Card -->
+                    <div class="parameter-card leverage-card mb-4">
+                        <h5 class="param-title"><i class="fas fa-balance-scale me-2"></i> Leverage</h5>
+                        <p class="param-value" id="leverage-display">2.0x</p>
+                        <p class="param-description">
+                            Leverage multiplies your investment power but also your risk. A 2x leverage means you're
+                            using 50% of your own cash and 50% borrowed funds (margin).
+                        </p>
+                    </div>
+                    
+                    <!-- Advanced Settings -->
+                    <div class="mb-3">
+                        <button class="btn btn-outline-secondary w-100" type="button" 
+                                data-bs-toggle="collapse" data-bs-target="#advancedSettings">
+                            ⚙️ Advanced Settings
+                        </button>
+                        <div class="collapse mt-3" id="advancedSettings">
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <label for="interest_rate" class="form-label">Annual Interest Rate (%)</label>
+                                    <input type="number" class="form-control" id="interest_rate" 
+                                           name="interest_rate" value="{{ interest_rate }}" min="0" max="20" step="0.1">
+                                </div>
+                                <div class="col-md-6">
+                                    <label for="holding_period" class="form-label">Holding Period (months)</label>
+                                    <input type="number" class="form-control" id="holding_period" 
+                                           name="holding_period" value="{{ holding_period }}" min="1" max="120" step="1">
+                                </div>
+                            </div>
+                            <div class="row mt-3">
+                                <div class="col-md-6">
+                                    <label for="bull_gain" class="form-label">Bull Scenario Gain (%)</label>
+                                    <input type="number" class="form-control" id="bull_gain" 
+                                           name="bull_gain" value="{{ bull_gain }}" min="0" max="100" step="1">
+                                </div>
+                                <div class="col-md-6">
+                                    <label for="bear_loss" class="form-label">Bear Scenario Loss (%)</label>
+                                    <input type="number" class="form-control" id="bear_loss" 
+                                           name="bear_loss" value="{{ bear_loss }}" min="0" max="100" step="1">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <button type="button" id="calculate-btn" class="btn btn-primary w-100">
+                        <i class="fas fa-calculator me-2"></i> Calculate
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Results Column -->
+    <div class="col-md-7">
+        <div class="card shadow-sm mb-4">
+            <div class="card-header bg-success text-white">
+                <h3 class="card-title mb-0">📈 Calculation Results</h3>
+            </div>
+            <div class="card-body p-0 pt-3">
+                <div id="loading" class="text-center d-none">
+                    <div class="spinner-border text-primary" role="status">
+                        <span class="visually-hidden">Loading...</span>
+                    </div>
+                    <p>Calculating...</p>
+                </div>
+                
+                <div id="results-container" class="d-none">
+                    <!-- Main Metrics -->
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="parameter-card investment-card">
+                                <h4><i class="fas fa-money-bill-wave"></i> Investment</h4>
+                                <hr>
+                                <div class="row">
+                                    <div class="col-7">Cash Investment:</div>
+                                    <div class="col-5 text-end fw-bold" id="cash-investment"></div>
+                                </div>
+                                <div class="row">
+                                    <div class="col-7">Margin Loan:</div>
+                                    <div class="col-5 text-end fw-bold" id="margin-loan"></div>
+                                </div>
+                                <div class="row">
+                                    <div class="col-7">Total Investment:</div>
+                                    <div class="col-5 text-end fw-bold" id="total-investment"></div>
+                                </div>
+                                <div class="row">
+                                    <div class="col-7">Shares Purchased:</div>
+                                    <div class="col-5 text-end fw-bold" id="shares-purchased"></div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="parameter-card leverage-card">
+                                <h4><i class="fas fa-balance-scale"></i> Margin Requirements</h4>
+                                <hr>
+                                <div class="row">
+                                    <div class="col-7">Initial Margin:</div>
+                                    <div class="col-5 text-end fw-bold" id="initial-margin"></div>
+                                </div>
+                                <div class="row">
+                                    <div class="col-7">Maintenance Margin:</div>
+                                    <div class="col-5 text-end fw-bold" id="maintenance-margin"></div>
+                                </div>
+                                <div class="row">
+                                    <div class="col-7">Margin Call Price:</div>
+                                    <div class="col-5 text-end fw-bold" id="margin-call-price"></div>
+                                </div>
+                                <div class="row">
+                                    <div class="col-7">Price Drop to Call:</div>
+                                    <div class="col-5 text-end fw-bold" id="margin-call-drop"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Interest Costs -->
+                    <div class="row mt-3">
+                        <div class="col-12">
+                            <div class="metric-container">
+                                <h4 class="mb-3">💰 Margin Interest Costs</h4>
+                                <div class="row">
+                                    <div class="col-md-4">
+                                        <div class="fw-bold mb-1">Daily Interest</div>
+                                        <div id="daily-interest-cost" class="fs-4"></div>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <div class="fw-bold mb-1">Annual Interest</div>
+                                        <div id="annual-interest-cost" class="fs-4"></div>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <div class="fw-bold mb-1">Breakeven Price</div>
+                                        <div id="breakeven-price" class="fs-4"></div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Risk Indicator -->
+                    <div class="row mt-3">
+                        <div class="col-12">
+                            <div id="risk-indicator" class="risk-indicator">
+                                <h4 class="mb-2">⚠️ Risk Assessment</h4>
+                                <div id="risk-level" class="fs-5 fw-bold"></div>
+                                <div id="risk-description" class="mt-2"></div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Scenarios -->
+                    <div class="row mt-3">
+                        <div class="col-12">
+                            <h4>🎯 Performance Scenarios</h4>
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="scenario-card bull-scenario">
+                                        <h5><i class="fas fa-arrow-up"></i> Bull Scenario</h5>
+                                        <div class="row">
+                                            <div class="col-8">Investment Return:</div>
+                                            <div class="col-4 text-end fw-bold" id="bull-investment-return"></div>
+                                        </div>
+                                        <div class="row">
+                                            <div class="col-8">Interest Cost:</div>
+                                            <div class="col-4 text-end fw-bold" id="bull-interest-cost"></div>
+                                        </div>
+                                        <div class="row">
+                                            <div class="col-8">Net Return:</div>
+                                            <div class="col-4 text-end fw-bold" id="bull-net-return"></div>
+                                        </div>
+                                        <div class="row">
+                                            <div class="col-8">ROI:</div>
+                                            <div class="col-4 text-end fw-bold" id="bull-roi"></div>
+                                        </div>
+                                        <div class="row">
+                                            <div class="col-8">Annualized ROI:</div>
+                                            <div class="col-4 text-end fw-bold" id="bull-annualized-roi"></div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="scenario-card bear-scenario">
+                                        <h5><i class="fas fa-arrow-down"></i> Bear Scenario</h5>
+                                        <div class="row">
+                                            <div class="col-8">Investment Return:</div>
+                                            <div class="col-4 text-end fw-bold" id="bear-investment-return"></div>
+                                        </div>
+                                        <div class="row">
+                                            <div class="col-8">Interest Cost:</div>
+                                            <div class="col-4 text-end fw-bold" id="bear-interest-cost"></div>
+                                        </div>
+                                        <div class="row">
+                                            <div class="col-8">Net Return:</div>
+                                            <div class="col-4 text-end fw-bold" id="bear-net-return"></div>
+                                        </div>
+                                        <div class="row">
+                                            <div class="col-8">ROI:</div>
+                                            <div class="col-4 text-end fw-bold" id="bear-roi"></div>
+                                        </div>
+                                        <div class="row">
+                                            <div class="col-8">Annualized ROI:</div>
+                                            <div class="col-4 text-end fw-bold" id="bear-annualized-roi"></div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    $(document).ready(function() {
+        // Format currency function
+        function formatCurrency(value) {
+            return new Intl.NumberFormat('en-US', { 
+                style: 'currency', 
+                currency: 'USD',
+                minimumFractionDigits: 2,
+                maximumFractionDigits: 2
+            }).format(value);
+        }
+        
+        // Format percentage function
+        function formatPercentage(value) {
+            return new Intl.NumberFormat('en-US', { 
+                style: 'percent', 
+                minimumFractionDigits: 2,
+                maximumFractionDigits: 2
+            }).format(value/100);
+        }
+        
+        // Format number function with commas
+        function formatNumber(value, decimals = 2) {
+            return new Intl.NumberFormat('en-US', {
+                minimumFractionDigits: decimals,
+                maximumFractionDigits: decimals
+            }).format(value);
+        }
+        
+        // Calculate button click handler
+        $("#calculate-btn").click(function() {
+            // Show loading spinner
+            $("#loading").removeClass("d-none");
+            $("#results-container").addClass("d-none");
+            
+            // Get form data
+            const formData = {
+                investment_amount: parseFloat($("#investment_amount").val()),
+                current_price: parseFloat($("#current_price").val()),
+                leverage: parseFloat($("#leverage").val()),
+                account_type: $("input[name='account_type']:checked").val(),
+                position_type: $("input[name='position_type']:checked").val(),
+                interest_rate: parseFloat($("#interest_rate").val()),
+                holding_period: parseFloat($("#holding_period").val()),
+                bull_gain: parseFloat($("#bull_gain").val()),
+                bear_loss: parseFloat($("#bear_loss").val())
+            };
+            
+            // API call to calculate margin
+            fetch("{% url 'calculator:calculate_margin' %}", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    "X-CSRFToken": "{{ csrf_token }}"
+                },
+                body: JSON.stringify(formData)
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    updateResults(data.data);
+                    // Hide loading, show results
+                    $("#loading").addClass("d-none");
+                    $("#results-container").removeClass("d-none");
+                } else {
+                    alert("Error: " + data.error);
+                    $("#loading").addClass("d-none");
+                }
+            })
+            .catch(error => {
+                console.error("Error:", error);
+                alert("An error occurred. Please try again.");
+                $("#loading").addClass("d-none");
+            });
+        });
+        
+        // Update results function
+        function updateResults(data) {
+            // Investment metrics
+            $("#cash-investment").text(formatCurrency(data.cash_investment));
+            $("#margin-loan").text(formatCurrency(data.margin_loan));
+            $("#total-investment").text(formatCurrency(data.total_investment));
+            $("#shares-purchased").text(formatNumber(data.shares_purchased, 2));
+            
+            // Margin requirements
+            $("#initial-margin").text(formatPercentage(data.initial_margin_req));
+            $("#maintenance-margin").text(formatPercentage(data.maintenance_margin_req));
+            $("#margin-call-price").text(formatCurrency(data.margin_call_price));
+            $("#margin-call-drop").text(formatPercentage(data.margin_call_drop));
+            
+            // Interest costs
+            $("#daily-interest-cost").text(formatCurrency(data.daily_interest_cost));
+            $("#annual-interest-cost").text(formatCurrency(data.annual_interest_cost));
+            $("#breakeven-price").text(formatCurrency(data.breakeven_price));
+            
+            // Bull scenario
+            $("#bull-investment-return").text(formatCurrency(data.bull_investment_return));
+            $("#bull-interest-cost").text(formatCurrency(data.bull_interest_cost));
+            $("#bull-net-return").text(formatCurrency(data.bull_net_return));
+            $("#bull-roi").text(formatPercentage(data.bull_roi));
+            $("#bull-annualized-roi").text(formatPercentage(data.bull_annualized_roi));
+            
+            // Bear scenario
+            $("#bear-investment-return").text(formatCurrency(data.bear_investment_return));
+            $("#bear-interest-cost").text(formatCurrency(data.bear_interest_cost));
+            $("#bear-net-return").text(formatCurrency(data.bear_net_return));
+            $("#bear-roi").text(formatPercentage(data.bear_roi));
+            $("#bear-annualized-roi").text(formatPercentage(data.bear_annualized_roi));
+            
+            // Risk indicator
+            updateRiskIndicator(data);
+        }
+        
+        // Update risk indicator based on margin call metrics
+        function updateRiskIndicator(data) {
+            const riskIndicator = $("#risk-indicator");
+            const riskLevel = $("#risk-level");
+            const riskDescription = $("#risk-description");
+            
+            let riskText, riskColor, description;
+            
+            if (data.leverage <= 1) {
+                riskText = "🟢 Low Risk";
+                riskColor = "#27ae60";
+                description = "No margin is being used, so there is no risk of a margin call.";
+            } else if (data.margin_call_drop < 15) {
+                riskText = "🔴 High Risk";
+                riskColor = "#e74c3c";
+                description = "A relatively small market drop could trigger a margin call. Consider reducing leverage or increasing cash reserves.";
+            } else if (data.margin_call_drop < 25) {
+                riskText = "🟡 Medium Risk";
+                riskColor = "#f39c12";
+                description = "A moderate market correction could trigger a margin call. Monitor your position closely.";
+            } else {
+                riskText = "🟢 Lower Risk";
+                riskColor = "#27ae60";
+                description = "Your position can withstand significant market drops before a margin call would be triggered.";
+            }
+            
+            riskIndicator.css("background-color", riskColor + "20");
+            riskIndicator.css("border-left", "5px solid " + riskColor);
+            riskLevel.text(riskText);
+            riskDescription.text(description);
+        }
+        
+        // Update parameter display when inputs change
+        $("#investment_amount").on("input", function() {
+            $("#investment-amount-display").text(formatCurrency(parseFloat($(this).val())));
+        });
+        
+        $("#leverage").on("change", function() {
+            $("#leverage-display").text($(this).val() + "x");
+        });
+        
+        // Trigger calculation on initial load
+        $("#calculate-btn").click();
+    });
+</script>
+{% endblock %}

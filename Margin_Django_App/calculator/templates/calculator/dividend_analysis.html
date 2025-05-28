@@ -1,0 +1,141 @@
+{% extends 'calculator/base.html' %}
+{% load static %}
+
+{% block title %}Dividend Analysis - ETF Margin Calculator{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <h2 class="mb-4">💰 Dividend Analysis</h2>
+        <p class="lead">
+            Analyze historical dividend distributions for major ETFs to understand how dividend income can offset margin interest costs and enhance total returns.
+        </p>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-12">
+        <div class="card shadow-sm mb-4">
+            <div class="card-header bg-primary text-white">
+                <h3 class="card-title mb-0">SPY - S&P 500 ETF Dividend History</h3>
+            </div>
+            <div class="card-body">
+                {% if spy_dividend_chart %}
+                    {{ spy_dividend_chart | safe }}
+                {% else %}
+                    <div class="alert alert-warning">
+                        <i class="fas fa-exclamation-triangle me-2"></i>
+                        Unable to load SPY dividend data. Please check that the data files are available.
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-12">
+        <div class="card shadow-sm mb-4">
+            <div class="card-header bg-success text-white">
+                <h3 class="card-title mb-0">VTI - Total Stock Market ETF Dividend History</h3>
+            </div>
+            <div class="card-body">
+                {% if vti_dividend_chart %}
+                    {{ vti_dividend_chart | safe }}
+                {% else %}
+                    <div class="alert alert-warning">
+                        <i class="fas fa-exclamation-triangle me-2"></i>
+                        Unable to load VTI dividend data. Please check that the data files are available.
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-12">
+        <div class="card shadow-sm mb-4">
+            <div class="card-header bg-info text-white">
+                <h3 class="card-title mb-0">Dividends and Margin Trading</h3>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <h4>Dividend Advantages in Margin Accounts</h4>
+                        <p>
+                            Dividends can play a significant role in margin trading strategies:
+                        </p>
+                        <ul>
+                            <li>Dividend income can offset margin interest costs</li>
+                            <li>Quarterly cash flow helps maintain margin requirements</li>
+                            <li>Dividend growth may increase total return over time</li>
+                            <li>Dividend capture strategies can be executed with leverage</li>
+                        </ul>
+                    </div>
+                    <div class="col-md-6">
+                        <h4>Dividend Considerations</h4>
+                        <p>
+                            When leveraging dividend-paying ETFs, remember:
+                        </p>
+                        <ul>
+                            <li>Dividend yield should be compared to margin interest rate</li>
+                            <li>Ex-dividend dates can cause price drops affecting margin requirements</li>
+                            <li>Dividend taxation may differ from capital gains</li>
+                            <li>Dividend reinvestment can compound returns in leveraged positions</li>
+                        </ul>
+                    </div>
+                </div>
+                <div class="row mt-4">
+                    <div class="col-12">
+                        <h4>Dividend Yield vs. Margin Interest</h4>
+                        <p>
+                            One key metric for margin traders is the spread between dividend yield and margin interest rate.
+                            When the dividend yield exceeds the margin interest rate, the position generates positive carry.
+                        </p>
+                        <div class="table-responsive">
+                            <table class="table table-bordered">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th>ETF</th>
+                                        <th>Approximate Dividend Yield</th>
+                                        <th>Typical Margin Rate</th>
+                                        <th>Net Yield at 2x Leverage</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr>
+                                        <td>SPY (S&P 500)</td>
+                                        <td>1.3% - 1.5%</td>
+                                        <td>5.0% - 7.0%</td>
+                                        <td>-2.4% to -4.0%</td>
+                                    </tr>
+                                    <tr>
+                                        <td>VTI (Total Market)</td>
+                                        <td>1.3% - 1.5%</td>
+                                        <td>5.0% - 7.0%</td>
+                                        <td>-2.4% to -4.0%</td>
+                                    </tr>
+                                    <tr>
+                                        <td>SCHD (Dividend ETF)</td>
+                                        <td>3.0% - 3.5%</td>
+                                        <td>5.0% - 7.0%</td>
+                                        <td>1.0% to -0.5%</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                        <p class="text-muted mt-2">
+                            <small>
+                                <i class="fas fa-info-circle me-1"></i>
+                                Yields and rates are approximate and will vary over time. Calculate your specific
+                                scenario using current data.
+                            </small>
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
