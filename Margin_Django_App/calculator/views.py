@@ -13,47 +13,58 @@ import matplotlib.pyplot as plt
 import base64
 from io import BytesIO
 
-# Path to data directory
-BASE_DIR = Path(__file__).resolve().parent.parent.parent
-DATA_DIR = os.path.join(BASE_DIR, 'Data')
+from calculator.models import StockData, DividendData
 
-# Load data function (similar to Streamlit app)
+# Load data function that uses database models instead of CSV files
 def load_data():
     try:
-        # Check if the Data directory exists
-        if not os.path.exists(DATA_DIR):
-            print(f"Data directory not found: {DATA_DIR}")
-            return None, None, None, None
-            
-        # Define file paths with proper naming
-        spy_path = os.path.join(DATA_DIR, 'SPY.csv')
-        spy_dividends_path = os.path.join(DATA_DIR, 'SPY Dividends.csv')  # Fixed name with space
-        vti_path = os.path.join(DATA_DIR, 'VTI.csv')
-        vti_dividends_path = os.path.join(DATA_DIR, 'VTI Dividends.csv')  # Fixed name with space
+        # Load SPY price data from database
+        spy_data = StockData.objects.filter(symbol='SPY').order_by('date')
+        if not spy_data.exists():
+            print("SPY price data not found in database")
+            spy_df = None
+        else:
+            # Convert queryset to dataframe
+            spy_df = pd.DataFrame(list(spy_data.values('date', 'open_price', 'high', 'low', 'close', 'volume')))
+            spy_df.rename(columns={'open_price': 'Open', 'high': 'High', 'low': 'Low', 'close': 'Close', 'volume': 'Volume'}, inplace=True)
+            spy_df.set_index('date', inplace=True)
         
-        # Check if files exist
-        files_to_check = {
-            "SPY price data": spy_path,
-            "SPY dividend data": spy_dividends_path,
-            "VTI price data": vti_path, 
-            "VTI dividend data": vti_dividends_path
-        }
+        # Load VTI price data from database
+        vti_data = StockData.objects.filter(symbol='VTI').order_by('date')
+        if not vti_data.exists():
+            print("VTI price data not found in database")
+            vti_df = None
+        else:
+            # Convert queryset to dataframe
+            vti_df = pd.DataFrame(list(vti_data.values('date', 'open_price', 'high', 'low', 'close', 'volume')))
+            vti_df.rename(columns={'open_price': 'Open', 'high': 'High', 'low': 'Low', 'close': 'Close', 'volume': 'Volume'}, inplace=True)
+            vti_df.set_index('date', inplace=True)
         
-        for desc, path in files_to_check.items():
-            if not os.path.exists(path):
-                print(f"{desc} file not found: {path}")
+        # Load SPY dividend data from database
+        spy_dividends_data = DividendData.objects.filter(symbol='SPY').order_by('date')
+        if not spy_dividends_data.exists():
+            print("SPY dividend data not found in database")
+            spy_dividends_df = None
+        else:
+            # Convert queryset to dataframe
+            spy_dividends_df = pd.DataFrame(list(spy_dividends_data.values('date', 'amount')))
+            spy_dividends_df.rename(columns={'amount': 'Dividends'}, inplace=True)
+            spy_dividends_df.set_index('date', inplace=True)
         
-        # Load price data
-        spy_df = pd.read_csv(spy_path, index_col='Date', parse_dates=True) if os.path.exists(spy_path) else None
-        vti_df = pd.read_csv(vti_path, index_col='Date', parse_dates=True) if os.path.exists(vti_path) else None
-        
-        # Load dividend data
-        spy_dividends_df = pd.read_csv(spy_dividends_path, index_col='Date', parse_dates=True) if os.path.exists(spy_dividends_path) else None
-        vti_dividends_df = pd.read_csv(vti_dividends_path, index_col='Date', parse_dates=True) if os.path.exists(vti_dividends_path) else None
+        # Load VTI dividend data from database
+        vti_dividends_data = DividendData.objects.filter(symbol='VTI').order_by('date')
+        if not vti_dividends_data.exists():
+            print("VTI dividend data not found in database")
+            vti_dividends_df = None
+        else:
+            # Convert queryset to dataframe
+            vti_dividends_df = pd.DataFrame(list(vti_dividends_data.values('date', 'amount')))
+            vti_dividends_df.rename(columns={'amount': 'Dividends'}, inplace=True)
+            vti_dividends_df.set_index('date', inplace=True)
         
         return spy_df, spy_dividends_df, vti_df, vti_dividends_df
     except Exception as e:
-        print(f"Error loading data: {e}")
+        print(f"Error loading data from database: {e}")
         return None, None, None, None
 
 # Function to calculate margin metrics
