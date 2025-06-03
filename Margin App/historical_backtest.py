@@ -14,56 +14,27 @@ warnings.filterwarnings('ignore')
 def load_comprehensive_data():
     """Load all required data including Fed Funds rates from Excel file"""
     try:
-        # Try multiple possible relative data paths (removed absolute Windows paths)
-        data_paths = [
-            "Data/ETFs and Fed Funds Data.xlsx",  # Direct path
-            "../Data/ETFs and Fed Funds Data.xlsx",  # Parent directory
-            "./Data/ETFs and Fed Funds Data.xlsx",  # Current directory explicit
-            "Margin App/Data/ETFs and Fed Funds Data.xlsx",  # From root
-            "../Margin App/Data/ETFs and Fed Funds Data.xlsx",  # From parent to Margin App
-        ]
+        # Define directory paths (same approach as main app)
+        local_dir = r"D:\Benson\aUpWork\Ben Ruff\Implementation\Data"
+        github_dir = "Data"
         
-        excel_data = None
-        successful_path = None
-        for path in data_paths:
-            try:
-                excel_data = pd.read_excel(path)
-                successful_path = path
-                break
-            except Exception as e:
-                continue
-                
-        if excel_data is None:
-            raise FileNotFoundError("Could not find ETFs and Fed Funds Data.xlsx file")
-            
+        # Choose which directory to use (True for local, False for GitHub)
+        use_local = False
+        data_dir = local_dir if use_local else github_dir
+        
+        # Load Excel data
+        excel_path = f"{data_dir}/ETFs and Fed Funds Data.xlsx"
+        excel_data = pd.read_excel(excel_path)
+        
         excel_data['Date'] = pd.to_datetime(excel_data['Unnamed: 0'])
         excel_data.set_index('Date', inplace=True)
         excel_data = excel_data.drop('Unnamed: 0', axis=1)
         
-        # Try multiple relative paths for CSV files (removed absolute Windows paths)
-        csv_paths = [
-            "Data/",
-            "../Data/",
-            "./Data/",
-            "Margin App/Data/",
-            "../Margin App/Data/",
-        ]
-        
-        spy_df = None
-        successful_csv_path = None
-        for path in csv_paths:
-            try:
-                spy_df = pd.read_csv(path + "SPY.csv")
-                vti_df = pd.read_csv(path + "VTI.csv")
-                spy_div_df = pd.read_csv(path + "SPY Dividends.csv")
-                vti_div_df = pd.read_csv(path + "VTI Dividends.csv")
-                successful_csv_path = path
-                break
-            except Exception as e:
-                continue
-        
-        if spy_df is None:
-            raise FileNotFoundError("Could not find CSV data files")
+        # Load CSV files
+        spy_df = pd.read_csv(f"{data_dir}/SPY.csv")
+        vti_df = pd.read_csv(f"{data_dir}/VTI.csv")
+        spy_div_df = pd.read_csv(f"{data_dir}/SPY Dividends.csv")
+        vti_div_df = pd.read_csv(f"{data_dir}/VTI Dividends.csv")
         
         # Process dataframes
         for df in [spy_df, vti_df, spy_div_df, vti_div_df]:
