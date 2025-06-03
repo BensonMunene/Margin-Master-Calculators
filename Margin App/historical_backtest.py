@@ -14,19 +14,23 @@ warnings.filterwarnings('ignore')
 def load_comprehensive_data():
     """Load all required data including Fed Funds rates from Excel file"""
     try:
-        # Try multiple possible data paths
+        # Try multiple possible relative data paths (removed absolute Windows paths)
         data_paths = [
-            "Data\ETFs and Fed Funds Data.xlsx",  # Direct path
-            "../Data/ETFs and Fed Funds Data.xlsx",  # Relative path
-            "D:/Benson/aUpWork/Ben Ruff/Implementation/Data/ETFs and Fed Funds Data.xlsx"  # Absolute path
+            "Data/ETFs and Fed Funds Data.xlsx",  # Direct path
+            "../Data/ETFs and Fed Funds Data.xlsx",  # Parent directory
+            "./Data/ETFs and Fed Funds Data.xlsx",  # Current directory explicit
+            "Margin App/Data/ETFs and Fed Funds Data.xlsx",  # From root
+            "../Margin App/Data/ETFs and Fed Funds Data.xlsx",  # From parent to Margin App
         ]
         
         excel_data = None
+        successful_path = None
         for path in data_paths:
             try:
                 excel_data = pd.read_excel(path)
+                successful_path = path
                 break
-            except:
+            except Exception as e:
                 continue
                 
         if excel_data is None:
@@ -36,22 +40,26 @@ def load_comprehensive_data():
         excel_data.set_index('Date', inplace=True)
         excel_data = excel_data.drop('Unnamed: 0', axis=1)
         
-        # Try multiple paths for CSV files
+        # Try multiple relative paths for CSV files (removed absolute Windows paths)
         csv_paths = [
             "Data/",
             "../Data/",
-            "D:/Benson/aUpWork/Ben Ruff/Implementation/Data/"
+            "./Data/",
+            "Margin App/Data/",
+            "../Margin App/Data/",
         ]
         
         spy_df = None
+        successful_csv_path = None
         for path in csv_paths:
             try:
                 spy_df = pd.read_csv(path + "SPY.csv")
                 vti_df = pd.read_csv(path + "VTI.csv")
                 spy_div_df = pd.read_csv(path + "SPY Dividends.csv")
                 vti_div_df = pd.read_csv(path + "VTI Dividends.csv")
+                successful_csv_path = path
                 break
-            except:
+            except Exception as e:
                 continue
         
         if spy_df is None:
@@ -65,6 +73,12 @@ def load_comprehensive_data():
         return excel_data, spy_df, vti_df, spy_div_df, vti_div_df
     except Exception as e:
         st.error(f"Error loading data: {e}")
+        st.error("Please ensure the following files are in the Data/ directory:")
+        st.error("- ETFs and Fed Funds Data.xlsx")
+        st.error("- SPY.csv")
+        st.error("- VTI.csv") 
+        st.error("- SPY Dividends.csv")
+        st.error("- VTI Dividends.csv")
         return None, None, None, None, None
 
 @st.cache_data
