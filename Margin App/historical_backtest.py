@@ -16,7 +16,7 @@ def load_comprehensive_data():
     try:
         # Try multiple possible data paths
         data_paths = [
-            "Data/ETFs and Fed Funds Data.xlsx",  # Direct path
+            "Data\ETFs and Fed Funds Data.xlsx",  # Direct path
             "../Data/ETFs and Fed Funds Data.xlsx",  # Relative path
             "D:/Benson/aUpWork/Ben Ruff/Implementation/Data/ETFs and Fed Funds Data.xlsx"  # Absolute path
         ]
