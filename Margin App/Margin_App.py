@@ -213,7 +213,7 @@ local_dir = r"D:\Benson\aUpWork\Ben Ruff\Implementation\Data"
 github_dir = ("Data")
 
 # Choose which directory to use (True for local, False for GitHub)
-use_local = False
+use_local = True
 data_dir = local_dir if use_local else github_dir
 
 # Define default date range

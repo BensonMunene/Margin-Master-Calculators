@@ -19,7 +19,7 @@ def load_comprehensive_data():
         github_dir = "Data"
         
         # Choose which directory to use (True for local, False for GitHub)
-        use_local = False
+        use_local = True
         data_dir = local_dir if use_local else github_dir
         
         # Load Excel data
@@ -661,14 +661,15 @@ def create_restart_summary_chart(rounds_df: pd.DataFrame, summary: Dict) -> go.F
         ),
         row=1, col=1
     )
-    fig.add_hline(y=0, line_dash="dash", line_color="gray", row=1, col=1)
+    fig.add_hline(y=0, line_dash="dash", line_color="white", opacity=0.7, row=1, col=1)
     
     # 2. Survival days histogram
     fig.add_trace(
         go.Histogram(
             x=rounds_df['days'],
-            nbinsx=20,
+            nbinsx=min(30, len(rounds_df)),
             marker_color='lightblue',
+            marker_line=dict(color='darkblue', width=1),
             name='Survival Days',
             hovertemplate='Days: %{x}<br>Frequency: %{y}<extra></extra>'
         ),
@@ -683,8 +684,10 @@ def create_restart_summary_chart(rounds_df: pd.DataFrame, summary: Dict) -> go.F
         go.Scatter(
             x=rounds_df['round'],
             y=cumulative_capital,
+            mode='lines+markers',
+            line=dict(color='#1f77b4', width=3),
+            marker=dict(size=6),
             name='Cumulative Capital',
-            line=dict(color='blue', width=3),
             hovertemplate='Round %{x}<br>Total Capital: $%{y:,.0f}<extra></extra>'
         ),
         row=2, col=1
@@ -694,39 +697,65 @@ def create_restart_summary_chart(rounds_df: pd.DataFrame, summary: Dict) -> go.F
         go.Scatter(
             x=rounds_df['round'],
             y=cumulative_losses,
+            mode='lines+markers',
+            line=dict(color='#ff7f0e', width=3, dash='dash'),
+            marker=dict(size=6),
             name='Cumulative Losses',
-            line=dict(color='red', width=3),
             hovertemplate='Round %{x}<br>Total Losses: $%{y:,.0f}<extra></extra>'
         ),
         row=2, col=1
     )
     
-    # 4. Key indicator
+    # Chart 4: Performance Indicator Gauge
+    return_color = "green" if summary['total_return_pct'] >= 0 else "red"
     fig.add_trace(
         go.Indicator(
-            mode="number+delta",
+            mode="gauge+number+delta",
             value=summary['total_return_pct'],
-            delta={"reference": 0, "valueformat": ".1f"},
-            title={"text": "Total Return %"},
-            number={"suffix": "%", "valueformat": ".1f"}
+            delta={'reference': 0, 'valueformat': '.1f'},
+            title={'text': "Total Return %", 'font': {'size': 16}},
+            domain={'x': [0, 1], 'y': [0, 1]},
+            gauge={
+                'axis': {'range': [-100, 100], 'tickformat': '.0f'},
+                'bar': {'color': return_color},
+                'steps': [
+                    {'range': [-100, -50], 'color': "darkred"},
+                    {'range': [-50, 0], 'color': "red"},
+                    {'range': [0, 50], 'color': "lightgreen"},
+                    {'range': [50, 100], 'color': "green"}
+                ],
+                'threshold': {
+                    'line': {'color': "black", 'width': 4},
+                    'thickness': 0.75,
+                    'value': 0
+                }
+            },
+            number={'suffix': "%", 'valueformat': '.1f'}
         ),
         row=2, col=2
     )
     
-    # Update layout
+    # Update layout for professional appearance
     fig.update_layout(
-        title=f"Restart Backtest Summary - {summary['total_rounds']} Rounds, {summary['margin_calls']} Margin Calls",
-        height=600,
-        showlegend=True
+        title={
+            'text': f"MarginMaster Analytics: {etf_choice} @ {leverage:.1f}x Leverage",
+            'x': 0.5,
+            'font': {'size': 20, 'color': '#1f77b4'}
+        },
+        height=700,
+        showlegend=True,
+        plot_bgcolor='rgba(240,240,240,0.1)',
+        paper_bgcolor='white',
+        font={'size': 12}
     )
     
-    # Update axes
-    fig.update_xaxes(title_text="Round Number", row=1, col=1)
-    fig.update_yaxes(title_text="Return (%)", row=1, col=1)
-    fig.update_xaxes(title_text="Days Survived", row=1, col=2)
-    fig.update_yaxes(title_text="Frequency", row=1, col=2)
-    fig.update_xaxes(title_text="Round Number", row=2, col=1)
-    fig.update_yaxes(title_text="Amount ($)", row=2, col=1)
+    # Update individual subplot styling
+    fig.update_xaxes(title_text="Round Number", showgrid=True, gridcolor='lightgray', row=1, col=1)
+    fig.update_yaxes(title_text="Return (%)", showgrid=True, gridcolor='lightgray', row=1, col=1)
+    fig.update_xaxes(title_text="Days Survived", showgrid=True, gridcolor='lightgray', row=1, col=2)
+    fig.update_yaxes(title_text="Frequency", showgrid=True, gridcolor='lightgray', row=1, col=2)
+    fig.update_xaxes(title_text="Round Number", showgrid=True, gridcolor='lightgray', row=2, col=1)
+    fig.update_yaxes(title_text="Amount ($)", tickformat='$,.0f', showgrid=True, gridcolor='lightgray', row=2, col=1)
     
     return fig
 
@@ -986,6 +1015,93 @@ def render_historical_backtest_tab():
                 st.subheader("⚖️ Margin Analysis")
                 margin_fig = create_margin_analysis_chart(results_df)
                 st.plotly_chart(margin_fig, use_container_width=True)
+                
+                # Detailed backtest data expander for standard mode
+                with st.expander("🔍 Detailed Backtest Data & Variables", expanded=False):
+                    st.markdown(f"""
+                    ### 📊 Complete Dataset: Standard Backtest Results
+                    
+                    This dataset contains **{len(results_df):,} daily observations** from your {leverage:.1f}x leveraged {etf_choice} position.
+                    Each row represents one trading day with all calculated variables.
+                    """)
+                    
+                    # Variable explanations
+                    st.markdown("""
+                    **📋 Variable Definitions:**
+                    
+                    | Variable | Description |
+                    |----------|-------------|
+                    | **ETF_Price** | Daily closing price of the selected ETF |
+                    | **Shares_Held** | Number of shares in your position (increases with dividend reinvestment) |
+                    | **Portfolio_Value** | Total market value of your holdings (Shares × Price) |
+                    | **Margin_Loan** | Outstanding loan balance (grows with daily interest) |
+                    | **Equity** | Your actual ownership value (Portfolio_Value - Margin_Loan) |
+                    | **Maintenance_Margin_Required** | Minimum equity required to avoid margin call |
+                    | **Is_Margin_Call** | TRUE when equity falls below maintenance requirement |
+                    | **Margin_Call_Price** | ETF price that would trigger margin call |
+                    | **Daily_Interest_Cost** | Interest charged on margin loan for that day |
+                    | **Fed_Funds_Rate** | Federal Reserve interest rate (%) |
+                    | **Margin_Rate** | Your borrowing rate (Fed Funds + spread) |
+                    | **Dividend_Payment** | Per-share dividend payment (if any) |
+                    | **Cumulative_Dividends** | Total dividend cash received that day |
+                    """)
+                    
+                    # Display the full dataset
+                    st.markdown("### 📈 Complete Daily Data")
+                    
+                    # Format the dataframe for better display
+                    display_df = results_df.copy()
+                    
+                    # Format currency columns
+                    currency_cols = ['Portfolio_Value', 'Margin_Loan', 'Equity', 'Maintenance_Margin_Required', 'Daily_Interest_Cost', 'Cumulative_Dividends']
+                    for col in currency_cols:
+                        if col in display_df.columns:
+                            display_df[col] = display_df[col].apply(lambda x: f"${x:,.2f}")
+                    
+                    # Format percentage columns
+                    pct_cols = ['Fed_Funds_Rate', 'Margin_Rate']
+                    for col in pct_cols:
+                        if col in display_df.columns:
+                            display_df[col] = display_df[col].apply(lambda x: f"{x:.2f}%")
+                    
+                    # Format price and share columns
+                    if 'ETF_Price' in display_df.columns:
+                        display_df['ETF_Price'] = display_df['ETF_Price'].apply(lambda x: f"${x:.2f}")
+                    if 'Shares_Held' in display_df.columns:
+                        display_df['Shares_Held'] = display_df['Shares_Held'].apply(lambda x: f"{x:,.2f}")
+                    if 'Margin_Call_Price' in display_df.columns:
+                        display_df['Margin_Call_Price'] = display_df['Margin_Call_Price'].apply(lambda x: f"${x:.2f}")
+                    if 'Dividend_Payment' in display_df.columns:
+                        display_df['Dividend_Payment'] = display_df['Dividend_Payment'].apply(lambda x: f"${x:.4f}")
+                    
+                    # Format boolean column
+                    if 'Is_Margin_Call' in display_df.columns:
+                        display_df['Is_Margin_Call'] = display_df['Is_Margin_Call'].apply(lambda x: "🔴 YES" if x else "🟢 NO")
+                    
+                    st.dataframe(
+                        display_df,
+                        use_container_width=True,
+                        height=400,
+                        column_config={
+                            "ETF_Price": st.column_config.TextColumn("ETF Price", width="small"),
+                            "Shares_Held": st.column_config.TextColumn("Shares", width="medium"),
+                            "Portfolio_Value": st.column_config.TextColumn("Portfolio Value", width="medium"),
+                            "Margin_Loan": st.column_config.TextColumn("Margin Loan", width="medium"),
+                            "Equity": st.column_config.TextColumn("Equity", width="medium"),
+                            "Is_Margin_Call": st.column_config.TextColumn("Margin Call", width="small"),
+                        }
+                    )
+                    
+                    # Download option for detailed data
+                    detailed_csv = results_df.to_csv()
+                    st.download_button(
+                        label="📊 Download Complete Dataset",
+                        data=detailed_csv,
+                        file_name=f"detailed_backtest_data_{etf_choice}_{leverage}x_{start_date}.csv",
+                        mime="text/csv",
+                        use_container_width=True,
+                        help="Download all daily calculations for external analysis"
+                    )
                 
             else:  # Restart mode
                 # Run restart backtest
@@ -1411,6 +1527,114 @@ def render_historical_backtest_tab():
                     )
                 
                 # ═══════════════════════════════════════════════════════════════
+                # 🔍 DETAILED BACKTEST DATA & VARIABLES - RESTART MODE
+                # ═══════════════════════════════════════════════════════════════
+                
+                with st.expander("🔍 Detailed Backtest Data & Variables", expanded=False):
+                    st.markdown(f"""
+                    ### 📊 Complete Dataset: Restart Backtest Results
+                    
+                    This dataset contains **{len(rounds_df):,} investment rounds** from your {leverage:.1f}x leveraged {etf_choice} strategy.
+                    Each row represents one complete investment cycle from entry to liquidation/profit-taking.
+                    """)
+                    
+                    # Variable explanations for restart mode
+                    st.markdown("""
+                    **📋 Variable Definitions:**
+                    
+                    | Variable | Description |
+                    |----------|-------------|
+                    | **round** | Sequential round number (1, 2, 3...) |
+                    | **start_date** | Date when this round's position was opened |
+                    | **end_date** | Date when position was closed (margin call or end of data) |
+                    | **days** | Number of calendar days the position was held |
+                    | **start_price** | ETF price when position opened |
+                    | **end_price** | ETF price when position closed |
+                    | **price_change_pct** | Percentage change in ETF price during this round |
+                    | **cash_invested** | Your cash contribution for this round |
+                    | **liquidation_value** | Final equity value when position closed |
+                    | **loss_amount** | Dollar loss if margin call occurred |
+                    | **loss_pct** | Percentage loss relative to cash invested |
+                    | **interest_paid** | Total interest costs during this round |
+                    | **dividends_received** | Total dividends collected during this round |
+                    | **margin_call** | TRUE if round ended due to margin call |
+                    """)
+                    
+                    # Add profit columns if they exist
+                    if 'profit_amount' in rounds_df.columns:
+                        st.markdown("| **profit_amount** | Dollar profit if round ended successfully |")
+                    if 'profit_pct' in rounds_df.columns:
+                        st.markdown("| **profit_pct** | Percentage profit relative to cash invested |")
+                    
+                    # Display the full dataset
+                    st.markdown("### 📈 Complete Round-by-Round Data")
+                    
+                    # Format the dataframe for better display
+                    display_df = rounds_df.copy()
+                    
+                    # Format date columns
+                    date_cols = ['start_date', 'end_date']
+                    for col in date_cols:
+                        if col in display_df.columns:
+                            display_df[col] = pd.to_datetime(display_df[col]).dt.strftime('%Y-%m-%d')
+                    
+                    # Format currency columns
+                    currency_cols = ['cash_invested', 'liquidation_value', 'loss_amount', 'interest_paid', 'dividends_received']
+                    if 'profit_amount' in display_df.columns:
+                        currency_cols.append('profit_amount')
+                    
+                    for col in currency_cols:
+                        if col in display_df.columns:
+                            display_df[col] = display_df[col].apply(lambda x: f"${x:,.2f}")
+                    
+                    # Format percentage columns
+                    pct_cols = ['price_change_pct', 'loss_pct']
+                    if 'profit_pct' in display_df.columns:
+                        pct_cols.append('profit_pct')
+                    
+                    for col in pct_cols:
+                        if col in display_df.columns:
+                            display_df[col] = display_df[col].apply(lambda x: f"{x:.2f}%")
+                    
+                    # Format price columns
+                    price_cols = ['start_price', 'end_price']
+                    for col in price_cols:
+                        if col in display_df.columns:
+                            display_df[col] = display_df[col].apply(lambda x: f"${x:.2f}")
+                    
+                    # Format boolean column
+                    if 'margin_call' in display_df.columns:
+                        display_df['margin_call'] = display_df['margin_call'].apply(lambda x: "🔴 YES" if x else "🟢 NO")
+                    
+                    st.dataframe(
+                        display_df,
+                        use_container_width=True,
+                        height=400,
+                        column_config={
+                            "round": st.column_config.NumberColumn("Round", width="small"),
+                            "days": st.column_config.NumberColumn("Days", width="small"),
+                            "start_date": st.column_config.TextColumn("Start Date", width="medium"),
+                            "end_date": st.column_config.TextColumn("End Date", width="medium"),
+                            "start_price": st.column_config.TextColumn("Start Price", width="small"),
+                            "end_price": st.column_config.TextColumn("End Price", width="small"),
+                            "cash_invested": st.column_config.TextColumn("Cash Invested", width="medium"),
+                            "liquidation_value": st.column_config.TextColumn("Final Value", width="medium"),
+                            "margin_call": st.column_config.TextColumn("Margin Call", width="small"),
+                        }
+                    )
+                    
+                    # Download option for detailed data
+                    detailed_csv = rounds_df.to_csv(index=False)
+                    st.download_button(
+                        label="📊 Download Complete Round Data",
+                        data=detailed_csv,
+                        file_name=f"detailed_rounds_data_{etf_choice}_{leverage}x_{start_date}.csv",
+                        mime="text/csv",
+                        use_container_width=True,
+                        help="Download all round-by-round calculations for external analysis"
+                    )
+                
+                # ═══════════════════════════════════════════════════════════════
                 # 🎓 EDUCATIONAL INSIGHTS - EXPERT COMMENTARY
                 # ═══════════════════════════════════════════════════════════════
                 
@@ -1501,7 +1725,7 @@ def render_historical_backtest_tab():
         
         This reveals the **hidden cost of leverage** that simple calculators miss.
         """)
-    
+
     st.markdown('</div>', unsafe_allow_html=True)
 
 # Function to be called from main app
