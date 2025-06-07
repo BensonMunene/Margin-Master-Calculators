@@ -1428,7 +1428,7 @@ def render_historical_backtest_tab():
     
     with backtest_col1:
         if st.button(
-            "⚡ Liquidation-Reentry (RECOMMENDED)",
+            "⚡ Liquidation-Reentry",
             use_container_width=True,
             help="Realistic simulation: liquidate on margin call, wait 2 days, re-enter with remaining equity",
             key="liquidation_backtest_btn"
