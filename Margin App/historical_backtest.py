@@ -19,7 +19,7 @@ def load_comprehensive_data():
         github_dir = "Data"
         
         # Choose which directory to use (True for local, False for GitHub)
-        use_local = True
+        use_local = False
         data_dir = local_dir if use_local else github_dir
         
         # Load ONLY the Excel file - it contains everything we need
@@ -48,15 +48,13 @@ def calculate_margin_params(account_type: str, leverage: float) -> Dict[str, flo
         return {
             'max_leverage': 2.0,
             'initial_margin_pct': 50.0,
-            'maintenance_margin_pct': 25.0,
-            'margin_rate_spread': 1.5  # Fed Funds + 1.5%
+            'maintenance_margin_pct': 25.0
         }
     else:  # portfolio margin
         return {
             'max_leverage': 7.0,
             'initial_margin_pct': max(100.0 / leverage, 14.29),  # Dynamic based on leverage
-            'maintenance_margin_pct': 15.0,
-            'margin_rate_spread': 2.0  # Fed Funds + 2.0% (typically higher for portfolio margin)
+            'maintenance_margin_pct': 15.0
         }
 
 @st.cache_data
@@ -126,8 +124,9 @@ def run_liquidation_reentry_backtest(
         dividend_payment = row[dividend_col] if pd.notna(row[dividend_col]) else 0.0
         fed_funds_rate = row['FedFunds (%)'] / 100.0
         
-        # Calculate interest rate for this day
-        daily_interest_rate = (fed_funds_rate + margin_params['margin_rate_spread'] / 100.0) / 365
+        # Use IBKR rates directly from Excel data
+        margin_rate = row['FedFunds + 1.5%'] / 100.0  # Convert percentage to decimal
+        daily_interest_rate = margin_rate / 365
         
         # Initialize daily result
         daily_result = {
@@ -139,7 +138,7 @@ def run_liquidation_reentry_backtest(
             'Cycle_Number': cycle_number,
             'Days_In_Position': days_in_current_position,
             'Fed_Funds_Rate': fed_funds_rate * 100,
-            'Margin_Rate': (fed_funds_rate + margin_params['margin_rate_spread'] / 100.0) * 100
+            'Margin_Rate': margin_rate * 100
         }
         
         # Handle waiting period after liquidation
@@ -438,8 +437,9 @@ def run_historical_backtest(
         dividend_payment = row[dividend_col] if pd.notna(row[dividend_col]) else 0.0
         fed_funds_rate = row['FedFunds (%)'] / 100.0  # Convert percentage to decimal
         
-        # Calculate daily interest on margin loan
-        daily_interest_rate = (fed_funds_rate + margin_params['margin_rate_spread'] / 100.0) / 365
+        # Use IBKR rates directly from Excel data
+        margin_rate = row['FedFunds + 1.5%'] / 100.0  # Convert percentage to decimal
+        daily_interest_rate = margin_rate / 365
         daily_interest_cost = margin_loan * daily_interest_rate
         
         # Handle dividend reinvestment
@@ -483,7 +483,7 @@ def run_historical_backtest(
             'Margin_Call_Price': margin_call_price,
             'Daily_Interest_Cost': daily_interest_cost,
             'Fed_Funds_Rate': fed_funds_rate * 100,
-            'Margin_Rate': (fed_funds_rate + margin_params['margin_rate_spread'] / 100.0) * 100,
+            'Margin_Rate': margin_rate * 100,
             'Dividend_Payment': dividend_payment,
             'Cumulative_Dividends': dividend_payment * shares if dividend_payment > 0 else 0
         })
@@ -602,8 +602,9 @@ def run_margin_restart_backtest(
             dividend = data[dividend_col].iloc[i] if pd.notna(data[dividend_col].iloc[i]) else 0
             fed_rate = data['FedFunds (%)'].iloc[i] / 100
             
-            # Daily interest cost
-            daily_rate = (fed_rate + margin_params['margin_rate_spread'] / 100) / 365
+            # Use IBKR rates directly from Excel data
+            margin_rate = data['FedFunds + 1.5%'].iloc[i] / 100.0  # Convert percentage to decimal
+            daily_rate = margin_rate / 365
             daily_interest = margin_loan * daily_rate
             margin_loan += daily_interest
             total_interest_paid += daily_interest

@@ -53,17 +53,16 @@ Portfolio Value = Shares Held × Current ETF Price
 Liquidation Price = Margin Loan ÷ (Shares × (1 - Maintenance Margin %))
 
 Example with Portfolio Margin (15%):
-Liquidation Price = $84,615,385 ÷ (250,000 × 0.85) = $399.55
-Price Drop to Liquidation = ($400.00 - $399.55) ÷ $400.00 = 0.11%
+Liquidation Price = $84,615,385 ÷ (250,000 × 0.85) = $398.19
+Price Drop to Liquidation = ($400.00 - $398.19) ÷ $400.00 = 0.45%
 ```
 
 #### Daily Interest Accumulation
 
 **Interest Rate Structure:**
 ```
-Margin Rate = Federal Funds Rate + Broker Spread
-Portfolio Margin Spread: Fed Funds + 2.0%
-Reg-T Margin Spread: Fed Funds + 1.5%
+Margin Rate = Direct from Excel column "FedFunds + 1.5%"
+(Historical rates already include Fed Funds + IBKR spreads)
 
 Daily Interest Cost = Margin Loan × (Annual Rate ÷ 365)
 ```
@@ -127,6 +126,262 @@ def cooling_period(liquidation_date):
 ```python
 def can_reenter(current_equity, min_threshold=1000):
     return current_equity >= min_threshold
+```
+
+### Variables Description
+
+This section provides comprehensive documentation of all variables in the backtest output data, with mathematical formulas, example calculations, and corresponding code implementations.
+
+#### Core Portfolio Variables
+
+**1. Portfolio_Value**
+```
+Portfolio_Value = Shares_Held × Current_ETF_Price
+```
+**Example:** 882,378.88 shares × $113.33 = $100,000,000
+
+**Code Implementation:**
+```python
+# From historical_backtest.py line 201
+portfolio_value = shares_held * current_price
+```
+
+**2. Margin_Loan** (Compounds Daily)
+```
+New_Margin_Loan = Previous_Margin_Loan + Daily_Interest_Cost
+```
+**Example:** $50,002,205 + $2,206 = $50,004,411
+
+**Code Implementation:**
+```python
+# From historical_backtest.py lines 194-196
+daily_interest_cost = margin_loan * daily_interest_rate
+margin_loan += daily_interest_cost
+total_interest_paid += daily_interest_cost
+```
+
+**3. Equity** (Net Worth)
+```
+Equity = Portfolio_Value - Outstanding_Margin_Loan
+```
+**Example:** $100,264,709 - $50,004,411 = $50,260,298
+
+**Code Implementation:**
+```python
+# From historical_backtest.py line 202
+current_equity_in_position = portfolio_value - margin_loan
+```
+
+#### Risk Management Variables
+
+**4. Maintenance_Margin_Required**
+```
+Maintenance_Required = Portfolio_Value × Maintenance_Margin_%
+For Reg-T: Portfolio_Value × 25%
+For Portfolio Margin: Portfolio_Value × 15%
+```
+**Example:** $100,264,709 × 25% = $25,066,177
+
+**Code Implementation:**
+```python
+# From historical_backtest.py line 203
+maintenance_margin_required = portfolio_value * (margin_params['maintenance_margin_pct'] / 100.0)
+```
+
+**5. Is_Margin_Call** (Boolean Logic)
+```
+Margin_Call = TRUE if Equity < Maintenance_Required
+Margin_Call = FALSE if Equity ≥ Maintenance_Required
+```
+**Example:** $50,260,298 > $25,066,177 → NO margin call
+
+**Code Implementation:**
+```python
+# From historical_backtest.py line 205
+is_margin_call = current_equity_in_position < maintenance_margin_required
+```
+
+**6. Margin_Call_Price** (Critical Price Level)
+```
+Margin_Call_Price = Margin_Loan ÷ (Shares × (1 - Maintenance_Margin_%))
+```
+**Example:** $50,004,411 ÷ (882,378.88 × 0.75) = $75.56
+
+**Code Implementation:**
+```python
+# From historical_backtest.py line 260
+'Margin_Call_Price': margin_loan / (shares_held * (1 - margin_params['maintenance_margin_pct'] / 100.0)) if shares_held > 0 else 0
+```
+
+#### Interest & Cost Variables
+
+**7. Daily_Interest_Cost**
+```
+Daily_Rate = FedFunds + 1.5% ÷ 365
+Daily_Interest_Cost = Outstanding_Margin_Loan × Daily_Rate
+```
+**Example:** $50,002,205 × (5.27% ÷ 365) = $7,215
+
+**Code Implementation:**
+```python
+# From historical_backtest.py lines 187-189
+margin_rate = row['FedFunds + 1.5%'] / 100.0  # Convert percentage to decimal
+daily_interest_rate = margin_rate / 365
+daily_interest_cost = margin_loan * daily_interest_rate
+```
+
+**8. Fed_Funds_Rate**
+```
+Historical Fed_Funds_Rate (%)
+```
+**Example:** 3.77% (historical rate from 2001)
+
+**Code Implementation:**
+```python
+# From historical_backtest.py line 186
+fed_funds_rate = row['FedFunds (%)'] / 100.0
+```
+
+**9. Margin_Rate**
+```
+Margin_Rate = Direct from Excel "FedFunds + 1.5%" column
+(Pre-calculated rates including Fed Funds + IBKR spreads)
+```
+**Example:** 5.27% (Fed Funds 3.77% + IBKR spread 1.5%)
+
+**Code Implementation:**
+```python
+# From historical_backtest.py lines 187-188
+margin_rate = row['FedFunds + 1.5%'] / 100.0  # Convert percentage to decimal
+daily_interest_rate = margin_rate / 365
+```
+
+#### Dividend Variables
+
+**10. Dividend_Payment**
+```
+Dividend_Received = Current_Shares × Dividend_Per_Share
+Additional_Shares = Dividend_Received ÷ Current_ETF_Price
+```
+**Example:** Usually $0.00 except quarterly dividend dates
+
+**Code Implementation:**
+```python
+# From historical_backtest.py lines 198-203
+if dividend_payment > 0:
+    dividend_received = shares_held * dividend_payment
+    total_dividends_received += dividend_received
+    additional_shares = dividend_received / current_price
+    shares_held += additional_shares
+```
+
+#### Position Tracking Variables
+
+**11. Shares_Held** (Dynamic with Dividend Reinvestment)
+```
+New_Shares = Previous_Shares + Dividend_Reinvestment_Shares
+```
+**Example:** 882,378.88 shares (constant unless dividends paid)
+
+**Code Implementation:**
+```python
+# From historical_backtest.py line 66
+shares = initial_investment / initial_price
+# Plus dividend reinvestment as shown above
+```
+
+**12. Current_Equity** (Real-Time Net Worth)
+```
+Current_Equity = Portfolio_Value - Margin_Loan
+```
+**Example:** $50,260,298 (same as Equity variable)
+
+**Code Implementation:**
+```python
+# From historical_backtest.py line 249
+current_equity = current_equity_in_position  # Update equity
+```
+
+**13. In_Position** (Boolean Status)
+```
+In_Position = TRUE when actively holding leveraged position
+In_Position = FALSE during cooling periods or insufficient capital
+```
+
+**Code Implementation:**
+```python
+# From historical_backtest.py lines 160-165
+if not in_position and current_equity >= min_equity_threshold:
+    # Enter new position logic
+    in_position = True
+```
+
+**14. Wait_Days_Remaining** (Cooling Period Counter)
+```
+Wait_Days_Remaining = Days left in mandatory 2-day cooling period
+```
+**Example:** 2, 1, 0 (countdown after liquidation)
+
+**Code Implementation:**
+```python
+# From historical_backtest.py lines 142-143
+if wait_days_remaining > 0:
+    wait_days_remaining -= 1
+```
+
+**15. Cycle_Number** (Position Sequence)
+```
+Cycle_Number = Sequential counter of position entry attempts
+```
+**Example:** 1 (first position), 2 (after first liquidation), etc.
+
+**Code Implementation:**
+```python
+# From historical_backtest.py line 167
+cycle_number += 1
+```
+
+**16. Days_In_Position** (Position Duration)
+```
+Days_In_Position = Counter of days current position has been held
+```
+**Example:** 1, 2, 3... (resets to 0 on new position)
+
+**Code Implementation:**
+```python
+# From historical_backtest.py line 191
+days_in_current_position += 1
+```
+
+**17. Position_Status** (Categorical State)
+```
+Position_Status ∈ {
+    'Active_Position',
+    'Liquidated', 
+    'Position_Entered',
+    'Waiting_After_Liquidation',
+    'Insufficient_Equity'
+}
+```
+
+**Code Implementation:**
+```python
+# From historical_backtest.py lines 225-245
+daily_result['Position_Status'] = 'Liquidated'  # On margin call
+daily_result['Position_Status'] = 'Position_Entered'  # On new entry
+daily_result['Position_Status'] = 'Active_Position'  # Normal trading
+```
+
+**18. ETF_Price** (Market Data)
+```
+ETF_Price = Current market price of selected ETF (SPY or VTI)
+```
+**Example:** $113.33, $113.63, $113.71 (daily price changes)
+
+**Code Implementation:**
+```python
+# From historical_backtest.py line 185
+current_price = row[price_col]
 ```
 
 ### Chart Analysis Guide
