@@ -1563,7 +1563,7 @@ def create_performance_metrics_chart(metrics: Dict[str, float]) -> go.Figure:
     
     return fig
 
-def create_restart_summary_chart(rounds_df: pd.DataFrame, summary: Dict) -> go.Figure:
+def create_restart_summary_chart(rounds_df: pd.DataFrame, summary: Dict, etf_choice: str = "ETF", leverage: float = 1.0) -> go.Figure:
     """Create a clean, focused summary chart for restart backtest"""
     
     if rounds_df.empty:
