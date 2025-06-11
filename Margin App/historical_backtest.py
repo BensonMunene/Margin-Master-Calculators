@@ -9,6 +9,13 @@ from typing import Dict, Tuple, List
 import warnings
 warnings.filterwarnings('ignore')
 
+# Optional cushion analytics import
+try:
+    import cushion_analysis
+    CUSHION_ANALYTICS_AVAILABLE = False
+except ImportError:
+    CUSHION_ANALYTICS_AVAILABLE = False
+
 # Cache data loading for performance
 @st.cache_data(ttl=3600)
 def load_comprehensive_data():
@@ -19,7 +26,7 @@ def load_comprehensive_data():
         github_dir = "Data"
         
         # Choose which directory to use (True for local, False for GitHub)
-        use_local = False
+        use_local = True
         data_dir = local_dir if use_local else github_dir
         
         # Load ONLY the Excel file - it contains everything we need
@@ -61,6 +68,7 @@ def calculate_margin_params(account_type: str, leverage: float) -> Dict[str, flo
 def run_liquidation_reentry_backtest(
     etf: str,
     start_date: str,
+    end_date: str,
     initial_investment: float,
     leverage: float,
     account_type: str,
@@ -82,8 +90,8 @@ def run_liquidation_reentry_backtest(
     # Get margin parameters
     margin_params = calculate_margin_params(account_type, leverage)
     
-    # Prepare data
-    data = excel_data.loc[start_date:].copy()
+    # Prepare data with date range
+    data = excel_data.loc[start_date:end_date].copy()
     if etf == 'SPY':
         price_col, dividend_col = 'SPY', 'SPY_Dividends'
     else:
@@ -159,7 +167,9 @@ def run_liquidation_reentry_backtest(
                 'Maintenance_Margin_Required': 0,
                 'Is_Margin_Call': False,
                 'Daily_Interest_Cost': 0,
+                'Cumulative_Interest_Cost': total_interest_paid,
                 'Dividend_Payment': 0,
+                'Cumulative_Dividends': total_dividends_received,
                 'Position_Status': 'Waiting_After_Liquidation'
             })
             daily_results.append(daily_result)
@@ -194,7 +204,9 @@ def run_liquidation_reentry_backtest(
                 'Maintenance_Margin_Required': 0,
                 'Is_Margin_Call': False,
                 'Daily_Interest_Cost': 0,
+                'Cumulative_Interest_Cost': total_interest_paid,
                 'Dividend_Payment': 0,
+                'Cumulative_Dividends': total_dividends_received,
                 'Position_Status': 'Insufficient_Equity'
             })
             daily_results.append(daily_result)
@@ -295,7 +307,9 @@ def run_liquidation_reentry_backtest(
                 'Maintenance_Margin_Required': maintenance_margin_required if in_position else 0,
                 'Is_Margin_Call': is_margin_call,
                 'Daily_Interest_Cost': daily_interest_cost if in_position else 0,
+                'Cumulative_Interest_Cost': total_interest_paid,
                 'Dividend_Payment': dividend_received,
+                'Cumulative_Dividends': total_dividends_received,
                 'Margin_Call_Price': margin_loan / (shares_held * (1 - margin_params['maintenance_margin_pct'] / 100.0)) if shares_held > 0 else 0
             })
         
@@ -610,6 +624,7 @@ def run_historical_backtest(
 def run_margin_restart_backtest(
     etf: str,
     start_date: str,
+    end_date: str,
     initial_investment: float,
     leverage: float,
     account_type: str,
@@ -624,8 +639,8 @@ def run_margin_restart_backtest(
     # Get margin parameters
     margin_params = calculate_margin_params(account_type, leverage)
     
-    # Prepare data
-    data = excel_data.loc[start_date:].copy()
+    # Prepare data with date range
+    data = excel_data.loc[start_date:end_date].copy()
     if etf == 'SPY':
         price_col, dividend_col = 'SPY', 'SPY_Dividends'
     else:
@@ -695,7 +710,9 @@ def run_margin_restart_backtest(
                 'Maintenance_Margin_Required': 0,
                 'Is_Margin_Call': False,
                 'Daily_Interest_Cost': 0,
+                'Cumulative_Interest_Cost': total_interest_paid,
                 'Dividend_Payment': 0,
+                'Cumulative_Dividends': total_dividends_received,
                 'Position_Status': 'Waiting_After_Liquidation_Fresh_Capital'
             })
             daily_results.append(daily_result)
@@ -808,7 +825,9 @@ def run_margin_restart_backtest(
                 'Maintenance_Margin_Required': maintenance_margin_required if in_position else 0,
                 'Is_Margin_Call': is_margin_call,
                 'Daily_Interest_Cost': daily_interest_cost if in_position else 0,
+                'Cumulative_Interest_Cost': total_interest_paid,
                 'Dividend_Payment': dividend_received,
+                'Cumulative_Dividends': total_dividends_received,
                 'Margin_Call_Price': margin_loan / (shares_held * (1 - margin_params['maintenance_margin_pct'] / 100.0)) if shares_held > 0 else 0
             })
         
@@ -967,16 +986,18 @@ def run_margin_restart_backtest(
     
     return df_results, metrics, round_analysis
 
+# Cushion analytics moved to cushion_analysis.py module
+
 def create_enhanced_portfolio_chart(df_results: pd.DataFrame, metrics: Dict[str, float]) -> go.Figure:
     """Create sophisticated institutional-grade portfolio performance chart"""
     
     fig = make_subplots(
         rows=4, cols=2,
         subplot_titles=(
-            'Equity Evolution & Liquidation Events', 'Position Status Timeline',
-            'Drawdown Analysis & Recovery', 'Daily Returns Distribution', 
-            'Rolling Performance Metrics', 'Interest Rate Environment',
-            'Cumulative P&L Attribution', 'Risk-Adjusted Performance'
+            'Portfolio Value, Equity & Margin Components', 'Cumulative P&L Attribution: Dividends and Loan Interests',
+            'Drawdown Analysis & Recovery', 'Rolling Performance Metrics', 
+            'Daily Returns Distribution', 'Interest Rate Environment',
+            'Position Status Timeline', 'Risk-Adjusted Performance'
         ),
         specs=[
             [{"colspan": 2}, None],
@@ -986,18 +1007,48 @@ def create_enhanced_portfolio_chart(df_results: pd.DataFrame, metrics: Dict[str,
         ],
         vertical_spacing=0.08,
         horizontal_spacing=0.08,
-        row_heights=[0.3, 0.25, 0.25, 0.2]
+        row_heights=[0.4, 0.2, 0.2, 0.2]
     )
     
-    # Main equity chart with enhanced annotations
-    equity_line = go.Scatter(
-        x=df_results.index,
-        y=df_results['Equity'],
-        name='Equity',
-        line=dict(color='#2E86C1', width=3),
-        hovertemplate='Date: %{x}<br>Equity: $%{y:,.0f}<br><extra></extra>'
+    # Enhanced main chart with all portfolio components
+    
+    # Portfolio Value line
+    fig.add_trace(
+        go.Scatter(
+            x=df_results.index,
+            y=df_results['Portfolio_Value'],
+            name='Portfolio Value',
+            line=dict(color='#1f77b4', width=3),
+            hovertemplate='Date: %{x}<br>Portfolio Value: $%{y:,.0f}<br><extra></extra>'
+        ),
+        row=1, col=1
     )
-    fig.add_trace(equity_line, row=1, col=1)
+    
+    # Equity line
+    fig.add_trace(
+        go.Scatter(
+            x=df_results.index,
+            y=df_results['Equity'],
+            name='Equity',
+            line=dict(color='#2E86C1', width=3),
+            hovertemplate='Date: %{x}<br>Equity: $%{y:,.0f}<br><extra></extra>'
+        ),
+        row=1, col=1
+    )
+    
+    # Maintenance Margin Required line
+    fig.add_trace(
+        go.Scatter(
+            x=df_results.index,
+            y=df_results['Maintenance_Margin_Required'],
+            name='Maintenance Margin Required',
+            line=dict(color='#d62728', width=2, dash='dash'),
+            hovertemplate='Date: %{x}<br>Maintenance Margin Required: $%{y:,.0f}<br><extra></extra>'
+        ),
+        row=1, col=1
+    )
+    
+
     
     # Add liquidation events as red markers
     liquidations = df_results[df_results['Position_Status'] == 'Liquidated']
@@ -1039,33 +1090,31 @@ def create_enhanced_portfolio_chart(df_results: pd.DataFrame, metrics: Dict[str,
             row=1, col=1
         )
     
-    # Position status timeline
-    position_colors = {
-        'Active_Position': '#28B463',
-        'Waiting_After_Liquidation': '#F39C12', 
-        'Liquidated': '#E74C3C',
-        'Position_Entered': '#3498DB',
-        'Insufficient_Equity': '#95A5A6'
-    }
+    # Cumulative P&L Attribution: Dividends and Loan Interests (moved from row 4, col 2)
+    cumulative_interest = df_results['Daily_Interest_Cost'].cumsum()
+    cumulative_dividends = df_results['Dividend_Payment'].cumsum()
     
-    for status, color in position_colors.items():
-        status_data = df_results[df_results['Position_Status'] == status]
-        if not status_data.empty:
-            display_name = status.replace('_', ' ')
-            hover_template = display_name + '<br>Date: %{x}<extra></extra>'
-            
-            fig.add_trace(
-                go.Scatter(
-                    x=status_data.index,
-                    y=[1] * len(status_data),
-                    mode='markers',
-                    name=display_name,
-                    marker=dict(color=color, size=4),
-                    yaxis='y2',
-                    hovertemplate=hover_template
-                ),
-                row=2, col=1
-            )
+    fig.add_trace(
+        go.Scatter(
+            x=df_results.index,
+            y=-cumulative_interest,  # Negative because it's a cost
+            name='Cumulative Interest Cost',
+            line=dict(color='#E74C3C', width=2),
+            hovertemplate='Date: %{x}<br>Interest Cost: -$%{y:,.0f}<extra></extra>'
+        ),
+        row=2, col=1
+    )
+    
+    fig.add_trace(
+        go.Scatter(
+            x=df_results.index,
+            y=cumulative_dividends,
+            name='Cumulative Dividends',
+            line=dict(color='#28B463', width=2),
+            hovertemplate='Date: %{x}<br>Dividends: +$%{y:,.0f}<extra></extra>'
+        ),
+        row=2, col=1
+    )
     
     # Enhanced drawdown analysis
     equity_series = df_results['Equity']
@@ -1148,40 +1197,42 @@ def create_enhanced_portfolio_chart(df_results: pd.DataFrame, metrics: Dict[str,
         row=4, col=1
     )
     
-    # Cumulative interest costs vs dividends
-    cumulative_interest = df_results['Daily_Interest_Cost'].cumsum()
-    cumulative_dividends = df_results['Dividend_Payment'].cumsum()
+    # Position Status Timeline (moved from row 2, col 1)
+    position_colors = {
+        'Active_Position': '#28B463',
+        'Waiting_After_Liquidation': '#F39C12', 
+        'Liquidated': '#E74C3C',
+        'Position_Entered': '#3498DB',
+        'Insufficient_Equity': '#95A5A6'
+    }
     
-    fig.add_trace(
-        go.Scatter(
-            x=df_results.index,
-            y=-cumulative_interest,  # Negative because it's a cost
-            name='Cumulative Interest Cost',
-            line=dict(color='#E74C3C', width=2),
-            hovertemplate='Date: %{x}<br>Interest Cost: -$%{y:,.0f}<extra></extra>'
-        ),
-        row=4, col=2
-    )
-    
-    fig.add_trace(
-        go.Scatter(
-            x=df_results.index,
-            y=cumulative_dividends,
-            name='Cumulative Dividends',
-            line=dict(color='#28B463', width=2),
-            hovertemplate='Date: %{x}<br>Dividends: +$%{y:,.0f}<extra></extra>'
-        ),
-        row=4, col=2
-    )
+    for status, color in position_colors.items():
+        status_data = df_results[df_results['Position_Status'] == status]
+        if not status_data.empty:
+            display_name = status.replace('_', ' ')
+            hover_template = display_name + '<br>Date: %{x}<extra></extra>'
+            
+            fig.add_trace(
+                go.Scatter(
+                    x=status_data.index,
+                    y=[1] * len(status_data),
+                    mode='markers',
+                    name=display_name,
+                    marker=dict(color=color, size=4),
+                    yaxis='y2',
+                    hovertemplate=hover_template
+                ),
+                row=4, col=2
+            )
     
     # Update layout
     fig.update_layout(
         title={
-            'text': f"Liquidation-Reentry Backtest: {metrics.get('Leverage Used', 0):.1f}x Leverage | {metrics.get('Total Liquidations', 0)} Liquidations | {metrics.get('CAGR (%)', 0):.1f}% CAGR",
+            'text': f"Comprehensive Portfolio Analysis: {metrics.get('Leverage Used', 0):.1f}x Leverage | {metrics.get('Total Liquidations', 0)} Liquidations | {metrics.get('CAGR (%)', 0):.1f}% CAGR",
             'x': 0.5,
             'font': {'size': 16, 'color': '#2C3E50'}
         },
-        height=1000,
+        height=1200,
         showlegend=True,
         legend=dict(x=1.02, y=1, bgcolor='rgba(255,255,255,0.8)'),
         plot_bgcolor='white',
@@ -1193,11 +1244,12 @@ def create_enhanced_portfolio_chart(df_results: pd.DataFrame, metrics: Dict[str,
     fig.update_yaxes(showgrid=True, gridwidth=1, gridcolor='#E8E8E8')
     
     # Format specific axes
-    fig.update_yaxes(tickformat='$,.0f', row=1, col=1, title_text="Equity ($)")
+    fig.update_yaxes(tickformat='$,.0f', row=1, col=1, title_text="Portfolio Components ($)")
+    fig.update_yaxes(tickformat='$,.0f', row=2, col=1, title_text="Cumulative ($)")
     fig.update_yaxes(tickformat='.1f', row=2, col=2, title_text="Drawdown (%)")
     fig.update_yaxes(tickformat='.2f', row=3, col=1, title_text="Rolling Sharpe")
     fig.update_yaxes(tickformat='.2f', row=4, col=1, title_text="Interest Rate (%)")
-    fig.update_yaxes(tickformat='$,.0f', row=4, col=2, title_text="Cumulative ($)")
+    fig.update_yaxes(tickformat='.0f', row=4, col=2, title_text="Position Status")
     
     return fig
 
@@ -1671,6 +1723,12 @@ def render_historical_backtest_tab():
         st.error("❌ Failed to load ETFs and Fed Funds Data.xlsx. Please check the Excel file.")
         return
     
+    # Display cushion analytics availability status
+    if CUSHION_ANALYTICS_AVAILABLE:
+        st.success("🛡️ **Cushion Analytics**: Advanced margin risk management features enabled")
+    else:
+        st.info("ℹ️ **Cushion Analytics**: Optional module not found. Basic backtest functionality available.")
+    
     # Add backtest mode selection
     st.markdown("### 🎯 Select Backtest Mode")
     
@@ -1757,6 +1815,20 @@ def render_historical_backtest_tab():
             help="When to start the backtest",
             key="backtest_start_date"
         )
+        
+        end_date = st.date_input(
+            "End Date",
+            value=max_date,
+            min_value=min_date,
+            max_value=max_date,
+            help="When to end the backtest",
+            key="backtest_end_date"
+        )
+        
+        # Validate date range
+        if start_date >= end_date:
+            st.error("❌ Start date must be before end date!")
+            return
     
     with input_col2:
         initial_investment = st.number_input(
@@ -1777,20 +1849,24 @@ def render_historical_backtest_tab():
         )
     
     with input_col3:
-        # Dynamic leverage options based on account type
+        # Dynamic leverage input based on account type
         if account_type == "reg_t":
             max_leverage = 2.0
-            leverage_options = [1.0, 1.25, 1.5, 1.75, 2.0]
+            min_leverage = 1.0
+            default_leverage = 2.0
         else:
             max_leverage = 7.0
-            leverage_options = [1.0, 1.5, 2.0, 2.5, 3.0, 3.5, 4.0, 4.5, 5.0, 5.5, 6.0, 6.5, 7.0]
+            min_leverage = 1.0
+            default_leverage = 4.0
         
-        leverage = st.selectbox(
+        leverage = st.number_input(
             "Leverage",
-            leverage_options,
-            index=len(leverage_options)-1,  # Default to max leverage
-            format_func=lambda x: f"{x:.1f}x",
-            help=f"Leverage multiplier (max {max_leverage:.1f}x for {account_type.replace('_', '-').title()})",
+            min_value=min_leverage,
+            max_value=max_leverage,
+            value=default_leverage,
+            step=0.1,
+            format="%.1f",
+            help=f"Leverage multiplier (min {min_leverage:.1f}x, max {max_leverage:.1f}x for {account_type.replace('_', '-').title()})",
             key="backtest_leverage"
         )
         
@@ -1798,9 +1874,19 @@ def render_historical_backtest_tab():
         cash_needed = initial_investment / leverage
         margin_loan = initial_investment - cash_needed
         
+        # Calculate actual trading days by counting data observations
+        date_range_data = excel_data.loc[str(start_date):str(end_date)]
+        if etf_choice == "SPY":
+            trading_days = len(date_range_data.dropna(subset=['SPY']))
+        else:
+            trading_days = len(date_range_data.dropna(subset=['VTI']))
+        
         st.markdown(f"""
         <div style="background: #f0f8ff; padding: 1rem; border-radius: 10px; margin-top: 1rem;">
-            <strong>📊 Position Summary:</strong><br>
+            <strong>📊 Backtest Summary:</strong><br>
+            Period: <strong>{start_date} to {end_date}</strong><br>
+            Duration: <strong>{trading_days:,} trading days</strong><br><br>
+            <strong>💰 Position Summary:</strong><br>
             Cash Required: <strong>${cash_needed:,.0f}</strong><br>
             Margin Loan: <strong>${margin_loan:,.0f}</strong><br>
             Total Position: <strong>${initial_investment:,.0f}</strong>
@@ -1817,6 +1903,7 @@ def render_historical_backtest_tab():
                 results_df, metrics, round_analysis = run_liquidation_reentry_backtest(
                     etf=etf_choice,
                     start_date=str(start_date),
+                    end_date=str(end_date),
                     initial_investment=initial_investment,
                     leverage=leverage,
                     account_type=account_type,
@@ -1930,6 +2017,12 @@ def render_historical_backtest_tab():
                 liquidation_fig = create_liquidation_analysis_chart(results_df, metrics)
                 st.plotly_chart(liquidation_fig, use_container_width=True)
                 
+                # Margin Cushion Analytics Dashboard (Optional)
+                if CUSHION_ANALYTICS_AVAILABLE:
+                    cushion_analysis.render_cushion_analytics_section(results_df, metrics, mode="liquidation_reentry")
+                else:
+                    st.info("💡 **Cushion Analytics**: Optional module not available. To enable advanced cushion risk management, ensure cushion_analysis.py is present.")
+                
                 # Detailed Round Analysis Section
                 st.markdown("### 📋 Detailed Round Analysis")
                 
@@ -2002,7 +2095,7 @@ def render_historical_backtest_tab():
                     st.download_button(
                         label="📊 Download Round Analysis",
                         data=rounds_csv,
-                        file_name=f"round_analysis_{etf_choice}_{leverage}x_{start_date}.csv",
+                        file_name=f"round_analysis_{etf_choice}_{leverage:.1f}x_{start_date}_to_{end_date}.csv",
                         mime="text/csv",
                         use_container_width=True,
                         help="Download complete round-by-round analysis data"
@@ -2051,9 +2144,11 @@ def render_historical_backtest_tab():
                     | **Maintenance_Margin_Required** | Minimum equity required to avoid liquidation |
                     | **Is_Margin_Call** | TRUE when liquidation is triggered |
                     | **Daily_Interest_Cost** | Interest charged on margin loan for that day |
+                    | **Cumulative_Interest_Cost** | Running total of all interest costs since backtest start |
+                    | **Dividend_Payment** | Dividend cash received (automatically reinvested) |
+                    | **Cumulative_Dividends** | Running total of all dividends received since backtest start |
                     | **Fed_Funds_Rate** | Federal Reserve interest rate (%) |
                     | **Margin_Rate** | Your borrowing rate (Fed Funds + spread) |
-                    | **Dividend_Payment** | Dividend cash received (automatically reinvested) |
                     """)
                     
                     # Display the full dataset
@@ -2063,7 +2158,7 @@ def render_historical_backtest_tab():
                     display_df = results_df.copy()
                     
                     # Format currency columns
-                    currency_cols = ['Portfolio_Value', 'Margin_Loan', 'Equity', 'Maintenance_Margin_Required', 'Daily_Interest_Cost', 'Cumulative_Dividends']
+                    currency_cols = ['Portfolio_Value', 'Margin_Loan', 'Equity', 'Maintenance_Margin_Required', 'Daily_Interest_Cost', 'Cumulative_Interest_Cost', 'Cumulative_Dividends']
                     for col in currency_cols:
                         if col in display_df.columns:
                             display_df[col] = display_df[col].apply(lambda x: f"${x:,.2f}")
@@ -2107,7 +2202,7 @@ def render_historical_backtest_tab():
                     st.download_button(
                         label="📊 Download Complete Dataset",
                         data=detailed_csv,
-                        file_name=f"detailed_backtest_data_{etf_choice}_{leverage}x_{start_date}.csv",
+                        file_name=f"detailed_backtest_data_{etf_choice}_{leverage:.1f}x_{start_date}_to_{end_date}.csv",
                         mime="text/csv",
                         use_container_width=True,
                         help="Download all daily calculations for external analysis"
@@ -2118,6 +2213,7 @@ def render_historical_backtest_tab():
                 results_df, metrics, round_analysis = run_margin_restart_backtest(
                     etf=etf_choice,
                     start_date=str(start_date),
+                    end_date=str(end_date),
                     initial_investment=initial_investment,
                     leverage=leverage,
                     account_type=account_type,
@@ -2228,6 +2324,12 @@ def render_historical_backtest_tab():
                 liquidation_fig = create_liquidation_analysis_chart(results_df, metrics)
                 st.plotly_chart(liquidation_fig, use_container_width=True)
                 
+                # Margin Cushion Analytics Dashboard (Optional - Fresh Capital Mode)
+                if CUSHION_ANALYTICS_AVAILABLE:
+                    cushion_analysis.render_cushion_analytics_section(results_df, metrics, mode="fresh_capital")
+                else:
+                    st.info("💡 **Cushion Analytics**: Optional module not available. To enable advanced cushion risk management, ensure cushion_analysis.py is present.")
+                
                 # Detailed Round Analysis Section (same as liquidation-reentry)
                 st.markdown("### 📋 Detailed Round Analysis")
                 
@@ -2301,7 +2403,7 @@ def render_historical_backtest_tab():
                     st.download_button(
                         label="📊 Download Fresh Capital Round Analysis",
                         data=rounds_csv,
-                        file_name=f"fresh_capital_analysis_{etf_choice}_{leverage}x_{start_date}.csv",
+                        file_name=f"fresh_capital_analysis_{etf_choice}_{leverage:.1f}x_{start_date}_to_{end_date}.csv",
                         mime="text/csv",
                         use_container_width=True,
                         help="Download complete fresh capital round-by-round analysis data"
@@ -2332,7 +2434,7 @@ def render_historical_backtest_tab():
                     """)
                     
                     # Enhanced variable explanations for fresh capital mode
-                    st.markdown("""
+                    st.markdown(f"""
                     **📋 Fresh Capital Variable Definitions:**
                     
                     | Variable | Description |
@@ -2341,20 +2443,24 @@ def render_historical_backtest_tab():
                     | **Current_Equity** | Fresh capital available (always equals cash per round in this mode) |
                     | **Position_Status** | Fresh_Capital_Deployed, Active_Position, Liquidated_Fresh_Capital_Ready |
                     | **Cycle_Number** | Sequential fresh capital deployment number |
-                                         | **Days_In_Position** | Days in current fresh capital position |
-                     | **Wait_Days_Remaining** | Days remaining in 2-day cooling period after liquidation |
+                    | **Days_In_Position** | Days in current fresh capital position |
+                    | **Wait_Days_Remaining** | Days remaining in 2-day cooling period after liquidation |
                     | **Shares_Held** | Number of shares in current fresh capital position |
                     | **Portfolio_Value** | Total market value of fresh capital holdings |
                     | **Margin_Loan** | Outstanding loan balance for current fresh capital position |
                     | **Equity** | Current equity value in active position |
                     | **Is_Margin_Call** | TRUE when fresh capital position liquidated |
+                    | **Daily_Interest_Cost** | Interest charged on margin loan for that day |
+                    | **Cumulative_Interest_Cost** | Running total of all interest costs since backtest start |
+                    | **Dividend_Payment** | Dividend cash received (automatically reinvested) |
+                    | **Cumulative_Dividends** | Running total of all dividends received since backtest start |
                     | **Fresh Capital Per Round** | Amount of fresh capital deployed per round |
                     | **Total Capital Deployed** | Cumulative fresh capital used across all rounds |
                     
-                                         **🔄 Fresh Capital Logic:**
-                     - After each margin call → Deploy new $""" + f"{metrics['Fresh Capital Per Round ($)']:,.0f}" + """
-                     - No equity depletion → Unlimited capital assumption
-                     - 2-day waiting period → Same as liquidation-reentry mode
+                    **🔄 Fresh Capital Logic:**
+                    - After each margin call → Deploy new ${metrics['Fresh Capital Per Round ($)']:,.0f}
+                    - No equity depletion → Unlimited capital assumption
+                    - 2-day waiting period → Same as liquidation-reentry mode
                     """)
                     
                     # Display the full dataset (same formatting as liquidation-reentry)
@@ -2364,7 +2470,7 @@ def render_historical_backtest_tab():
                     display_df = results_df.copy()
                     
                     # Format currency columns
-                    currency_cols = ['Portfolio_Value', 'Margin_Loan', 'Equity', 'Maintenance_Margin_Required', 'Daily_Interest_Cost', 'Dividend_Payment']
+                    currency_cols = ['Portfolio_Value', 'Margin_Loan', 'Equity', 'Maintenance_Margin_Required', 'Daily_Interest_Cost', 'Cumulative_Interest_Cost', 'Dividend_Payment', 'Cumulative_Dividends']
                     for col in currency_cols:
                         if col in display_df.columns:
                             display_df[col] = display_df[col].apply(lambda x: f"${x:,.2f}")
@@ -2406,7 +2512,7 @@ def render_historical_backtest_tab():
                     st.download_button(
                         label="📊 Download Complete Fresh Capital Dataset",
                         data=detailed_csv,
-                        file_name=f"fresh_capital_backtest_data_{etf_choice}_{leverage}x_{start_date}.csv",
+                        file_name=f"fresh_capital_backtest_data_{etf_choice}_{leverage:.1f}x_{start_date}_to_{end_date}.csv",
                         mime="text/csv",
                         use_container_width=True,
                         help="Download all daily calculations for fresh capital strategy analysis"

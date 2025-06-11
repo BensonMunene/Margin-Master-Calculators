@@ -350,10 +350,6 @@ if 'initialized' not in st.session_state:
 # Check if data loaded successfully
 if spy_df is not None and vti_df is not None:
     
-    # Initialize session state for tabs to prevent jumping back to first tab
-    if 'tab_index' not in st.session_state:
-        st.session_state.tab_index = 0
-    
     # --- Custom Tab Implementation for Streamlit 1.45.1 ---
     tab_labels = [
         "🧮 Margin Calculator",
@@ -367,6 +363,10 @@ if spy_df is not None and vti_df is not None:
     # Initialize selected tab in session state
     if 'selected_tab' not in st.session_state:
         st.session_state.selected_tab = tab_labels[0]
+    
+    # Initialize tab index for proper state tracking
+    if 'tab_index' not in st.session_state:
+        st.session_state.tab_index = 0
     
     # Add custom CSS for beautiful tab styling
     st.markdown("""
@@ -554,16 +554,23 @@ if spy_df is not None and vti_df is not None:
     </style>
     """, unsafe_allow_html=True)
     
-    # Create tab selector using radio buttons horizontally
+    # Create tab selector using radio buttons horizontally with improved state management
+    current_tab_index = tab_labels.index(st.session_state.selected_tab)
+    
     selected_tab = st.radio(
         "Navigation",
         tab_labels,
-        index=tab_labels.index(st.session_state.selected_tab),
+        index=current_tab_index,
         horizontal=True,
         key="tab_selector",
         label_visibility="collapsed"
     )
-    st.session_state.selected_tab = selected_tab
+    
+    # Only update session state if the tab actually changed
+    if selected_tab != st.session_state.selected_tab:
+        st.session_state.selected_tab = selected_tab
+        st.session_state.tab_index = tab_labels.index(selected_tab)
+        st.rerun()
     
     st.markdown("---")
     
