@@ -87,7 +87,12 @@ def create_cushion_analytics_dashboard(df_results: pd.DataFrame, metrics: Dict[s
     )
     
     # 1. Cushion percentage over time with risk zones
-    active_positions = df_cushion[df_cushion['In_Position'] == True]
+    # Handle different backtest modes - some don't have 'In_Position' column
+    if 'In_Position' in df_cushion.columns:
+        active_positions = df_cushion[df_cushion['In_Position'] == True]
+    else:
+        # For constant leverage mode, consider positions active when shares are held
+        active_positions = df_cushion[df_cushion['Shares_Held'] > 0]
     if not active_positions.empty:
         # Create separate traces for different risk levels for better visualization
         for risk_level, color in [('Safe (>50%)', '#27AE60'), ('Caution (20-50%)', '#F39C12'), 
@@ -347,7 +352,12 @@ def render_cushion_analytics_section(results_df: pd.DataFrame, metrics: Dict[str
     
     st.markdown("### 🛡️ Margin Cushion Risk Management Dashboard")
     
-    active_positions = results_df[results_df['In_Position'] == True]
+    # Handle different backtest modes - some don't have 'In_Position' column
+    if 'In_Position' in results_df.columns:
+        active_positions = results_df[results_df['In_Position'] == True]
+    else:
+        # For constant leverage mode, consider positions active when shares are held
+        active_positions = results_df[results_df['Shares_Held'] > 0]
     
     if not active_positions.empty:
         # Calculate current cushion metrics
@@ -461,6 +471,22 @@ def render_cushion_analytics_section(results_df: pd.DataFrame, metrics: Dict[str
                 - 🟠 **Warning Zone (5-20%)**: Fresh capital restart likely within days
                 - 🔴 **Critical Zone (<5%)**: Fresh capital restart imminent
                 """)
+            elif mode == "constant_leverage":
+                st.markdown("""
+                ### 🛡️ Constant Leverage Cushion Analysis
+                
+                **Constant Leverage Mode Cushion Behavior:**
+                - **Dynamic Position Sizing**: Cushion changes as positions are rebalanced to maintain target leverage
+                - **Rebalancing Impact**: Each rebalance adjusts position size, affecting cushion levels
+                - **Leverage Maintenance**: System automatically borrows more when equity increases
+                - **Cost Considerations**: Transaction costs from rebalancing affect overall cushion
+                
+                **Risk Zones Explained (Constant Leverage Context):**
+                - 🟢 **Safe Zone (50%+)**: Healthy cushion, rebalancing can proceed normally
+                - 🟡 **Caution Zone (20-50%)**: Monitor rebalancing costs and frequency
+                - 🟠 **Warning Zone (5-20%)**: Consider reducing target leverage or rebalancing frequency
+                - 🔴 **Critical Zone (<5%)**: Immediate risk of forced liquidation despite rebalancing
+                """)
             else:
                 st.markdown("""
                 ### 🛡️ Understanding Margin Cushion
@@ -480,6 +506,108 @@ def render_cushion_analytics_section(results_df: pd.DataFrame, metrics: Dict[str
                 - **<20% Cushion**: Consider partial position reduction immediately
                 - **<10% Cushion**: Reduce position by 50% or add capital within 24 hours
                 - **<5% Cushion**: Close position immediately or face forced liquidation
+                
+                ### 📊 Detailed Plot Explanations
+                
+                **🔶 Plot 1: Margin Cushion Over Time**
+                
+                This plot shows your margin cushion percentage evolution throughout the backtest period. The cushion percentage is calculated as: `(Current Equity - Maintenance Margin Required) / Maintenance Margin Required × 100`.
+                
+                **Data Sources:**
+                - **Equity**: Daily portfolio equity from backtest calculations (Portfolio Value - Margin Loan)
+                - **Maintenance Margin Required**: 25% of portfolio value for Reg-T accounts, 15% for Portfolio Margin
+                - **Color Coding**: Green (Safe >50%), Yellow (Caution 20-50%), Orange (Warning 5-20%), Red (Critical <5%)
+                
+                **Key Insights:**
+                - **Trend Analysis**: Declining cushion indicates increasing risk from interest erosion or adverse price movement
+                - **Risk Zone Transitions**: Watch for periods spent in warning/critical zones
+                - **Volatility Impact**: Sharp drops reveal portfolio sensitivity to market movements
+                - **Interest Erosion**: Gradual decline shows cumulative impact of daily interest costs
+                
+                **🔶 Plot 2: Real-Time Cushion Gauge**
+                
+                This gauge displays your current margin cushion as a speedometer-style indicator with color-coded risk zones.
+                
+                **Data Sources:**
+                - **Current Value**: Latest cushion percentage from active position data
+                - **Reference Point**: 50% (Safe Zone threshold) used as benchmark
+                - **Background Zones**: Visual representation of the four risk categories
+                
+                **Key Insights:**
+                - **Instant Risk Assessment**: Quick visual of current risk level
+                - **Threshold Monitoring**: Black line shows typical maintenance margin level (25%)
+                - **Delta Indicator**: Shows difference from 50% safe threshold
+                - **Action Trigger**: Red zone (<5%) indicates immediate liquidation risk
+                
+                **🔶 Plot 3: Days to Margin Call Timeline**
+                
+                This plot calculates how many days until a margin call would occur based solely on interest cost erosion (assuming no price movement).
+                
+                **Data Sources:**
+                - **Daily Interest Cost**: Actual daily interest charges on margin loan
+                - **Cushion Dollars**: Dollar buffer above maintenance margin requirement
+                - **Calculation**: `Days = Cushion Buffer ($) / Daily Interest Cost ($)`
+                - **Warning Lines**: 30-day (red) and 90-day (yellow) critical thresholds
+                
+                **Key Insights:**
+                - **Time Buffer**: Shows breathing room before interest alone triggers margin call
+                - **Interest Rate Sensitivity**: Higher rates reduce days-to-call dramatically
+                - **Position Sizing**: Larger positions have higher daily interest costs
+                - **Strategic Planning**: Use for position sizing and risk management timing
+                
+                **🔶 Plot 4: Break-Even Price Analysis**
+                
+                This dual-line plot compares the current ETF price with the calculated break-even price that would trigger a margin call.
+                
+                **Data Sources:**
+                - **Current ETF Price**: Daily closing prices from market data
+                - **Break-Even Price**: `Margin Loan / (Shares Held × (1 - Maintenance Margin %))`
+                - **Price Gap**: Distance between current and break-even prices
+                
+                **Key Insights:**
+                - **Price Risk**: Shows exact price level that triggers liquidation
+                - **Safety Margin**: Gap between lines indicates price drop protection
+                - **Trend Analysis**: Converging lines indicate increasing vulnerability
+                - **Volatility Assessment**: Compare gap to typical daily price ranges
+                
+                **🔶 Plot 5: Cushion Dollar Buffer**
+                
+                This area chart displays the absolute dollar amount of your margin cushion buffer over time.
+                
+                **Data Sources:**
+                - **Cushion Buffer**: `Current Equity - Maintenance Margin Required`
+                - **Daily Tracking**: Shows buffer erosion from interest costs and market movements
+                - **Fill Area**: Visual representation of protective capital above minimum
+                
+                **Key Insights:**
+                - **Absolute Protection**: Dollar amount available to absorb losses
+                - **Erosion Rate**: Declining area shows speed of buffer depletion
+                - **Position Scale**: Larger positions require proportionally larger buffers
+                - **Capital Efficiency**: Evaluate if buffer size justifies position risk
+                
+                **🔶 Plot 6: Interest Rate Impact on Cushion Erosion**
+                
+                This plot shows the daily cushion erosion rate as a percentage, overlaid with the annual margin interest rate for context.
+                
+                **Data Sources:**
+                - **Daily Erosion Rate**: `(Daily Interest Cost / Cushion Buffer) × 100`
+                - **Annual Margin Rate**: Fed Funds Rate + 1.5% spread (IBKR standard)
+                - **Rate Environment**: Historical interest rate context from Fed data
+                
+                **Key Insights:**
+                - **Erosion Speed**: Daily percentage of cushion consumed by interest
+                - **Rate Sensitivity**: How changes in Fed rates affect your position survival
+                - **Compounding Effect**: Higher erosion rates accelerate margin call timing
+                - **Strategic Timing**: Use rate environment for entry/exit decisions
+                
+                **📈 Data Integration Notes:**
+                
+                All plots are derived from the comprehensive backtest dataset containing:
+                - **Real Market Data**: Historical ETF prices from ETFs and Fed Funds Data.xlsx
+                - **Actual Interest Rates**: Fed Funds rates + IBKR spreads for realistic borrowing costs
+                - **Precise Calculations**: Maintenance margin requirements based on account type
+                - **Daily Tracking**: Every trading day captured for complete risk timeline
+                - **Live Calculations**: Cushion metrics updated with each price movement and interest accrual
                 """)
 
 def is_cushion_analytics_available() -> bool:

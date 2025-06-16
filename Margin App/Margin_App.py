@@ -356,8 +356,7 @@ if spy_df is not None and vti_df is not None:
         "📊 Historical Backtest",
         "📈 Market Overview",
         "💹 Price Analysis",
-        "💰 Dividend Analysis",
-        "🎲 Kelly Criterion"
+        "💰 Dividend Analysis"
     ]
     
     # Initialize selected tab in session state
@@ -441,13 +440,6 @@ if spy_df is not None and vti_df is not None:
             color: #00664d !important;
         }
         
-        /* Kelly Criterion - Purple/Pink */
-        div[role="radiogroup"] > label:nth-child(6) {
-            background: linear-gradient(145deg, #ffe6f7, #f3e6ff);
-            border-color: #ffb3e6;
-            color: #66004d !important;
-        }
-        
         /* Add gradient overlay on hover */
         div[role="radiogroup"] > label::before {
             content: '';
@@ -486,11 +478,6 @@ if spy_df is not None and vti_df is not None:
         div[role="radiogroup"] > label:nth-child(5):hover {
             box-shadow: 0 8px 25px rgba(16, 185, 129, 0.3);
             border-color: #10b981;
-        }
-        
-        div[role="radiogroup"] > label:nth-child(6):hover {
-            box-shadow: 0 8px 25px rgba(217, 70, 239, 0.3);
-            border-color: #d946ef;
         }
         
         div[role="radiogroup"] > label:hover {
@@ -544,7 +531,6 @@ if spy_df is not None and vti_df is not None:
         div[role="radiogroup"] > label:nth-child(3) { --tab-index: 2; }
         div[role="radiogroup"] > label:nth-child(4) { --tab-index: 3; }
         div[role="radiogroup"] > label:nth-child(5) { --tab-index: 4; }
-        div[role="radiogroup"] > label:nth-child(6) { --tab-index: 5; }
         
         /* Pause animation on hover */
         div[role="radiogroup"] > label:hover,
@@ -1253,35 +1239,6 @@ if spy_df is not None and vti_df is not None:
             else:
                 st.info("No VTI dividend data available for the selected date range.")
         
-    elif st.session_state.selected_tab == "🎲 Kelly Criterion":
-        with st.container():
-            # Kelly Criterion tab
-            st.header("🎲 Kelly Criterion")
-            
-            st.markdown("""
-            <div class="card" style="text-align: center; padding: 3rem;">
-                <h3 style="color: #667eea; margin-bottom: 1rem;">🚀 Coming Soon!</h3>
-                <p style="font-size: 1.2rem; color: #6c757d; margin-bottom: 1.5rem;">
-                    Kelly Criterion bet sizing calculator is under development.
-                </p>
-                <p style="color: #6c757d; line-height: 1.6;">
-                    This powerful tool will help you determine optimal position sizing based on:
-                </p>
-                <ul style="text-align: left; color: #6c757d; max-width: 500px; margin: 1rem auto;">
-                    <li>Expected returns and probabilities</li>
-                    <li>Win/loss ratios</li>
-                    <li>Risk tolerance parameters</li>
-                    <li>Portfolio optimization</li>
-                    <li>Fractional Kelly calculations</li>
-                </ul>
-                <div style="margin-top: 2rem; padding: 1rem; background: linear-gradient(135deg, #f8f9fa, #e9ecef); border-radius: 10px;">
-                    <small style="color: #6c757d;">Expected release: Q2 2025</small>
-                </div>
-            </div>
-            """, unsafe_allow_html=True)
-            
-            st.markdown('</div>', unsafe_allow_html=True)
-    
     # Footer with information
     st.markdown(app_footer(), unsafe_allow_html=True)
     

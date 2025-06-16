@@ -200,6 +200,10 @@ def load_css():
             background-color: white;
             margin: 8px 20px;
         }
+        /* Remove Kelly Criterion border styling */
+        .tab-content {
+            border-top: 3px solid #e91e63;  /* Pink for Kelly Criterion */
+        }
     </style>
     """
 
@@ -322,3 +326,6 @@ def app_footer():
         <p>Last updated: {datetime.datetime.now().strftime("%B %d, %Y")}</p>
     </footer>
     """ 
+    
+    
+    
