@@ -2312,7 +2312,6 @@ def render_historical_backtest_tab():
                 <li>⚙️ <strong>Configurable Rebalancing</strong>: Daily, weekly, or monthly rebalancing frequency</li>
                 <li>💰 <strong>Realistic Transaction Costs</strong>: Includes trading costs for each rebalance</li>
                 <li>📊 <strong>Leverage Analytics</strong>: Comprehensive charts showing leverage over time</li>
-                <li>🏛️ <strong>Institutional-Grade</strong>: Professional implementation used by hedge funds</li>
             </ul>
         </div>
         """
