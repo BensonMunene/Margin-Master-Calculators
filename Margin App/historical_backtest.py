@@ -9,12 +9,8 @@ from typing import Dict, Tuple, List
 import warnings
 warnings.filterwarnings('ignore')
 
-# Optional cushion analytics import
-try:
-    import cushion_analysis
-    CUSHION_ANALYTICS_AVAILABLE = True
-except ImportError:
-    CUSHION_ANALYTICS_AVAILABLE = False
+# Cushion analytics import
+import cushion_analysis
 
 # Cache data loading for performance
 @st.cache_data(ttl=3600)
@@ -143,6 +139,9 @@ def run_liquidation_reentry_backtest(
         margin_rate = row['FedFunds + 1.5%'] / 100.0  # Convert percentage to decimal
         daily_interest_rate = margin_rate / 365
         
+        # On Day 1 (i==0), we just enter positions at close - no interest/dividends yet
+        # Starting Day 2 (i>=1), we calculate interest, dividends, and other changes
+        
         # Initialize daily result
         daily_result = {
             'Date': date,
@@ -170,7 +169,7 @@ def run_liquidation_reentry_backtest(
                 'Cumulative_Interest_Cost': total_interest_paid,
                 'Dividend_Payment': 0,
                 'Cumulative_Dividends': total_dividends_received,
-                'Position_Status': 'Waiting_After_Liquidation'
+                'Position_Status': 'Waiting'
             })
             daily_results.append(daily_result)
             continue
@@ -192,7 +191,7 @@ def run_liquidation_reentry_backtest(
             round_start_equity = current_equity
             
             # Record position entry
-            daily_result['Position_Status'] = 'Position_Entered'
+            daily_result['Position_Status'] = 'Entered'
             
         elif not in_position:
             # Insufficient equity to continue trading
@@ -216,14 +215,16 @@ def run_liquidation_reentry_backtest(
         if in_position:
             days_in_current_position += 1
             
-            # Calculate daily interest cost
-            daily_interest_cost = margin_loan * daily_interest_rate
-            margin_loan += daily_interest_cost
-            total_interest_paid += daily_interest_cost
+            # Calculate daily interest cost - ONLY after Day 1
+            daily_interest_cost = 0
+            if i > 0:
+                daily_interest_cost = margin_loan * daily_interest_rate
+                margin_loan += daily_interest_cost
+                total_interest_paid += daily_interest_cost
             
-            # Handle dividend payments
+            # Handle dividend payments - ONLY after Day 1
             dividend_received = 0
-            if dividend_payment > 0:
+            if i > 0 and dividend_payment > 0:
                 dividend_received = shares_held * dividend_payment
                 total_dividends_received += dividend_received
                 # Reinvest dividends (buy more shares)
@@ -294,7 +295,7 @@ def run_liquidation_reentry_backtest(
                 
                 daily_result['Position_Status'] = 'Liquidated'
             else:
-                daily_result['Position_Status'] = 'Active_Position'
+                daily_result['Position_Status'] = 'Active'
                 current_equity = current_equity_in_position  # Update equity
                 max_equity_achieved = max(max_equity_achieved, current_equity)
             
@@ -519,10 +520,17 @@ def run_historical_backtest(
         # Use IBKR rates directly from Excel data
         margin_rate = row['FedFunds + 1.5%'] / 100.0  # Convert percentage to decimal
         daily_interest_rate = margin_rate / 365
-        daily_interest_cost = margin_loan * daily_interest_rate
         
-        # Handle dividend reinvestment
-        if dividend_payment > 0:
+        # On Day 1 (i==0), we just enter the position at close - no interest/dividends yet
+        # Starting Day 2 (i>=1), we calculate interest, dividends, and other changes
+        
+        # Calculate daily interest cost - ONLY after Day 1
+        daily_interest_cost = 0
+        if i > 0:
+            daily_interest_cost = margin_loan * daily_interest_rate
+        
+        # Handle dividend reinvestment - ONLY after Day 1
+        if i > 0 and dividend_payment > 0:
             dividend_received = shares * dividend_payment
             # Reinvest dividends (buy more shares)
             additional_shares = dividend_received / current_price
@@ -532,8 +540,9 @@ def run_historical_backtest(
         portfolio_value = shares * current_price
         equity = portfolio_value - margin_loan
         
-        # Update margin loan with accrued interest
-        margin_loan += daily_interest_cost
+        # Update margin loan with accrued interest - ONLY after Day 1
+        if i > 0:
+            margin_loan += daily_interest_cost
         
         # Calculate maintenance margin requirement
         maintenance_margin_required = portfolio_value * (margin_params['maintenance_margin_pct'] / 100.0)
@@ -620,8 +629,9 @@ def run_historical_backtest(
     
     return df_results, metrics
 
+
 @st.cache_data
-def run_constant_leverage_backtest(
+def run_profit_threshold_backtest(
     etf: str,
     start_date: str,
     end_date: str,
@@ -629,21 +639,34 @@ def run_constant_leverage_backtest(
     target_leverage: float,
     account_type: str,
     excel_data: pd.DataFrame,
-    rebalance_frequency: str = 'daily',
+    profit_threshold_pct: float = 100.0,
     transaction_cost_bps: float = 5.0
 ) -> Tuple[pd.DataFrame, Dict[str, float], List[Dict]]:
     """
-    Advanced Constant Leverage Rebalancing Backtest
-    ================================================
+    Profit Threshold Rebalancing Backtest with Liquidation-Reentry Logic
+    ===================================================================
     
-    This implements sophisticated constant leverage maintenance by:
-    1. Dynamically adjusting position size to maintain target leverage
-    2. Borrowing more when equity increases
-    3. Reducing exposure when equity decreases
-    4. Tracking actual leverage over time with comprehensive analytics
-    5. Including realistic transaction costs and rebalancing frequency
+    This implements a growth-based rebalancing strategy that:
+    1. Monitors portfolio growth percentage from initial position
+    2. When growth hits threshold (e.g., 100%), rebalances back to target leverage
+    3. Only borrows more to buy additional shares (never sells)
+    4. Locks in profits by scaling position size with consistent leverage exposure
+    5. Continues trading after liquidation with 2-day wait period (like Liquidation-Reentry mode)
     
-    This is a professional-grade implementation for institutional trading.
+    Key Logic:
+    - Start with target leverage (e.g., 2x)
+    - Monitor portfolio value vs growth threshold
+    - When portfolio grows by threshold % → check if leverage dropped below target
+    - If yes → borrow more to restore target leverage with new equity base
+    - **If margin call**: liquidate, wait 2 days, then re-enter with remaining equity
+    - Track all rebalancing events and growth milestones
+    
+    Example:
+    - Start: $1M equity @ 2x = $2M position
+    - Growth: Portfolio grows to $4M (100% growth)
+    - Current leverage: $4M ÷ $3M equity = 1.33x (below 2x target)
+    - Rebalance: Borrow $2M more → $6M position @ 2x leverage
+    - If liquidated: wait 2 days, restart with remaining equity
     """
     
     # Get margin parameters
@@ -665,37 +688,40 @@ def run_constant_leverage_backtest(
     # Initialize portfolio with target leverage
     initial_equity = initial_investment / target_leverage
     current_equity = initial_equity
-    
-    # Rebalancing frequency setup
-    rebalance_days = {
-        'daily': 1,
-        'weekly': 5,
-        'monthly': 21
-    }
-    rebalance_interval = rebalance_days.get(rebalance_frequency, 1)
+    min_equity_threshold = 1000  # Stop trading if equity falls below this
     
     # Transaction cost (basis points to decimal)
     transaction_cost_rate = transaction_cost_bps / 10000.0
     
-    # Comprehensive daily tracking
+    # Tracking variables for profit threshold strategy
     daily_results = []
     rebalancing_events = []
     liquidation_events = []
     
-    # State variables for constant leverage
+    # State variables for liquidation-reentry logic
     shares_held = 0.0
     margin_loan = 0.0
-    days_since_rebalance = 0
     total_transaction_costs = 0.0
     total_rebalances = 0
     total_liquidations = 0
     total_interest_paid = 0.0
     total_dividends_received = 0.0
+    days_since_rebalance = 0
     
-    # Performance tracking
+    # Position tracking for liquidation-reentry
+    in_position = False
+    wait_days_remaining = 0
+    wait_days_after_liquidation = 2
+    cycle_number = 0
+    days_in_current_position = 0
+    
+    # Growth tracking
+    initial_position_value = 0  # Will be set when first position is actually entered
+    last_rebalance_position_value = 0  # Track for next rebalance trigger
+    first_position_entered = False  # Track if we've ever entered a position
     max_equity_achieved = current_equity
     
-    # Main simulation loop - CONSTANT LEVERAGE REBALANCING
+    # Main simulation loop - PROFIT THRESHOLD WITH LIQUIDATION-REENTRY LOGIC
     for i, (date, row) in enumerate(data.iterrows()):
         current_price = row[price_col]
         dividend_payment = row[dividend_col] if pd.notna(row[dividend_col]) else 0.0
@@ -703,134 +729,235 @@ def run_constant_leverage_backtest(
         margin_rate = row['FedFunds + 1.5%'] / 100.0
         daily_interest_rate = margin_rate / 365
         
-        # Handle dividend payments first (before rebalancing)
+        # On Day 1 (i==0), we just enter positions at close - no interest/dividends yet
+        # Starting Day 2 (i>=1), we calculate interest, dividends, and other changes
+        
+        # Initialize daily result
+        daily_result = {
+            'Date': date,
+            'ETF_Price': current_price,
+            'Current_Equity': current_equity,
+            'In_Position': in_position,
+            'Wait_Days_Remaining': wait_days_remaining,
+            'Cycle_Number': cycle_number,
+            'Days_In_Position': days_in_current_position,
+            'Fed_Funds_Rate': fed_funds_rate * 100,
+            'Margin_Rate': margin_rate * 100
+        }
+        
+        # Handle waiting period after liquidation
+        if wait_days_remaining > 0:
+            wait_days_remaining -= 1
+            portfolio_value = 0
+            actual_leverage = 0
+            daily_result.update({
+                'Position_Status': 'Waiting'
+            })
+        
+        # Check if we should enter a new position
+        elif not in_position and current_equity >= min_equity_threshold:
+            # Enter new position with target leverage
+            position_value = current_equity * target_leverage
+            shares_held = position_value / current_price
+            margin_loan = position_value - current_equity
+            in_position = True
+            cycle_number += 1
+            days_in_current_position = 0
+            days_since_rebalance = 0
+            
+            # Set growth tracking baselines correctly
+            if not first_position_entered:
+                # This is the very first position - set the baseline for total growth tracking
+                initial_position_value = position_value
+                first_position_entered = True
+            
+            # Always reset the rebalance tracking for new position
+            last_rebalance_position_value = position_value
+            
+            daily_result.update({
+                'Position_Status': 'Entered'
+            })
+            
+        elif not in_position:
+            # Insufficient equity to continue trading
+            portfolio_value = 0
+            actual_leverage = 0
+            daily_result.update({
+                'Position_Status': 'Insufficient_Equity'
+            })
+        
+        # Initialize variables that will be used in daily results (always define them)
+        daily_interest_cost = 0
         dividend_received = 0
-        if dividend_payment > 0 and shares_held > 0:
-            dividend_received = shares_held * dividend_payment
-            total_dividends_received += dividend_received
-            current_equity += dividend_received  # Dividends increase equity
-        
-        # Calculate current portfolio value BEFORE rebalancing
-        portfolio_value = shares_held * current_price if shares_held > 0 else 0
-        
-        # Update equity with any gains/losses
-        if shares_held > 0:
-            current_equity = portfolio_value - margin_loan
-        
-        # Calculate daily interest cost
-        daily_interest_cost = margin_loan * daily_interest_rate if margin_loan > 0 else 0
-        if daily_interest_cost > 0:
-            margin_loan += daily_interest_cost
-            total_interest_paid += daily_interest_cost
-            current_equity -= daily_interest_cost  # Interest reduces equity
-        
-        # Calculate current leverage BEFORE rebalancing
-        current_leverage = portfolio_value / current_equity if current_equity > 0 else 0
-        
-        # REBALANCING LOGIC - Maintain Target Leverage
-        days_since_rebalance += 1
-        should_rebalance = (days_since_rebalance >= rebalance_interval) or (i == 0)  # Always rebalance on first day
-        
         transaction_cost_today = 0
         rebalanced = False
         
-        if should_rebalance and current_equity > 0:
-            # Calculate target portfolio value to maintain leverage
-            target_portfolio_value = current_equity * target_leverage
-            target_shares = target_portfolio_value / current_price
+        # If in position, update position metrics and check for profit threshold rebalancing
+        if in_position:
+            days_in_current_position += 1
+            days_since_rebalance += 1
             
-            # Calculate position change needed
-            shares_change = target_shares - shares_held
+            # Calculate daily interest cost - ONLY after Day 1
+            if i > 0:
+                daily_interest_cost = margin_loan * daily_interest_rate
+                margin_loan += daily_interest_cost
+                total_interest_paid += daily_interest_cost
             
-            if abs(shares_change) > 0.01:  # Only rebalance if meaningful change
-                # Calculate transaction cost
-                trade_value = abs(shares_change) * current_price
-                transaction_cost_today = trade_value * transaction_cost_rate
-                total_transaction_costs += transaction_cost_today
-                current_equity -= transaction_cost_today  # Transaction costs reduce equity
+            # Handle dividend payments - ONLY after Day 1
+            if i > 0 and dividend_payment > 0:
+                dividend_received = shares_held * dividend_payment
+                total_dividends_received += dividend_received
+                # Reinvest dividends (buy more shares)
+                additional_shares = dividend_received / current_price
+                shares_held += additional_shares
+            
+            # Calculate current position values
+            portfolio_value = shares_held * current_price
+            current_equity_in_position = portfolio_value - margin_loan
+            maintenance_margin_required = portfolio_value * (margin_params['maintenance_margin_pct'] / 100.0)
+            
+            # PROFIT THRESHOLD REBALANCING LOGIC (only if not on entry day)
+            if i > 0:  # Don't rebalance on entry day
+                # Check for profit threshold trigger
+                growth_pct = ((portfolio_value - last_rebalance_position_value) / last_rebalance_position_value) * 100 if last_rebalance_position_value > 0 else 0
                 
-                # Adjust for transaction costs in target calculation
-                adjusted_target_portfolio_value = current_equity * target_leverage
-                target_shares = adjusted_target_portfolio_value / current_price
+                # Trigger rebalancing if growth exceeds threshold
+                if growth_pct >= profit_threshold_pct:
+                    # Calculate current leverage
+                    current_leverage = portfolio_value / current_equity_in_position if current_equity_in_position > 0 else 0
+                    
+                    # Only rebalance if leverage dropped below target (due to growth)
+                    if current_leverage < target_leverage * 0.95:  # Small buffer to avoid tiny rebalances
+                        # Calculate target portfolio value to maintain leverage
+                        target_portfolio_value = current_equity_in_position * target_leverage
+                        target_shares = target_portfolio_value / current_price
+                        
+                        # Calculate additional shares needed
+                        shares_change = target_shares - shares_held
+                        
+                        if shares_change > 0.01:  # Only buy more shares
+                            # Calculate transaction cost
+                            trade_value = shares_change * current_price
+                            transaction_cost_today = trade_value * transaction_cost_rate
+                            total_transaction_costs += transaction_cost_today
+                            current_equity_in_position -= transaction_cost_today  # Transaction costs reduce equity
+                            
+                            # Adjust for transaction costs in target calculation
+                            adjusted_target_portfolio_value = current_equity_in_position * target_leverage
+                            target_shares = adjusted_target_portfolio_value / current_price
+                            
+                            # Update position - buy more shares
+                            shares_held = target_shares
+                            margin_loan = adjusted_target_portfolio_value - current_equity_in_position
+                            
+                            # Record rebalancing event
+                            rebalancing_events.append({
+                                'date': date,
+                                'growth_trigger_pct': growth_pct,
+                                'shares_change': shares_change,
+                                'transaction_cost': transaction_cost_today,
+                                'equity_before': current_equity_in_position + transaction_cost_today,
+                                'equity_after': current_equity_in_position,
+                                'leverage_before': current_leverage,
+                                'leverage_after': target_leverage,
+                                'portfolio_value_before': portfolio_value,
+                                'portfolio_value_after': adjusted_target_portfolio_value,
+                                'rebalance_type': 'PROFIT_THRESHOLD_REBALANCE'
+                            })
+                            
+                            total_rebalances += 1
+                            rebalanced = True
+                            days_since_rebalance = 0
+                            last_rebalance_position_value = adjusted_target_portfolio_value
+            
+            # Recalculate final values after rebalancing
+            portfolio_value = shares_held * current_price
+            current_equity_in_position = portfolio_value - margin_loan
+            actual_leverage = portfolio_value / current_equity_in_position if current_equity_in_position > 0 else 0
+            maintenance_margin_required = portfolio_value * (margin_params['maintenance_margin_pct'] / 100.0)
+            
+            # Check for margin call
+            is_margin_call = current_equity_in_position < maintenance_margin_required
+            
+            if is_margin_call:
+                # LIQUIDATION EVENT - Start waiting period and then re-enter
+                liquidation_value = max(0, current_equity_in_position)
                 
-                # Update position
-                shares_held = target_shares
-                margin_loan = adjusted_target_portfolio_value - current_equity
-                
-                # Record rebalancing event
-                rebalancing_events.append({
+                liquidation_events.append({
                     'date': date,
-                    'shares_change': shares_change,
-                    'transaction_cost': transaction_cost_today,
-                    'equity_before': current_equity + transaction_cost_today,
-                    'equity_after': current_equity,
-                    'leverage_before': current_leverage,
-                    'leverage_after': target_leverage,
-                    'portfolio_value': adjusted_target_portfolio_value
+                    'cycle_number': cycle_number,
+                    'days_in_position': days_in_current_position,
+                    'liquidation_equity': liquidation_value,
+                    'portfolio_value_before': portfolio_value,
+                    'leverage_before': actual_leverage,
+                    'maintenance_margin_shortfall': maintenance_margin_required - current_equity_in_position
                 })
                 
-                total_rebalances += 1
+                # Update state after liquidation
+                current_equity = liquidation_value
+                max_equity_achieved = max(max_equity_achieved, current_equity)
+                total_liquidations += 1
+                in_position = False
+                wait_days_remaining = wait_days_after_liquidation
+                shares_held = 0
+                margin_loan = 0
+                days_in_current_position = 0
                 days_since_rebalance = 0
-                rebalanced = True
+                last_rebalance_position_value = 0
+                
+                daily_result.update({
+                    'Position_Status': 'Liquidated'
+                })
+            else:
+                daily_result.update({
+                    'Position_Status': 'Active'
+                })
+                current_equity = current_equity_in_position  # Update equity
+                max_equity_achieved = max(max_equity_achieved, current_equity)
         
-        # Recalculate final values after rebalancing
-        portfolio_value = shares_held * current_price
-        actual_leverage = portfolio_value / current_equity if current_equity > 0 else 0
-        maintenance_margin_required = portfolio_value * (margin_params['maintenance_margin_pct'] / 100.0)
+        # Update performance tracking for no-position states
+        if not in_position and wait_days_remaining == 0:
+            max_equity_achieved = max(max_equity_achieved, current_equity)
         
-        # Check for margin call
-        is_margin_call = current_equity < maintenance_margin_required if maintenance_margin_required > 0 else False
+        # Calculate growth metrics
+        total_growth_pct = ((portfolio_value - initial_position_value) / initial_position_value) * 100 if initial_position_value > 0 and portfolio_value > 0 else 0
+        since_last_rebalance_pct = ((portfolio_value - last_rebalance_position_value) / last_rebalance_position_value) * 100 if last_rebalance_position_value > 0 and portfolio_value > 0 else 0
         
-        if is_margin_call:
-            # LIQUIDATION EVENT - Reset with remaining equity
-            liquidation_value = max(0, current_equity)
-            
-            liquidation_events.append({
-                'date': date,
-                'liquidation_equity': liquidation_value,
-                'portfolio_value_before': portfolio_value,
-                'leverage_before': actual_leverage,
-                'maintenance_margin_shortfall': maintenance_margin_required - current_equity
-            })
-            
-            # Reset position
-            shares_held = 0
-            margin_loan = 0
-            current_equity = liquidation_value
-            portfolio_value = 0
-            actual_leverage = 0
-            total_liquidations += 1
-            
-            # Wait 2 days before re-entering (implement waiting period if needed)
+        # Calculate leverage drift for analytics
+        leverage_drift = abs(actual_leverage - target_leverage) if actual_leverage > 0 else 0
         
-        # Update performance tracking
-        max_equity_achieved = max(max_equity_achieved, current_equity)
+        # Calculate margin call price
+        margin_call_price = 0
+        if shares_held > 0 and margin_loan > 0:
+            margin_call_price = margin_loan / (shares_held * (1 - margin_params['maintenance_margin_pct'] / 100.0))
         
         # Store comprehensive daily results
-        daily_results.append({
-            'Date': date,
-            'ETF_Price': current_price,
+        daily_result.update({
             'Shares_Held': shares_held,
             'Portfolio_Value': portfolio_value,
             'Margin_Loan': margin_loan,
             'Equity': current_equity,
             'Target_Leverage': target_leverage,
             'Actual_Leverage': actual_leverage,
-            'Leverage_Drift': abs(actual_leverage - target_leverage) if actual_leverage > 0 else 0,
-            'Maintenance_Margin_Required': maintenance_margin_required,
-            'Is_Margin_Call': is_margin_call,
-            'Daily_Interest_Cost': daily_interest_cost,
+            'Leverage_Drift': leverage_drift,
+            'Maintenance_Margin_Required': maintenance_margin_required if in_position else 0,
+            'Is_Margin_Call': is_margin_call if in_position else False,
+            'Daily_Interest_Cost': daily_interest_cost if in_position else 0,
             'Cumulative_Interest_Cost': total_interest_paid,
-            'Dividend_Payment': dividend_received,
+            'Dividend_Payment': dividend_received if in_position else 0,
             'Cumulative_Dividends': total_dividends_received,
-            'Transaction_Cost_Today': transaction_cost_today,
+            'Transaction_Cost_Today': transaction_cost_today if in_position else 0,
             'Cumulative_Transaction_Costs': total_transaction_costs,
             'Days_Since_Rebalance': days_since_rebalance,
-            'Rebalanced_Today': rebalanced,
-            'Fed_Funds_Rate': fed_funds_rate * 100,
-            'Margin_Rate': margin_rate * 100,
-            'Position_Status': 'Liquidated' if is_margin_call else ('Rebalanced' if rebalanced else 'Active')
+            'Rebalanced_Today': rebalanced if in_position else False,
+            'Total_Growth_Pct': total_growth_pct,
+            'Growth_Since_Last_Rebalance_Pct': since_last_rebalance_pct,
+            'Profit_Threshold_Pct': profit_threshold_pct,
+            'Next_Rebalance_Target': last_rebalance_position_value * (1 + profit_threshold_pct/100) if last_rebalance_position_value > 0 else 0,
+            'Margin_Call_Price': margin_call_price
         })
+        
+        daily_results.append(daily_result)
     
     # Convert to DataFrame
     df_results = pd.DataFrame(daily_results)
@@ -867,14 +994,34 @@ def run_constant_leverage_backtest(
         
         # Leverage statistics
         leverage_series = df_results['Actual_Leverage']
-        avg_leverage = leverage_series.mean()
-        max_leverage = leverage_series.max()
-        min_leverage = leverage_series.min()
-        leverage_volatility = leverage_series.std()
+        # Only calculate leverage stats if we have valid leverage data
+        leverage_mask = leverage_series > 0
+        if leverage_mask.any():
+            avg_leverage = leverage_series[leverage_mask].mean()
+            max_leverage = leverage_series.max()
+            min_leverage = leverage_series[leverage_mask].min()
+            leverage_volatility = leverage_series[leverage_mask].std()
+        else:
+            avg_leverage = target_leverage
+            max_leverage = target_leverage
+            min_leverage = target_leverage
+            leverage_volatility = 0
+        
+        # Leverage drift statistics  
+        if len(df_results) > 0:
+            leverage_drift_avg = df_results['Leverage_Drift'].mean()
+        else:
+            leverage_drift_avg = 0
         
         # Rebalancing statistics
-        avg_days_between_rebalance = df_results['Days_Since_Rebalance'].mean()
-        leverage_drift_avg = df_results['Leverage_Drift'].mean()
+        if 'Days_Since_Rebalance' in df_results.columns and total_rebalances > 0:
+            avg_days_between_rebalance = df_results['Days_Since_Rebalance'].mean()
+        else:
+            avg_days_between_rebalance = total_days if total_rebalances == 0 else total_days / total_rebalances
+        
+        # Growth statistics
+        max_total_growth = df_results['Total_Growth_Pct'].max()
+        final_total_growth = df_results['Total_Growth_Pct'].iloc[-1]
         
     else:
         annual_volatility = 0
@@ -884,10 +1031,12 @@ def run_constant_leverage_backtest(
         max_leverage = target_leverage
         min_leverage = target_leverage
         leverage_volatility = 0
-        avg_days_between_rebalance = rebalance_interval
         leverage_drift_avg = 0
+        avg_days_between_rebalance = 0
+        max_total_growth = 0
+        final_total_growth = 0
     
-    # Comprehensive metrics for constant leverage strategy
+    # Comprehensive metrics
     metrics = {
         # Core Performance
         'Initial Investment ($)': initial_equity,
@@ -909,10 +1058,12 @@ def run_constant_leverage_backtest(
         'Leverage Volatility': leverage_volatility,
         'Average Leverage Drift': leverage_drift_avg,
         
-        # Rebalancing Analytics
+        # Profit Threshold Analytics
+        'Profit Threshold (%)': profit_threshold_pct,
         'Total Rebalances': total_rebalances,
-        'Rebalance Frequency (days)': rebalance_interval,
         'Average Days Between Rebalances': avg_days_between_rebalance,
+        'Max Portfolio Growth (%)': max_total_growth,
+        'Final Portfolio Growth (%)': final_total_growth,
         'Total Transaction Costs ($)': total_transaction_costs,
         'Transaction Cost (% of Equity)': (total_transaction_costs / initial_equity) * 100,
         
@@ -920,14 +1071,14 @@ def run_constant_leverage_backtest(
         'Total Interest Paid ($)': total_interest_paid,
         'Total Dividends Received ($)': total_dividends_received,
         'Net Interest Cost ($)': total_interest_paid - total_dividends_received,
-        'Total Trading Costs ($)': total_transaction_costs,
         'All-In Cost ($)': total_interest_paid + total_transaction_costs - total_dividends_received,
         
         # Trading Statistics
         'Total Liquidations': total_liquidations,
         'Backtest Days': total_days,
         'Backtest Years': years,
-        'Account Type': account_type
+        'Account Type': account_type,
+        'Initial Position Value': initial_position_value
     }
     
     return df_results, metrics, rebalancing_events
@@ -998,6 +1149,9 @@ def run_margin_restart_backtest(
         margin_rate = row['FedFunds + 1.5%'] / 100.0
         daily_interest_rate = margin_rate / 365
         
+        # On Day 1 (i==0), we just enter positions at close - no interest/dividends yet
+        # Starting Day 2 (i>=1), we calculate interest, dividends, and other changes
+        
         # Initialize daily result
         daily_result = {
             'Date': date,
@@ -1050,14 +1204,16 @@ def run_margin_restart_backtest(
         if in_position:
             days_in_current_position += 1
             
-            # Calculate daily interest cost
-            daily_interest_cost = margin_loan * daily_interest_rate
-            margin_loan += daily_interest_cost
-            total_interest_paid += daily_interest_cost
+            # Calculate daily interest cost - ONLY after Day 1
+            daily_interest_cost = 0
+            if i > 0:
+                daily_interest_cost = margin_loan * daily_interest_rate
+                margin_loan += daily_interest_cost
+                total_interest_paid += daily_interest_cost
             
-            # Handle dividend payments
+            # Handle dividend payments - ONLY after Day 1
             dividend_received = 0
-            if dividend_payment > 0:
+            if i > 0 and dividend_payment > 0:
                 dividend_received = shares_held * dividend_payment
                 total_dividends_received += dividend_received
                 # Reinvest dividends
@@ -1125,7 +1281,7 @@ def run_margin_restart_backtest(
                 
                 daily_result['Position_Status'] = 'Liquidated_Fresh_Capital_Wait'
             else:
-                daily_result['Position_Status'] = 'Active_Position'
+                daily_result['Position_Status'] = 'Active'
             
             # Update daily result with position data
             equity_to_show = current_equity_in_position if in_position else cash_per_round
@@ -1383,7 +1539,7 @@ def create_enhanced_portfolio_chart(df_results: pd.DataFrame, metrics: Dict[str,
         )
     
     # Add position entries as green markers
-    entries = df_results[df_results['Position_Status'] == 'Position_Entered']
+    entries = df_results[df_results['Position_Status'] == 'Entered']
     if not entries.empty:
         fig.add_trace(
             go.Scatter(
@@ -1406,26 +1562,53 @@ def create_enhanced_portfolio_chart(df_results: pd.DataFrame, metrics: Dict[str,
     cumulative_interest = df_results['Daily_Interest_Cost'].cumsum()
     cumulative_dividends = df_results['Dividend_Payment'].cumsum()
     
+    # Calculate dynamic range for better fill visualization
+    min_interest = -cumulative_interest.max() if len(cumulative_interest) > 0 else 0
+    max_dividends = cumulative_dividends.max() if len(cumulative_dividends) > 0 else 0
+    
+    # Add Interest Cost trace with red shaded area below the line
     fig.add_trace(
         go.Scatter(
             x=df_results.index,
             y=-cumulative_interest,  # Negative because it's a cost
             name='Cumulative Interest Cost',
-            line=dict(color='#E74C3C', width=2),
+            line=dict(color='#E74C3C', width=3),
+            fill='tozeroy',  # Fill from line to zero (and beyond to bottom)
+            fillcolor='rgba(231, 76, 60, 0.25)',  # Semi-transparent red
             hovertemplate='Date: %{x}<br>Interest Cost: -$%{y:,.0f}<extra></extra>'
         ),
         row=2, col=1
     )
     
+    # Add Dividends trace with green shaded area above the line  
     fig.add_trace(
         go.Scatter(
             x=df_results.index,
             y=cumulative_dividends,
             name='Cumulative Dividends',
-            line=dict(color='#28B463', width=2),
+            line=dict(color='#28B463', width=3),
+            fill='tonexty',  # Fill from this line to the previous trace (creating layered effect)
+            fillcolor='rgba(40, 180, 99, 0.25)',  # Semi-transparent green
             hovertemplate='Date: %{x}<br>Dividends: +$%{y:,.0f}<extra></extra>'
         ),
         row=2, col=1
+    )
+    
+    # Add subtle zero baseline for better visual reference
+    fig.add_hline(
+        y=0, 
+        line_dash="dash", 
+        line_color="rgba(108, 117, 125, 0.6)", 
+        line_width=1,
+        row=2, col=1,
+        annotation_text="Break-even Line",
+        annotation_position="top right",
+        annotation=dict(
+            font=dict(size=10, color="rgba(108, 117, 125, 0.8)"),
+            bgcolor="rgba(255, 255, 255, 0.8)",
+            bordercolor="rgba(108, 117, 125, 0.3)",
+            borderwidth=1
+        )
     )
     
     # Enhanced drawdown analysis
@@ -1511,10 +1694,10 @@ def create_enhanced_portfolio_chart(df_results: pd.DataFrame, metrics: Dict[str,
     
     # Position Status Timeline (moved from row 2, col 1)
     position_colors = {
-        'Active_Position': '#28B463',
-        'Waiting_After_Liquidation': '#F39C12', 
+        'Active': '#28B463',
+        'Waiting': '#F39C12', 
         'Liquidated': '#E74C3C',
-        'Position_Entered': '#3498DB',
+        'Entered': '#3498DB',
         'Insufficient_Equity': '#95A5A6'
     }
     
@@ -1675,26 +1858,40 @@ def create_liquidation_analysis_chart(df_results: pd.DataFrame, metrics: Dict[st
     cumulative_interest = df_results['Daily_Interest_Cost'].cumsum()
     cumulative_dividends = df_results['Dividend_Payment'].cumsum()
     
+    # Add Interest Cost with red shaded area
     fig.add_trace(
         go.Scatter(
             x=df_results.index,
             y=-cumulative_interest,
             name='Interest Cost',
             line=dict(color='#E74C3C', width=2),
-            fill='tonexty',
+            fill='tozeroy',  # Fill from line to zero
+            fillcolor='rgba(231, 76, 60, 0.25)',  # Semi-transparent red
             hovertemplate='Date: %{x}<br>Interest: -$%{y:,.0f}<extra></extra>'
         ),
         row=2, col=2
     )
     
+    # Add Dividend Income with green shaded area  
     fig.add_trace(
         go.Scatter(
             x=df_results.index,
             y=cumulative_dividends,
             name='Dividend Income',
             line=dict(color='#27AE60', width=2),
+            fill='tonexty',  # Fill from this line to previous trace
+            fillcolor='rgba(39, 174, 96, 0.25)',  # Semi-transparent green
             hovertemplate='Date: %{x}<br>Dividends: +$%{y:,.0f}<extra></extra>'
         ),
+        row=2, col=2
+    )
+    
+    # Add zero baseline for this chart too
+    fig.add_hline(
+        y=0, 
+        line_dash="dot", 
+        line_color="rgba(108, 117, 125, 0.4)", 
+        line_width=1,
         row=2, col=2
     )
     
@@ -1875,196 +2072,7 @@ def create_performance_metrics_chart(metrics: Dict[str, float]) -> go.Figure:
     
     return fig
 
-def create_leverage_analytics_chart(df_results: pd.DataFrame, metrics: Dict[str, float], rebalancing_events: List[Dict]) -> go.Figure:
-    """Create comprehensive leverage analytics chart for constant leverage analysis"""
-    
-    fig = make_subplots(
-        rows=3, cols=2,
-        subplot_titles=(
-            'Target vs Actual Leverage Over Time', 'Leverage Drift Analysis',
-            'Rebalancing Events & Transaction Costs', 'Position Size Changes',
-            'Leverage Volatility Distribution', 'Cost Impact Analysis'
-        ),
-        specs=[
-            [{"colspan": 2}, None],
-            [{"type": "scatter"}, {"type": "scatter"}],
-            [{"type": "histogram"}, {"type": "scatter"}]
-        ],
-        vertical_spacing=0.10,
-        horizontal_spacing=0.08,
-        row_heights=[0.4, 0.3, 0.3]
-    )
-    
-    # 1. MAIN CHART: Target vs Actual Leverage Over Time
-    fig.add_trace(
-        go.Scatter(
-            x=df_results.index,
-            y=df_results['Target_Leverage'],
-            mode='lines',
-            name='Target Leverage',
-            line=dict(color='#E74C3C', width=3, dash='dash'),
-            hovertemplate='Date: %{x}<br>Target Leverage: %{y:.2f}x<extra></extra>'
-        ),
-        row=1, col=1
-    )
-    
-    fig.add_trace(
-        go.Scatter(
-            x=df_results.index,
-            y=df_results['Actual_Leverage'],
-            mode='lines',
-            name='Actual Leverage',
-            line=dict(color='#2E86C1', width=2),
-            hovertemplate='Date: %{x}<br>Actual Leverage: %{y:.2f}x<extra></extra>'
-        ),
-        row=1, col=1
-    )
-    
-    # Add rebalancing events as markers
-    if rebalancing_events:
-        rebalance_dates = [event['date'] for event in rebalancing_events]
-        rebalance_leverages = []
-        
-        for event in rebalancing_events:
-            # Find the leverage value on that date
-            date_mask = df_results.index == event['date']
-            if date_mask.any():
-                rebalance_leverages.append(df_results.loc[date_mask, 'Actual_Leverage'].iloc[0])
-            else:
-                rebalance_leverages.append(metrics['Target Leverage'])
-        
-        fig.add_trace(
-            go.Scatter(
-                x=rebalance_dates,
-                y=rebalance_leverages,
-                mode='markers',
-                name='Rebalancing Events',
-                marker=dict(
-                    color='#F39C12',
-                    size=8,
-                    symbol='diamond',
-                    line=dict(color='#E67E22', width=2)
-                ),
-                hovertemplate='REBALANCE<br>Date: %{x}<br>Leverage: %{y:.2f}x<extra></extra>'
-            ),
-            row=1, col=1
-        )
-    
-    # 2. Leverage Drift Analysis
-    fig.add_trace(
-        go.Scatter(
-            x=df_results.index,
-            y=df_results['Leverage_Drift'],
-            mode='lines+markers',
-            name='Leverage Drift',
-            line=dict(color='#8E44AD', width=2),
-            marker=dict(size=3),
-            fill='tozeroy',
-            fillcolor='rgba(142, 68, 173, 0.2)',
-            hovertemplate='Date: %{x}<br>Drift: %{y:.3f}x<extra></extra>'
-        ),
-        row=2, col=1
-    )
-    
-    # Add drift threshold lines
-    fig.add_hline(y=0.1, line_dash="dash", line_color="orange", opacity=0.7, row=2, col=1)
-    fig.add_hline(y=0.2, line_dash="dash", line_color="red", opacity=0.7, row=2, col=1)
-    
-    # 3. Transaction Costs Over Time
-    fig.add_trace(
-        go.Scatter(
-            x=df_results.index,
-            y=df_results['Cumulative_Transaction_Costs'],
-            mode='lines',
-            name='Cumulative Transaction Costs',
-            line=dict(color='#E74C3C', width=2),
-            hovertemplate='Date: %{x}<br>Total Costs: $%{y:,.0f}<extra></extra>'
-        ),
-        row=2, col=2
-    )
-    
-    # Add individual transaction cost events
-    if rebalancing_events:
-        transaction_dates = [event['date'] for event in rebalancing_events]
-        transaction_costs = [event['transaction_cost'] for event in rebalancing_events]
-        
-        fig.add_trace(
-            go.Scatter(
-                x=transaction_dates,
-                y=transaction_costs,
-                mode='markers',
-                name='Individual Transaction Costs',
-                marker=dict(
-                    color='#F39C12',
-                    size=6,
-                    symbol='circle'
-                ),
-                hovertemplate='Date: %{x}<br>Cost: $%{y:,.0f}<extra></extra>'
-            ),
-            row=2, col=2
-        )
-    
-    # 4. Position Size Changes
-    fig.add_trace(
-        go.Scatter(
-            x=df_results.index,
-            y=df_results['Shares_Held'],
-            mode='lines',
-            name='Shares Held',
-            line=dict(color='#27AE60', width=2),
-            hovertemplate='Date: %{x}<br>Shares: %{y:,.0f}<extra></extra>'
-        ),
-        row=3, col=1
-    )
-    
-    # 5. Leverage Distribution
-    leverage_values = df_results['Actual_Leverage']
-    fig.add_trace(
-        go.Histogram(
-            x=leverage_values,
-            nbinsx=50,
-            name='Leverage Distribution',
-            marker_color='#5DADE2',
-            marker_line=dict(color='#2E86C1', width=1),
-            hovertemplate='Leverage: %{x:.2f}x<br>Frequency: %{y}<extra></extra>'
-        ),
-        row=3, col=2
-    )
-    
-    # Add target leverage line on histogram
-    fig.add_vline(
-        x=metrics['Target Leverage'], 
-        line_dash="dash", 
-        line_color="red", 
-        line_width=3,
-        row=3, col=2
-    )
-    
-    # Update layout
-    fig.update_layout(
-        title={
-            'text': f"🎯 Constant Leverage Analytics Dashboard | Target: {metrics['Target Leverage']:.1f}x | Avg Actual: {metrics['Average Actual Leverage']:.2f}x | {metrics['Total Rebalances']} Rebalances",
-            'x': 0.5,
-            'font': {'size': 16, 'color': '#2C3E50'}
-        },
-        height=1000,
-        showlegend=True,
-        plot_bgcolor='white',
-        paper_bgcolor='#FAFAFA'
-    )
-    
-    # Update axes styling
-    fig.update_xaxes(showgrid=True, gridwidth=1, gridcolor='#E8E8E8')
-    fig.update_yaxes(showgrid=True, gridwidth=1, gridcolor='#E8E8E8')
-    
-    # Format specific axes
-    fig.update_yaxes(tickformat='.2f', row=1, col=1, title_text="Leverage Ratio")
-    fig.update_yaxes(tickformat='.3f', row=2, col=1, title_text="Leverage Drift")
-    fig.update_yaxes(tickformat='$,.0f', row=2, col=2, title_text="Transaction Costs ($)")
-    fig.update_yaxes(tickformat=',.0f', row=3, col=1, title_text="Shares Held")
-    fig.update_yaxes(tickformat='.0f', row=3, col=2, title_text="Frequency")
-    
-    return fig
+
 
 def create_restart_summary_chart(rounds_df: pd.DataFrame, summary: Dict, etf_choice: str = "ETF", leverage: float = 1.0) -> go.Figure:
     """Create a clean, focused summary chart for restart backtest"""
@@ -2226,11 +2234,7 @@ def render_historical_backtest_tab():
         st.error("❌ Failed to load ETFs and Fed Funds Data.xlsx. Please check the Excel file.")
         return
     
-    # Display cushion analytics availability status
-    if CUSHION_ANALYTICS_AVAILABLE:
-        st.success("🛡️ **Cushion Analytics**: Advanced margin risk management features enabled")
-    else:
-        st.info("ℹ️ **Cushion Analytics**: Optional module not found. Basic backtest functionality available.")
+
     
     # Add backtest mode selection
     st.markdown("### 🎯 Select Backtest Mode")
@@ -2257,12 +2261,12 @@ def render_historical_backtest_tab():
     
     with backtest_col3:
         if st.button(
-            "🎯 Constant Leverage", 
+            "📈 Profit Threshold", 
             use_container_width=True,
-            help="Advanced strategy: Maintain constant leverage by borrowing more when equity increases",
-            key="constant_leverage_btn"
+            help="Rebalance back to target leverage when portfolio grows by specified percentage (e.g., 100% growth)",
+            key="profit_threshold_btn"
         ):
-            st.session_state.backtest_mode = 'constant_leverage'
+            st.session_state.backtest_mode = 'profit_threshold'
     
     # Initialize if not set
     if 'backtest_mode' not in st.session_state:
@@ -2284,7 +2288,28 @@ def render_historical_backtest_tab():
         </ul>
     </div>
         """
-    elif st.session_state.backtest_mode == 'restart':
+    elif st.session_state.backtest_mode == 'profit_threshold':
+        st.success("✅ **Profit Threshold Rebalancing Mode**: Rebalance back to target leverage when portfolio grows by specified percentage")
+        mode_description = """
+        <div class="card">
+            <h3>📈 Profit Threshold Rebalancing Strategy</h3>
+            <p><strong>Growth-Based Leverage Rebalancing:</strong> This sophisticated mode rebalances back to target leverage when portfolio growth hits specified thresholds:</p>
+            <ul>
+                <li>🎯 <strong>Profit Monitoring</strong>: Tracks portfolio growth percentage from initial position</li>
+                <li>📈 <strong>Growth Threshold</strong>: User-configurable threshold (default: 100% growth)</li>
+                <li>⚖️ <strong>Leverage Rebalancing</strong>: When threshold hit, rebalance back to target leverage</li>
+                <li>💰 <strong>Borrow More Strategy</strong>: Only borrows more to buy additional shares (never sells)</li>
+                <li>🔄 <strong>Compound Growth</strong>: Locks in profits by scaling position size with target leverage</li>
+                <li>📊 <strong>Growth Analytics</strong>: Tracks all rebalancing events and profit thresholds</li>
+                <li>🎲 <strong>Risk Management</strong>: Maintains consistent leverage exposure as wealth grows</li>
+            </ul>
+            <div style="background: #e8f5e8; padding: 1rem; border-left: 4px solid #4caf50; margin: 1rem 0;">
+                <strong>💡 Example:</strong> Start with $1M @ 2x leverage ($2M position). Portfolio grows to $4M (100% growth). 
+                Current leverage: 1.33x. <strong>REBALANCE:</strong> Borrow $2M more → $6M position @ 2x leverage.
+            </div>
+        </div>
+        """
+    else:  # restart mode
         st.success("✅ **Restart Mode Selected**: Alternative simulation with unlimited fresh capital (for comparison)")
         mode_description = """
         <div class="card">
@@ -2299,29 +2324,17 @@ def render_historical_backtest_tab():
             </ul>
         </div>
         """
-    else:  # constant_leverage mode
-        st.success("🎯 **Constant Leverage Mode Selected**: Advanced rebalancing strategy for maintaining consistent leverage")
-        mode_description = """
-        <div class="card">
-            <h3>🎯 Constant Leverage Rebalancing Strategy</h3>
-            <p><strong>Advanced Implementation:</strong> This sophisticated mode maintains constant leverage by dynamically adjusting positions:</p>
-            <ul>
-                <li>🎯 <strong>Constant Leverage Maintenance</strong>: Automatically rebalances to maintain target leverage ratio</li>
-                <li>📈 <strong>Borrow More When Equity Rises</strong>: Increases position size when portfolio gains value</li>
-                <li>📉 <strong>Reduce Exposure on Losses</strong>: Decreases position size when portfolio loses value</li>
-                <li>⚙️ <strong>Configurable Rebalancing</strong>: Daily, weekly, or monthly rebalancing frequency</li>
-                <li>💰 <strong>Realistic Transaction Costs</strong>: Includes trading costs for each rebalance</li>
-                <li>📊 <strong>Leverage Analytics</strong>: Comprehensive charts showing leverage over time</li>
-            </ul>
-        </div>
-        """
     
     st.markdown(mode_description, unsafe_allow_html=True)
     
     # Input parameters
     st.subheader("🔧 Backtest Parameters")
     
-    input_col1, input_col2, input_col3 = st.columns(3)
+    # Get available date range for validation
+    min_date = excel_data.index.min().date()
+    max_date = excel_data.index.max().date()
+    
+    input_col1, input_col2, input_col3 = st.columns([1, 1, 1.2])
     
     with input_col1:
         etf_choice = st.selectbox(
@@ -2330,10 +2343,6 @@ def render_historical_backtest_tab():
             help="Choose the ETF to backtest",
             key="backtest_etf_choice"
         )
-        
-        # Get available date range
-        min_date = excel_data.index.min().date()
-        max_date = excel_data.index.max().date()
         
         start_date = st.date_input(
             "Start Date",
@@ -2353,20 +2362,29 @@ def render_historical_backtest_tab():
             key="backtest_end_date"
         )
         
-        # Validate date range
-        if start_date >= end_date:
-            st.error("❌ Start date must be before end date")
-            return
-    
+        # Initial Investment for Profit Threshold mode ONLY - stays in column 1 below End Date
+        if st.session_state.backtest_mode == 'profit_threshold':
+            initial_investment = st.number_input(
+                "Initial Investment ($)",
+                min_value=10000,
+                value=100000000,
+                step=10000,
+                help="Total position size (including leverage)",
+                key="backtest_initial_investment"
+            )
+        
     with input_col2:
-        initial_investment = st.number_input(
-            "Initial Investment ($)",
-            min_value=10000,
-            value=100000000,
-            step=10000,
-            help="Total position size (including leverage)",
-            key="backtest_initial_investment"
-        )
+        # Initial Investment for Liquidation-Reentry and Fresh Capital Restart modes - goes to column 2
+        if st.session_state.backtest_mode in ['standard', 'restart']:
+            help_text = "Fresh capital deployed per restart cycle" if st.session_state.backtest_mode == 'restart' else "Total position size (including leverage)"
+            initial_investment = st.number_input(
+                "Initial Investment ($)",
+                min_value=10000,
+                value=100000000,
+                step=10000,
+                help=help_text,
+                key="backtest_initial_investment"
+            )
         
         account_type = st.selectbox(
             "Account Type",
@@ -2376,7 +2394,6 @@ def render_historical_backtest_tab():
             key="backtest_account_type"
         )
     
-    with input_col3:
         # Dynamic leverage input based on account type
         if account_type == "reg_t":
             max_leverage = 2.0
@@ -2398,14 +2415,16 @@ def render_historical_backtest_tab():
             key="backtest_leverage"
         )
         
-        # Additional controls for Constant Leverage mode
-        if st.session_state.backtest_mode == 'constant_leverage':
-            rebalance_frequency = st.selectbox(
-                "Rebalancing Frequency",
-                ["daily", "weekly", "monthly"],
-                index=1,  # Default to weekly
-                help="How often to rebalance to maintain target leverage",
-                key="rebalance_frequency"
+        # Additional controls for Profit Threshold mode
+        if st.session_state.backtest_mode == 'profit_threshold':
+            profit_threshold_pct = st.number_input(
+                "Profit Threshold (%)",
+                min_value=10.0,
+                max_value=500.0,
+                value=100.0,
+                step=10.0,
+                help="Portfolio growth percentage to trigger rebalancing (e.g., 100% = double portfolio value)",
+                key="profit_threshold_pct"
             )
             
             transaction_cost_bps = st.number_input(
@@ -2415,10 +2434,20 @@ def render_historical_backtest_tab():
                 value=5.0,
                 step=0.5,
                 help="Transaction cost per trade in basis points (5 bps = 0.05%)",
-                key="transaction_cost_bps"
+                key="profit_transaction_cost_bps"
             )
+    
+    with input_col3:
+        # Validate date range
+        if start_date >= end_date:
+            st.error("❌ Start date must be before end date")
+            return
         
-        # Show parameter summary
+        # Ensure initial_investment is defined (it should be from either column 1 or 2)
+        if 'initial_investment' not in locals():
+            initial_investment = 100000000  # Fallback default value
+        
+        # Calculate summary values
         cash_needed = initial_investment / leverage
         margin_loan = initial_investment - cash_needed
         
@@ -2429,44 +2458,52 @@ def render_historical_backtest_tab():
         else:
             trading_days = len(date_range_data.dropna(subset=['VTI']))
         
-        # Mode-specific parameter summary
+        # Mode-specific parameter summary card
         if st.session_state.backtest_mode == 'constant_leverage':
             st.markdown(f"""
             <div style="background: #f0f8ff; padding: 1rem; border-radius: 10px; margin-top: 1rem;">
-                <strong>🎯 Constant Leverage Backtest Summary:</strong><br>
+
+            </div>
+            """, unsafe_allow_html=True)
+        elif st.session_state.backtest_mode == 'profit_threshold':
+            st.markdown(f"""
+            <div style="background: #f0f8ff; padding: 1rem; border-radius: 10px; margin-top: 1rem;">
+                <strong>📈 Profit Threshold Rebalancing Summary:</strong><br>
                 Period: <strong>{start_date} to {end_date}</strong><br>
                 Duration: <strong>{trading_days:,} trading days</strong><br><br>
-                <strong>⚙️ Rebalancing Configuration:</strong><br>
+                <strong>🎯 Profit Threshold Configuration:</strong><br>
                 Target Leverage: <strong>{leverage:.1f}x</strong><br>
-                Rebalance Frequency: <strong>{rebalance_frequency.title()}</strong><br>
-                Transaction Cost: <strong>{transaction_cost_bps} bps</strong><br><br>
+                Profit Threshold: <strong>{profit_threshold_pct:.0f}%</strong><br>
+                Transaction Cost: <strong>{transaction_cost_bps} bps (rebalancing only)</strong><br>
+                Strategy: <strong>Rebalance to target leverage when portfolio grows by {profit_threshold_pct:.0f}%</strong><br><br>
                 <strong>💰 Initial Position:</strong><br>
                 Starting Equity: <strong>${cash_needed:,.0f}</strong><br>
                 Initial Margin Loan: <strong>${margin_loan:,.0f}</strong><br>
-                Total Initial Position: <strong>${initial_investment:,.0f}</strong>
+                Total Initial Position: <strong>${initial_investment:,.0f}</strong><br>
+                Rebalance Trigger: <strong>Portfolio reaches ${initial_investment * (1 + profit_threshold_pct/100):,.0f}</strong>
             </div>
             """, unsafe_allow_html=True)
         else:
             st.markdown(f"""
-            <div style="background: #f0f8ff; padding: 1rem; border-radius: 10px; margin-top: 1rem;">
-                <strong>📊 Backtest Summary:</strong><br>
-                Period: <strong>{start_date} to {end_date}</strong><br>
-                Duration: <strong>{trading_days:,} trading days</strong><br><br>
-                <strong>💰 Position Summary:</strong><br>
-                Cash Required: <strong>${cash_needed:,.0f}</strong><br>
-                Margin Loan: <strong>${margin_loan:,.0f}</strong><br>
-                Total Position: <strong>${initial_investment:,.0f}</strong>
-            </div>
-            """, unsafe_allow_html=True)
+        <div style="background: #f0f8ff; padding: 1rem; border-radius: 10px; margin-top: 1rem;">
+            <strong>📊 Backtest Summary:</strong><br>
+            Period: <strong>{start_date} to {end_date}</strong><br>
+            Duration: <strong>{trading_days:,} trading days</strong><br><br>
+            <strong>💰 Position Summary:</strong><br>
+            Cash Required: <strong>${cash_needed:,.0f}</strong><br>
+            Margin Loan: <strong>${margin_loan:,.0f}</strong><br>
+            Total Position: <strong>${initial_investment:,.0f}</strong>
+        </div>
+        """, unsafe_allow_html=True)
     
     # Run backtest button
     if st.button("🚀 Run Historical Backtest", use_container_width=True, type="primary", key="run_backtest_button"):
         
         with st.spinner("🔄 Running comprehensive backtest simulation..."):
             
-            if st.session_state.backtest_mode == 'constant_leverage':
-                # Run constant leverage backtest
-                results_df, metrics, rebalancing_events = run_constant_leverage_backtest(
+            if st.session_state.backtest_mode == 'profit_threshold':
+                # Run profit threshold backtest
+                results_df, metrics, rebalancing_events = run_profit_threshold_backtest(
                     etf=etf_choice,
                     start_date=str(start_date),
                     end_date=str(end_date),
@@ -2474,7 +2511,7 @@ def render_historical_backtest_tab():
                     target_leverage=leverage,
                     account_type=account_type,
                     excel_data=excel_data,
-                    rebalance_frequency=rebalance_frequency,
+                    profit_threshold_pct=profit_threshold_pct,
                     transaction_cost_bps=transaction_cost_bps
                 )
                 
@@ -2482,11 +2519,11 @@ def render_historical_backtest_tab():
                     st.error("❌ Backtest failed. Please check your parameters.")
                     return
                 
-                # Display constant leverage results
-                st.success(f"✅ **Constant Leverage Backtest Complete** - Analyzed {len(results_df):,} trading days with {metrics.get('Total Rebalances', 0)} rebalancing events and {metrics.get('Total Liquidations', 0)} liquidations")
+                # Display profit threshold results
+                st.success(f"✅ **Profit Threshold Backtest Complete** - Analyzed {len(results_df):,} trading days with {metrics.get('Total Rebalances', 0)} profit-based rebalancing events and {metrics.get('Total Liquidations', 0)} liquidations")
                 
-                # Enhanced metrics summary for constant leverage
-                st.markdown("### 📊 Constant Leverage Performance Dashboard")
+                # Enhanced metrics summary for profit threshold
+                st.markdown("### 📊 Profit Threshold Performance Dashboard")
                 
                 # Core Performance Metrics
                 st.markdown("#### Core Performance Metrics")
@@ -2508,40 +2545,40 @@ def render_historical_backtest_tab():
                 
                 with metric_row1_col3:
                     st.metric(
-                        "Sharpe Ratio",
-                        f"{metrics['Sharpe Ratio']:.3f}",
-                        delta=f"Max DD: {metrics['Max Drawdown (%)']:.1f}%"
+                        "Portfolio Growth",
+                        f"{metrics['Final Portfolio Growth (%)']:.1f}%",
+                        delta=f"Max: {metrics['Max Portfolio Growth (%)']:.1f}%"
                     )
                     
                 with metric_row1_col4:
                     st.metric(
-                        "Target vs Actual Leverage",
-                        f"{metrics['Average Actual Leverage']:.2f}x",
-                        delta=f"Target: {metrics['Target Leverage']:.1f}x"
+                        "Sharpe Ratio",
+                        f"{metrics['Sharpe Ratio']:.3f}",
+                        delta=f"Max DD: {metrics['Max Drawdown (%)']:.1f}%"
                     )
                 
-                st.markdown("#### Leverage & Rebalancing Analytics")
+                st.markdown("#### Profit Threshold Analytics")
                 metric_row2_col1, metric_row2_col2, metric_row2_col3, metric_row2_col4 = st.columns(4)
                 
                 with metric_row2_col1:
                     st.metric(
-                        "Total Rebalances",
-                        f"{int(metrics['Total Rebalances'])}",
-                        delta=f"Every {metrics['Average Days Between Rebalances']:.1f} days"
+                        "Profit Threshold",
+                        f"{metrics['Profit Threshold (%)']:.0f}%",
+                        delta=f"{metrics['Total Rebalances']} rebalances"
                     )
                     
                 with metric_row2_col2:
                     st.metric(
-                        "Transaction Costs",
-                        f"${metrics['Total Transaction Costs ($)']:,.0f}",
-                        delta=f"{metrics['Transaction Cost (% of Equity)']:.2f}% of equity"
+                        "Avg Leverage",
+                        f"{metrics['Average Actual Leverage']:.2f}x",
+                        delta=f"Target: {metrics['Target Leverage']:.1f}x"
                     )
                 
                 with metric_row2_col3:
                     st.metric(
-                        "Leverage Volatility",
-                        f"{metrics['Leverage Volatility']:.3f}",
-                        delta=f"Avg Drift: {metrics['Average Leverage Drift']:.3f}"
+                        "Transaction Costs",
+                        f"${metrics['Total Transaction Costs ($)']:,.0f}",
+                        delta=f"{metrics['Transaction Cost (% of Equity)']:.2f}% of equity"
                     )
                     
                 with metric_row2_col4:
@@ -2551,109 +2588,104 @@ def render_historical_backtest_tab():
                         delta=f"Interest + Trading - Dividends"
                     )
                 
-                # Strategy insights for constant leverage
-                rebalance_freq = metrics['Rebalance Frequency (days)']
-                total_costs = metrics['All-In Cost ($)']
-                leverage_efficiency = abs(metrics['Average Actual Leverage'] - metrics['Target Leverage'])
+                # Strategy insights
+                total_rebalances = metrics['Total Rebalances']
+                growth_achieved = metrics['Final Portfolio Growth (%)']
+                threshold = metrics['Profit Threshold (%)']
                 
-                if leverage_efficiency < 0.05:
+                if total_rebalances > 0:
                     st.success(f"""
-                    ✅ **Optimal Leverage Control**: Average leverage {metrics['Average Actual Leverage']:.2f}x vs target {metrics['Target Leverage']:.1f}x. 
-                    Rebalancing every {rebalance_freq} days maintained tight control with ${total_costs:,.0f} in all-in costs.
-                    """)
-                elif leverage_efficiency < 0.2:
-                    st.info(f"""
-                    💡 **Adequate Leverage Maintenance**: Average leverage {metrics['Average Actual Leverage']:.2f}x vs target {metrics['Target Leverage']:.1f}x. 
-                    Consider more frequent rebalancing to tighten control. Total costs: ${total_costs:,.0f}.
+                    ✅ **Profit Threshold Strategy Success**: {total_rebalances} rebalancing events triggered by {threshold:.0f}% growth thresholds. 
+                    Final portfolio growth: {growth_achieved:.1f}%. Strategy successfully locked in profits by scaling position size.
                     """)
                 else:
-                    st.warning(f"""
-                    ⚠️ **Leverage Drift Detected**: Average leverage {metrics['Average Actual Leverage']:.2f}x deviates from target {metrics['Target Leverage']:.1f}x. 
-                    Consider daily rebalancing or lower transaction costs. Current costs: ${total_costs:,.0f}.
+                    st.info(f"""
+                    💡 **No Rebalancing**: Portfolio never reached {threshold:.0f}% growth threshold during backtest period. 
+                    Consider lowering threshold or extending backtest period to see strategy in action.
                     """)
                 
-                # Leverage analytics chart: Target vs actual leverage over time
-                st.markdown("### 📈 Leverage Analytics Dashboard")
-                leverage_fig = create_leverage_analytics_chart(results_df, metrics, rebalancing_events)
-                st.plotly_chart(leverage_fig, use_container_width=True)
-                
-                # Enhanced portfolio performance chart (modified for constant leverage)
-                st.markdown("### 📊 Portfolio Performance Analytics")
+                # Enhanced portfolio performance chart
+                st.markdown("### 📈 Portfolio Performance Analytics")
                 portfolio_fig = create_enhanced_portfolio_chart(results_df, metrics)
                 st.plotly_chart(portfolio_fig, use_container_width=True)
                 
-                # Margin Cushion Analytics Dashboard (for constant leverage)
-                if CUSHION_ANALYTICS_AVAILABLE:
-                    cushion_analysis.render_cushion_analytics_section(results_df, metrics, mode="constant_leverage")
-                else:
-                    st.info("💡 **Cushion Analytics**: Optional module not available for constant leverage analysis.")
+
                 
-                # Detailed Rebalancing Analysis
-                st.markdown("### 📋 Detailed Rebalancing Analysis")
+                # Margin Cushion Analytics Dashboard
+                cushion_analysis.render_cushion_analytics_section(results_df, metrics, mode="profit_threshold")
+                
+                # Detailed Profit Threshold Rebalancing Analysis
+                st.markdown("### 📋 Detailed Profit Threshold Analysis")
                 
                 if rebalancing_events:
-                    # Convert rebalancing events to DataFrame
                     rebalance_df = pd.DataFrame(rebalancing_events)
                     
+                    # Calculate summary statistics
+                    total_events = len(rebalance_df)
+                    avg_growth = rebalance_df['growth_trigger_pct'].mean()
+                    avg_cost = rebalance_df['transaction_cost'].mean()
+                    total_cost = rebalance_df['transaction_cost'].sum()
+                    
                     st.markdown(f"""
-                    **Rebalancing Summary:** {len(rebalance_df)} total rebalances • Average cost: ${rebalance_df['transaction_cost'].mean():,.0f} • Total cost: ${rebalance_df['transaction_cost'].sum():,.0f}
+                    **Profit Threshold Summary:** {total_events} rebalancing events • Average trigger growth: {avg_growth:.1f}% • Total costs: ${total_cost:,.0f}
                     """)
                     
                     # Format display DataFrame
                     display_rebalance = rebalance_df.copy()
                     display_rebalance['Date'] = pd.to_datetime(display_rebalance['date']).dt.strftime('%Y-%m-%d')
-                    display_rebalance['Shares Change'] = display_rebalance['shares_change'].apply(lambda x: f"{x:+,.0f}")
+                    display_rebalance['Growth Trigger'] = display_rebalance['growth_trigger_pct'].apply(lambda x: f"{x:.1f}%")
+                    display_rebalance['Shares Added'] = display_rebalance['shares_change'].apply(lambda x: f"{x:+,.0f}")
                     display_rebalance['Transaction Cost'] = display_rebalance['transaction_cost'].apply(lambda x: f"${x:,.0f}")
                     display_rebalance['Equity Before'] = display_rebalance['equity_before'].apply(lambda x: f"${x:,.0f}")
                     display_rebalance['Equity After'] = display_rebalance['equity_after'].apply(lambda x: f"${x:,.0f}")
                     display_rebalance['Leverage Before'] = display_rebalance['leverage_before'].apply(lambda x: f"{x:.2f}x")
                     display_rebalance['Leverage After'] = display_rebalance['leverage_after'].apply(lambda x: f"{x:.2f}x")
-                    display_rebalance['Portfolio Value'] = display_rebalance['portfolio_value'].apply(lambda x: f"${x:,.0f}")
+                    display_rebalance['Portfolio Before'] = display_rebalance['portfolio_value_before'].apply(lambda x: f"${x:,.0f}")
+                    display_rebalance['Portfolio After'] = display_rebalance['portfolio_value_after'].apply(lambda x: f"${x:,.0f}")
                     
-                    # Select columns for display
                     display_columns = [
-                        'Date', 'Shares Change', 'Transaction Cost', 'Equity Before', 'Equity After',
-                        'Leverage Before', 'Leverage After', 'Portfolio Value'
+                        'Date', 'Growth Trigger', 'Shares Added', 'Transaction Cost', 
+                        'Equity Before', 'Equity After', 'Leverage Before', 'Leverage After',
+                        'Portfolio Before', 'Portfolio After'
                     ]
                     
                     final_rebalance_display = display_rebalance[display_columns]
+                    
+                    # Calculate dynamic height based on data rows (35px per row + 50px header)
+                    dynamic_height = min(max(len(final_rebalance_display) * 35 + 50, 100), 400)
                     
                     st.dataframe(
                         final_rebalance_display,
                         use_container_width=True,
                         hide_index=True,
-                        height=400
-                    )
-                    
-                    # Download option
-                    rebalance_csv = rebalance_df.to_csv(index=False)
-                    st.download_button(
-                        label="📊 Download Rebalancing Analysis",
-                        data=rebalance_csv,
-                        file_name=f"constant_leverage_rebalancing_{etf_choice}_{leverage:.1f}x_{start_date}_to_{end_date}.csv",
-                        mime="text/csv",
-                        use_container_width=True
+                        height=dynamic_height
                     )
                 else:
-                    st.info("No rebalancing events occurred during this backtest.")
+                    st.info(f"No rebalancing events occurred. Portfolio never reached {profit_threshold_pct:.0f}% growth threshold.")
                 
-                # Detailed data expander for constant leverage
-                with st.expander("🔍 Detailed Constant Leverage Data", expanded=False):
+                # Detailed data expander for profit threshold
+                with st.expander("🔍 Detailed Profit Threshold Data", expanded=False):
                     st.markdown(f"""
-                    ### 📊 Complete Constant Leverage Dataset
+                    ### 📊 Complete Profit Threshold Dataset
                     
-                    This dataset contains **{len(results_df):,} daily observations** from your {leverage:.1f}x constant leverage {etf_choice} strategy.
-                    Shows dynamic position adjustments, leverage maintenance, and rebalancing costs.
+                    This dataset contains **{len(results_df):,} daily observations** from your {leverage:.1f}x profit threshold {etf_choice} strategy.
+                    Tracks portfolio growth and rebalancing triggers based on {profit_threshold_pct:.0f}% profit thresholds.
                     """)
                     
                     # Format and display complete dataset
                     display_df = results_df.copy()
                     
                     # Format currency columns
-                    currency_cols = ['Portfolio_Value', 'Margin_Loan', 'Equity', 'Maintenance_Margin_Required', 'Daily_Interest_Cost', 'Cumulative_Interest_Cost', 'Dividend_Payment', 'Cumulative_Dividends', 'Transaction_Cost_Today', 'Cumulative_Transaction_Costs']
+                    currency_cols = ['Portfolio_Value', 'Margin_Loan', 'Equity', 'Maintenance_Margin_Required', 'Daily_Interest_Cost', 'Cumulative_Interest_Cost', 'Dividend_Payment', 'Cumulative_Dividends', 'Transaction_Cost_Today', 'Cumulative_Transaction_Costs', 'Next_Rebalance_Target']
                     for col in currency_cols:
                         if col in display_df.columns:
                             display_df[col] = display_df[col].apply(lambda x: f"${x:,.2f}")
+                    
+                    # Format percentage columns
+                    pct_cols = ['Total_Growth_Pct', 'Growth_Since_Last_Rebalance_Pct', 'Profit_Threshold_Pct']
+                    for col in pct_cols:
+                        if col in display_df.columns:
+                            display_df[col] = display_df[col].apply(lambda x: f"{x:.1f}%")
                     
                     # Format other columns
                     if 'Shares_Held' in display_df.columns:
@@ -2662,20 +2694,8 @@ def render_historical_backtest_tab():
                         display_df['Target_Leverage'] = display_df['Target_Leverage'].apply(lambda x: f"{x:.2f}x")
                     if 'Actual_Leverage' in display_df.columns:
                         display_df['Actual_Leverage'] = display_df['Actual_Leverage'].apply(lambda x: f"{x:.2f}x")
-                    if 'Leverage_Drift' in display_df.columns:
-                        display_df['Leverage_Drift'] = display_df['Leverage_Drift'].apply(lambda x: f"{x:.3f}")
                     
                     st.dataframe(display_df, use_container_width=True, height=400)
-                    
-                    # Download detailed data
-                    detailed_csv = results_df.to_csv()
-                    st.download_button(
-                        label="📊 Download Complete Constant Leverage Dataset",
-                        data=detailed_csv,
-                        file_name=f"constant_leverage_data_{etf_choice}_{leverage:.1f}x_{start_date}_to_{end_date}.csv",
-                        mime="text/csv",
-                        use_container_width=True
-                    )
             
             elif st.session_state.backtest_mode == 'standard':
                 # Run enhanced liquidation-reentry backtest
@@ -2796,11 +2816,8 @@ def render_historical_backtest_tab():
                 liquidation_fig = create_liquidation_analysis_chart(results_df, metrics)
                 st.plotly_chart(liquidation_fig, use_container_width=True)
                 
-                # Margin Cushion Analytics Dashboard (Optional)
-                if CUSHION_ANALYTICS_AVAILABLE:
-                    cushion_analysis.render_cushion_analytics_section(results_df, metrics, mode="liquidation_reentry")
-                else:
-                    st.info("💡 **Cushion Analytics**: Optional module not available. To enable advanced cushion risk management, ensure cushion_analysis.py is present.")
+                # Margin Cushion Analytics Dashboard
+                cushion_analysis.render_cushion_analytics_section(results_df, metrics, mode="liquidation_reentry")
                 
                 # Detailed Round Analysis Section
                 st.markdown("### 📋 Detailed Round Analysis")
@@ -2867,17 +2884,6 @@ def render_historical_backtest_tab():
                             "Profit%": st.column_config.TextColumn("Profit%", width="small"),
                             "Loss%": st.column_config.TextColumn("Loss%", width="small")
                         }
-                    )
-                    
-                    # Download option for round analysis
-                    rounds_csv = rounds_df.to_csv(index=False)
-                    st.download_button(
-                        label="📊 Download Round Analysis",
-                        data=rounds_csv,
-                        file_name=f"round_analysis_{etf_choice}_{leverage:.1f}x_{start_date}_to_{end_date}.csv",
-                        mime="text/csv",
-                        use_container_width=True,
-                        help="Download complete round-by-round analysis data"
                     )
                     
                     # Key insights
@@ -2974,17 +2980,6 @@ def render_historical_backtest_tab():
                             "Equity": st.column_config.TextColumn("Equity", width="medium"),
                             "Is_Margin_Call": st.column_config.TextColumn("Margin Call", width="small"),
                         }
-                    )
-                    
-                    # Download option for detailed data
-                    detailed_csv = results_df.to_csv()
-                    st.download_button(
-                        label="📊 Download Complete Dataset",
-                        data=detailed_csv,
-                        file_name=f"detailed_backtest_data_{etf_choice}_{leverage:.1f}x_{start_date}_to_{end_date}.csv",
-                        mime="text/csv",
-                        use_container_width=True,
-                        help="Download all daily calculations for external analysis"
                     )
                 
             else:  # Fresh Capital Restart mode
@@ -3103,11 +3098,8 @@ def render_historical_backtest_tab():
                 liquidation_fig = create_liquidation_analysis_chart(results_df, metrics)
                 st.plotly_chart(liquidation_fig, use_container_width=True)
                 
-                # Margin Cushion Analytics Dashboard (Optional - Fresh Capital Mode)
-                if CUSHION_ANALYTICS_AVAILABLE:
-                    cushion_analysis.render_cushion_analytics_section(results_df, metrics, mode="fresh_capital")
-                else:
-                    st.info("💡 **Cushion Analytics**: Optional module not available. To enable advanced cushion risk management, ensure cushion_analysis.py is present.")
+                # Margin Cushion Analytics Dashboard (Fresh Capital Mode)
+                cushion_analysis.render_cushion_analytics_section(results_df, metrics, mode="fresh_capital")
                 
                 # Detailed Round Analysis Section (same as liquidation-reentry)
                 st.markdown("### 📋 Detailed Round Analysis")
@@ -3175,17 +3167,6 @@ def render_historical_backtest_tab():
                             "Profit%": st.column_config.TextColumn("Profit%", width="small"),
                             "Loss%": st.column_config.TextColumn("Loss%", width="small")
                         }
-                    )
-                    
-                    # Download option for round analysis
-                    rounds_csv = rounds_df.to_csv(index=False)
-                    st.download_button(
-                        label="📊 Download Fresh Capital Round Analysis",
-                        data=rounds_csv,
-                        file_name=f"fresh_capital_analysis_{etf_choice}_{leverage:.1f}x_{start_date}_to_{end_date}.csv",
-                        mime="text/csv",
-                        use_container_width=True,
-                        help="Download complete fresh capital round-by-round analysis data"
                     )
                     
                     # Fresh capital specific insights
@@ -3285,49 +3266,46 @@ def render_historical_backtest_tab():
                             "Is_Margin_Call": st.column_config.TextColumn("Margin Call", width="small"),
                         }
                     )
-                    
-                    # Download option for detailed data
-                    detailed_csv = results_df.to_csv()
-                    st.download_button(
-                        label="📊 Download Complete Fresh Capital Dataset",
-                        data=detailed_csv,
-                        file_name=f"fresh_capital_backtest_data_{etf_choice}_{leverage:.1f}x_{start_date}_to_{end_date}.csv",
-                        mime="text/csv",
-                        use_container_width=True,
-                        help="Download all daily calculations for fresh capital strategy analysis"
-                    )
     
     # Educational section
     with st.expander("📚 Understanding the Enhanced Backtest Modes", expanded=False):
         st.markdown("""
-        ### 🎯 Constant Leverage Mode
+        ### 📈 Profit Threshold Rebalancing Mode (GROWTH-BASED STRATEGY)
         
-        **Advanced Rebalancing Strategy:**
-        This is a sophisticated professional-grade implementation that maintains constant leverage through dynamic rebalancing.
+        **Growth-Based Leverage Rebalancing:**
+        This sophisticated strategy locks in profits by rebalancing back to target leverage when portfolio growth hits specified thresholds.
         
         **Exact Process:**
-        1. **Initial Setup**: Start with target leverage (e.g., 3x) and initial equity
-        2. **Daily Monitoring**: Track actual leverage vs target leverage
-        3. **Automatic Rebalancing**: When equity changes, adjust position size to maintain target leverage
-        4. **Borrow More on Gains**: When portfolio value increases, increase position size (borrow more)
-        5. **Reduce on Losses**: When portfolio value decreases, reduce position size (pay down debt)
-        6. **Transaction Costs**: Realistic trading costs for each rebalance
-        7. **Leverage Analytics**: Comprehensive tracking of leverage over time
+        1. **Initial Setup**: Start with target leverage (e.g., 2x) using initial equity
+        2. **Growth Monitoring**: Track portfolio value vs growth threshold (e.g., 100% growth)
+        3. **Threshold Trigger**: When portfolio grows by threshold percentage → check current leverage
+        4. **Leverage Assessment**: If leverage dropped below target due to gains → rebalance
+        5. **Borrow More Strategy**: Only borrows additional capital to buy more shares (never sells)
+        6. **Lock in Profits**: Scales position size with new equity base at target leverage
+        7. **Compound Growth**: Maintains consistent leverage exposure as wealth grows
         
-        **Key Advantages:**
-        - 🎯 **True Constant Leverage**: Maintains exact target leverage through rebalancing
-        - 📈 **Dynamic Position Sizing**: Borrows more when equity rises
-        - 📊 **Leverage Visualization**: Shows leverage over time with comprehensive analytics
-        - ⚙️ **Configurable Frequency**: Daily, weekly, or monthly rebalancing
-        - 💰 **Realistic Costs**: Includes transaction costs for sustainable analysis
-        - 🏛️ **Institutional Grade**: Used by hedge funds and professional traders
-        - 📈 **Performance Analytics**: Advanced leverage drift and volatility analysis
+        **Key Strategy Logic:**
+        - 🎯 **Profit Monitoring**: Tracks portfolio growth from last rebalance point
+        - 📈 **Threshold Trigger**: User-configurable growth percentage (default 100%)
+        - ⚖️ **Leverage Restoration**: Rebalances back to target leverage with new equity base
+        - 💰 **Growth Capture**: Only borrows more to scale up (never sells winners)
+        - 🔄 **Compound Effect**: Each rebalance uses higher equity base for next threshold
+        - 📊 **Growth Analytics**: Tracks all rebalancing events and growth milestones
         
-        **Professional Applications:**
-        - Hedge fund leverage management
-        - Institutional portfolio rebalancing
-        - Risk parity strategies
-        - Volatility targeting systems
+        **Example Walkthrough:**
+        1. **Start**: $1M equity @ 2x leverage = $2M position
+        2. **Growth**: Portfolio grows to $4M (100% growth threshold hit!)
+        3. **Current State**: $3M equity, $1M loan, 1.33x leverage (below 2x target)
+        4. **Rebalance Action**: Borrow $2M more → $6M total position @ 2x leverage
+        5. **Result**: Locked in profits by scaling position size with target leverage
+        
+        **When to Use:**
+        - Systematic profit-taking with continued market exposure
+        - Wealth building through leveraged growth compounding
+        - Maintaining consistent risk exposure as portfolio grows
+        - Testing growth-based rebalancing strategies
+        
+
         
         ### ⚡ Liquidation-Reentry Mode (REALISTIC SIMULATION)
         
@@ -3366,19 +3344,15 @@ def render_historical_backtest_tab():
         - Understanding margin call frequency patterns
         - Analyzing market volatility impact on leverage strategies
         
-        ### 🎯 Professional Interpretation Guide
+        ### 🎯 Professional Strategy Comparison Guide
         
-        **Liquidation-Reentry Results Analysis:**
+        **Which Strategy Should You Choose?**
         
-        **If Total Return > 0%:**
-        - Strategy worked but analyze capital efficiency
-        - Check if returns justify the liquidation frequency
-        - Consider if same returns achievable with lower leverage
-        
-        **If Total Return < -50%:**
-        - High-risk strategy requiring significant capital reserves
-        - Consider reducing leverage by 50% and re-testing
-        - Evaluate if strategy suitable for your risk tolerance
+        | Strategy | Best For | Risk Level | Capital Requirement |
+        |----------|----------|------------|-------------------|
+        | **Liquidation-Reentry** | Realistic testing | High | Limited (depletes over time) |
+        | **Fresh Capital Restart** | Academic analysis | High | Unlimited (theoretical) |
+        | **Profit Threshold** | Wealth building | Medium | Growing (compounds profits) |
         
         **Key Metrics to Watch:**
         - **Liquidation Rate**: <30% good, 30-70% moderate risk, >70% high risk
@@ -3400,9 +3374,9 @@ def render_historical_backtest_tab():
                 padding: 2rem; border-radius: 15px; margin: 2rem 0; text-align: center;">
         <h3 style="color: white; margin: 0;">🎯 Advanced Historical Backtest Engine</h3>
         <p style="color: rgba(255,255,255,0.9); margin: 1rem 0 0 0; font-size: 1.1rem;">
-            <strong>Advanced Features:</strong> Constant Leverage Mode | Dynamic Position Sizing | Automatic Rebalancing<br/>
-            <strong>Professional Analysis:</strong> Liquidation-Reentry Logic | Fresh Capital Analysis | Leverage Analytics Dashboard<br/>
-            <strong>Institutional Metrics:</strong> Sortino Ratio | Drawdown Duration | Transaction Cost Analysis | Rebalancing Optimization
+                    <strong>Advanced Features:</strong> Profit Threshold Rebalancing | Growth-Based Strategies | Liquidation-Reentry Logic<br/>
+        <strong>Professional Analysis:</strong> Fresh Capital Analysis | Compound Growth Analytics | Advanced Risk Metrics<br/>
+        <strong>Research Tools:</strong> Sortino Ratio | Drawdown Duration | Portfolio Growth Analytics | Cost Attribution
         </p>
         <p style="color: rgba(255,255,255,0.8); margin: 0.5rem 0 0 0; font-size: 0.9rem;">
             Professional-grade implementation | Real market data | Hedge fund-level analytics | Custom leverage visualization
