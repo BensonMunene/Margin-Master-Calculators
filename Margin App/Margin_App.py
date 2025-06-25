@@ -8,14 +8,14 @@ from UI_Components import (
     load_css, app_header, date_range_explanation, 
     market_overview_explanation, price_analysis_explanation,
     dividend_analysis_explanation, margin_calculator_explanation,
-    app_footer
+    app_footer, navigation_explanation
 )
 from historical_backtest import show_historical_backtest
 
 # Set page configuration
 st.set_page_config(
-    page_title="ETF Margin Calculator",
-    page_icon="📈",
+    page_title="Margin Analytics Terminal",
+    page_icon="📊",
     layout="wide",
     initial_sidebar_state="collapsed"
 )
@@ -23,190 +23,17 @@ st.set_page_config(
 # Cache CSS loading to prevent re-rendering on every interaction
 @st.cache_data
 def get_enhanced_css():
-    return load_css() + """
-<style>
-    /* Enhanced responsive design */
-    .main-container {
-        max-width: 1400px;
-        margin: 0 auto;
-        padding: 0 1rem;
-    }
-    
-    /* Smooth tab transitions */
-    .stTabs [data-baseweb="tab-list"] {
-        gap: 2rem;
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-        padding: 1rem 2rem;
-        border-radius: 15px 15px 0 0;
-        margin-bottom: 0;
-    }
-    
-    .stTabs [data-baseweb="tab"] {
-        color: rgba(255, 255, 255, 0.8);
-        font-weight: 600;
-        font-size: 1.1rem;
-        padding: 0.8rem 1.5rem;
-        border-radius: 10px;
-        transition: all 0.3s ease;
-        border: none;
-        background: transparent;
-    }
-    
-    .stTabs [aria-selected="true"] {
-        color: #ffffff;
-        background: rgba(255, 255, 255, 0.2);
-        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
-    }
-    
-    .stTabs [data-baseweb="tab"]:hover {
-        background: rgba(255, 255, 255, 0.1);
-        transform: translateY(-2px);
-    }
-    
-    /* Enhanced card styling */
-    .card {
-        background: linear-gradient(145deg, #ffffff, #f8f9fa);
-        border-radius: 20px;
-        padding: 2rem;
-        margin: 1.5rem 0;
-        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
-        border: 1px solid rgba(255, 255, 255, 0.8);
-        transition: all 0.3s ease;
-    }
-    
-    .card:hover {
-        transform: translateY(-5px);
-        box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15);
-    }
-    
-    /* Parameter explanation cards */
-    .param-card {
-        background: linear-gradient(135deg, #f8f9fa 0%, #ffffff 100%);
-        border: 2px solid #e9ecef;
-        border-radius: 15px;
-        padding: 1.5rem;
-        margin: 1rem 0;
-        transition: all 0.3s ease;
-        box-shadow: 0 5px 15px rgba(0, 0, 0, 0.08);
-    }
-    
-    .param-card:hover {
-        transform: translateY(-3px);
-        box-shadow: 0 8px 25px rgba(0, 0, 0, 0.12);
-        border-color: #3498db;
-    }
-    
-    .param-title {
-        font-size: 1.1rem;
-        font-weight: 600;
-        color: #2c3e50;
-        margin: 0 0 0.5rem 0;
-        display: flex;
-        align-items: center;
-        gap: 0.5rem;
-    }
-    
-    .param-value {
-        font-size: 1.3rem;
-        font-weight: 700;
-        color: #3498db;
-        margin: 0.5rem 0;
-    }
-    
-    .param-description {
-        font-size: 0.9rem;
-        color: #6c757d;
-        line-height: 1.4;
-        margin: 0;
-    }
-    
-    .leverage-card {
-        background: linear-gradient(135deg, #e8f5e8 0%, #f0f8f0 100%);
-        border: 2px solid #27ae60;
-    }
-    
-    .investment-card {
-        background: linear-gradient(135deg, #e3f2fd 0%, #f1f8fe 100%);
-        border: 2px solid #2196f3;
-    }
-    
-    /* Metric styling */
-    .metric-container {
-        background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
-        border-radius: 15px;
-        padding: 1.5rem;
-        color: white;
-        text-align: center;
-        margin: 1rem 0;
-        transition: all 0.3s ease;
-    }
-    
-    .metric-container:hover {
-        transform: scale(1.02);
-    }
-    
-    /* Risk indicator styling */
-    .risk-indicator {
-        border-radius: 15px;
-        padding: 1.2rem;
-        margin: 1rem 0;
-        transition: all 0.3s ease;
-        backdrop-filter: blur(10px);
-    }
-    
-    /* Animation for loading */
-    @keyframes fadeInUp {
-        from {
-            opacity: 0;
-            transform: translateY(30px);
-        }
-        to {
-            opacity: 1;
-            transform: translateY(0);
-        }
-    }
-    
-    .fade-in {
-        animation: fadeInUp 0.6s ease forwards;
-    }
-    
-    /* Responsive design */
-    @media (max-width: 768px) {
-        .card {
-            padding: 1rem;
-            margin: 1rem 0;
-        }
-        
-        .param-card {
-            padding: 1rem;
-        }
-        
-        .stTabs [data-baseweb="tab-list"] {
-            padding: 0.5rem 1rem;
-        }
-        
-        .stTabs [data-baseweb="tab"] {
-            font-size: 0.9rem;
-            padding: 0.6rem 1rem;
-        }
-    }
-</style>
-"""
+    return load_css()
 
-# Load cached CSS
+# Load professional CSS
 st.markdown(get_enhanced_css(), unsafe_allow_html=True)
 
-# Cache app header to prevent re-rendering
-@st.cache_data
-def get_app_header():
-    return app_header()
-
-# App header with Pearson Creek logo
-st.markdown(get_app_header(), unsafe_allow_html=True)
+# Professional app header
+st.markdown(app_header(), unsafe_allow_html=True)
 
 # Initialize session state for tab management
 if 'active_tab' not in st.session_state:
-    st.session_state.active_tab = 0  # Default to first tab (Margin Calculator)
+    st.session_state.active_tab = 0
 
 # Define directory paths
 local_dir = r"D:\Benson\aUpWork\Ben Ruff\Implementation\Data"
@@ -234,17 +61,18 @@ def load_data(data_path):
         for df in [spy_df, spy_dividends_df, vti_df, vti_dividends_df]:
             df['Date'] = pd.to_datetime(df['Date'], format='%Y-%m-%d', errors='coerce')
             df.set_index('Date', inplace=True)
-            df.sort_index(inplace=True)  # Ensure sorted for faster filtering
+            df.sort_index(inplace=True)
             
         return spy_df, spy_dividends_df, vti_df, vti_dividends_df
     except Exception as e:
-        st.error(f"Error loading data: {e}")
+        st.error(f"Data loading error: {e}")
+        st.error("Please ensure data files are available in the specified directory")
         return None, None, None, None
 
-# Cache margin calculations to prevent recalculation on every slider change
+# Professional margin calculations
 @st.cache_data
 def calculate_margin_metrics(investment_amount, leverage, current_price, account_type, position_type):
-    """Optimized margin calculation function"""
+    """Professional margin calculation engine"""
     cash_investment = investment_amount / leverage
     margin_loan = investment_amount - cash_investment
     shares_purchased = investment_amount / current_price if current_price > 0 else 0
@@ -276,69 +104,77 @@ def calculate_margin_metrics(investment_amount, leverage, current_price, account
         'margin_call_drop': margin_call_drop
     }
 
-# Cache scenario calculations
+# Professional metric cards
 @st.cache_data
-def calculate_scenarios(investment_amount, margin_loan, cash_investment, interest_rate, holding_period, bull_gain, bear_loss):
-    """Optimized scenario calculation function"""
-    # Bull scenario
-    bull_value = investment_amount * (1 + bull_gain/100)
-    bull_interest_cost = (margin_loan * interest_rate/100) * (holding_period/12)
-    bull_profit = bull_value - investment_amount - bull_interest_cost
-    bull_roi = (bull_profit / cash_investment) * 100 if cash_investment > 0 else 0
+def generate_professional_metric_card(label, value, change=None, format_type="currency"):
+    """Generate professional metric cards"""
+    if format_type == "currency":
+        formatted_value = f"${value:,.0f}"
+    elif format_type == "percentage":
+        formatted_value = f"{value:.2f}%"
+    elif format_type == "number":
+        formatted_value = f"{value:,.2f}"
+    else:
+        formatted_value = str(value)
     
-    # Neutral scenario
-    neutral_interest_cost = (margin_loan * interest_rate/100) * (holding_period/12)
-    neutral_profit = -neutral_interest_cost
-    neutral_roi = (neutral_profit / cash_investment) * 100 if cash_investment > 0 else 0
+    change_class = ""
+    change_display = ""
+    if change is not None:
+        if change > 0:
+            change_class = "positive"
+            change_display = f"+{change:.2f}%"
+        elif change < 0:
+            change_class = "negative"
+            change_display = f"{change:.2f}%"
+        else:
+            change_class = "neutral"
+            change_display = "0.00%"
     
-    # Bear scenario
-    bear_value = investment_amount * (1 - bear_loss/100)
-    bear_interest_cost = (margin_loan * interest_rate/100) * (holding_period/12)
-    bear_loss_total = investment_amount - bear_value + bear_interest_cost
-    bear_roi = -(bear_loss_total / cash_investment) * 100 if cash_investment > 0 else 0
-    
-    return {
-        'bull': {'profit': bull_profit, 'roi': bull_roi},
-        'neutral': {'profit': neutral_profit, 'roi': neutral_roi},
-        'bear': {'loss': bear_loss_total, 'roi': bear_roi}
-    }
-
-# Optimized HTML generation functions
-@st.cache_data
-def generate_investment_card(investment_amount):
     return f"""
-    <div class="param-card investment-card" style="padding: 1rem; margin: 0.5rem 0;">
-        <div class="param-title" style="font-size: 1rem;">
-            💰 Investment Amount
-        </div>
-        <div class="param-value" style="font-size: 1.1rem;">${investment_amount:,.0f}</div>
-        <div class="param-description" style="font-size: 0.85rem;">
-            This is the total position size you want to control, including both your own cash and borrowed funds. 
-            A larger investment amount increases both potential profits and risks.
-        </div>
+    <div class="metric-card">
+        <div class="metric-label">{label}</div>
+        <div class="metric-value">{formatted_value}</div>
+        {f'<div class="metric-change {change_class}">{change_display}</div>' if change is not None else ''}
     </div>
     """
 
+# Professional investment breakdown
 @st.cache_data
-def generate_leverage_card(leverage):
-    margin_percentage = ((leverage - 1) / leverage) * 100
+def generate_investment_breakdown(investment_amount, cash_investment, margin_loan):
     return f"""
-    <div class="param-card leverage-card" style="padding: 1rem; margin: 0.5rem 0;">
-        <div class="param-title" style="font-size: 1rem;">
-            ⚡ Leverage
+    <div class="professional-card">
+        <div class="card-header">
+            <div class="card-title">Portfolio Composition</div>
+            <div class="card-subtitle">Capital Structure Analysis</div>
         </div>
-        <div class="param-value" style="font-size: 1.1rem;">{leverage:.1f}x ({margin_percentage:.1f}% borrowed)</div>
-        <div class="param-description" style="font-size: 0.85rem;">
-            Leverage multiplies your buying power. {leverage:.1f}x leverage means you control {leverage:.1f} times 
-            your cash investment. Higher leverage amplifies both gains and losses significantly.
+        <div class="metrics-grid">
+            <div class="metric-card">
+                <div class="metric-label">Cash Investment</div>
+                <div class="metric-value">${cash_investment:,.0f}</div>
+                <div class="metric-change neutral">Your Capital</div>
+            </div>
+            <div class="metric-card">
+                <div class="metric-label">Margin Loan</div>
+                <div class="metric-value">${margin_loan:,.0f}</div>
+                <div class="metric-change neutral">Borrowed Capital</div>
+            </div>
+            <div class="metric-card">
+                <div class="metric-label">Total Position</div>
+                <div class="metric-value">${investment_amount:,.0f}</div>
+                <div class="metric-change neutral">Market Exposure</div>
+            </div>
         </div>
+        <p class="typography-body">
+            Your capital provides the foundation for leveraged exposure. Margin loan amplifies position size 
+            but introduces additional risk through interest costs and potential margin calls.
+        </p>
     </div>
     """
 
-# Load data with optimized caching
+# Load data
 spy_df, spy_dividends_df, vti_df, vti_dividends_df = load_data(data_dir)
 
-# Initialize session state more efficiently
+# Initialize session state
 if 'initialized' not in st.session_state:
     st.session_state.account_type = 'reg_t'
     st.session_state.leverage_reg_t = 2.0
@@ -350,201 +186,30 @@ if 'initialized' not in st.session_state:
 # Check if data loaded successfully
 if spy_df is not None and vti_df is not None:
     
-    # --- Custom Tab Implementation for Streamlit 1.45.1 ---
+    # Professional Tab Navigation
     tab_labels = [
-        "🧮 Margin Calculator",
-        "📊 Historical Backtest",
-        "📈 Market Overview",
-        "💹 Price Analysis",
-        "💰 Dividend Analysis"
+        "Margin Calculator",
+        "Historical Backtest", 
+        "Market Overview",
+        "Price Analysis",
+        "Dividend Analysis"
     ]
     
     # Initialize selected tab in session state
     if 'selected_tab' not in st.session_state:
         st.session_state.selected_tab = tab_labels[0]
     
-    # Initialize tab index for proper state tracking
     if 'tab_index' not in st.session_state:
         st.session_state.tab_index = 0
     
-    # Add custom CSS for beautiful tab styling
-    st.markdown("""
-    <style>
-        /* Hide the default radio button circles */
-        div[role="radiogroup"] > label > div:first-child {
-            display: none !important;
-        }
-        
-        /* Style the radio button container */
-        div[role="radiogroup"] {
-            background: transparent;
-            padding: 1rem 0;
-            margin: 0;
-            display: flex;
-            gap: 1rem;
-            justify-content: center;
-            flex-wrap: wrap;
-        }
-        
-        /* Style each radio button label as an independent box */
-        div[role="radiogroup"] > label {
-            background: linear-gradient(145deg, #ffffff, #f0f0f0);
-            border: 2px solid #e0e0e0;
-            border-radius: 15px;
-            padding: 1rem 2rem !important;
-            margin: 0 !important;
-            transition: all 0.3s ease;
-            color: #555 !important;
-            font-weight: 600 !important;
-            font-size: 1.05rem !important;
-            text-align: center;
-            min-width: 180px;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.08);
-            position: relative;
-            overflow: hidden;
-        }
-        
-        /* Individual color schemes for each tab */
-        /* Margin Calculator - Blue/Purple */
-        div[role="radiogroup"] > label:nth-child(1) {
-            background: linear-gradient(145deg, #e6f2ff, #f0e6ff);
-            border-color: #b3d9ff;
-            color: #4a5568 !important;
-        }
-        
-        /* Historical Backtest - Green */
-        div[role="radiogroup"] > label:nth-child(2) {
-            background: linear-gradient(145deg, #e6ffe6, #f0fff0);
-            border-color: #b3ffb3;
-            color: #2d5016 !important;
-        }
-        
-        /* Market Overview - Orange/Gold */
-        div[role="radiogroup"] > label:nth-child(3) {
-            background: linear-gradient(145deg, #fff9e6, #ffe6cc);
-            border-color: #ffd9b3;
-            color: #7c4e00 !important;
-        }
-        
-        /* Price Analysis - Cyan/Blue */
-        div[role="radiogroup"] > label:nth-child(4) {
-            background: linear-gradient(145deg, #e6ffff, #e6f7ff);
-            border-color: #b3e6ff;
-            color: #005a7c !important;
-        }
-        
-        /* Dividend Analysis - Teal/Green */
-        div[role="radiogroup"] > label:nth-child(5) {
-            background: linear-gradient(145deg, #e6fff5, #e6ffe6);
-            border-color: #b3ffd9;
-            color: #00664d !important;
-        }
-        
-        /* Add gradient overlay on hover */
-        div[role="radiogroup"] > label::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            opacity: 0;
-            transition: opacity 0.3s ease;
-            pointer-events: none;
-        }
-        
-        /* Hover effects with color-specific shadows */
-        div[role="radiogroup"] > label:nth-child(1):hover {
-            box-shadow: 0 8px 25px rgba(102, 126, 234, 0.3);
-            border-color: #667eea;
-        }
-        
-        div[role="radiogroup"] > label:nth-child(2):hover {
-            box-shadow: 0 8px 25px rgba(52, 211, 153, 0.3);
-            border-color: #34d399;
-        }
-        
-        div[role="radiogroup"] > label:nth-child(3):hover {
-            box-shadow: 0 8px 25px rgba(251, 191, 36, 0.3);
-            border-color: #fbbf24;
-        }
-        
-        div[role="radiogroup"] > label:nth-child(4):hover {
-            box-shadow: 0 8px 25px rgba(59, 130, 246, 0.3);
-            border-color: #3b82f6;
-        }
-        
-        div[role="radiogroup"] > label:nth-child(5):hover {
-            box-shadow: 0 8px 25px rgba(16, 185, 129, 0.3);
-            border-color: #10b981;
-        }
-        
-        div[role="radiogroup"] > label:hover {
-            transform: translateY(-3px);
-        }
-        
-        div[role="radiogroup"] > label:hover::before {
-            opacity: 0.1;
-        }
-        
-        /* Selected tab styling - maintains purple gradient */
-        div[role="radiogroup"] > label[data-checked="true"] {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
-            border: 2px solid transparent;
-            color: white !important;
-            transform: translateY(-5px);
-            box-shadow: 0 10px 30px rgba(102, 126, 234, 0.4);
-        }
-        
-        /* Tab container separator - more subtle */
-        hr {
-            margin: 1rem 0 2rem 0 !important;
-            border: none;
-            height: 1px;
-            background: linear-gradient(90deg, transparent 0%, #e0e0e0 50%, transparent 100%);
-        }
-        
-        /* Responsive design */
-        @media (max-width: 768px) {
-            div[role="radiogroup"] > label {
-                min-width: 140px;
-                padding: 0.8rem 1.2rem !important;
-                font-size: 0.95rem !important;
-            }
-        }
-        
-        /* Add subtle animation to tabs */
-        @keyframes tabFloat {
-            0%, 100% { transform: translateY(0px); }
-            50% { transform: translateY(-2px); }
-        }
-        
-        div[role="radiogroup"] > label {
-            animation: tabFloat 3s ease-in-out infinite;
-            animation-delay: calc(var(--tab-index) * 0.1s);
-        }
-        
-        /* Set animation delays for each tab */
-        div[role="radiogroup"] > label:nth-child(1) { --tab-index: 0; }
-        div[role="radiogroup"] > label:nth-child(2) { --tab-index: 1; }
-        div[role="radiogroup"] > label:nth-child(3) { --tab-index: 2; }
-        div[role="radiogroup"] > label:nth-child(4) { --tab-index: 3; }
-        div[role="radiogroup"] > label:nth-child(5) { --tab-index: 4; }
-        
-        /* Pause animation on hover */
-        div[role="radiogroup"] > label:hover,
-        div[role="radiogroup"] > label[data-checked="true"] {
-            animation-play-state: paused;
-        }
-    </style>
-    """, unsafe_allow_html=True)
+    # Professional navigation container
+    st.markdown('<div class="nav-container">', unsafe_allow_html=True)
     
-    # Create tab selector using radio buttons horizontally with improved state management
+    # Tab selector using radio buttons
     current_tab_index = tab_labels.index(st.session_state.selected_tab)
     
     selected_tab = st.radio(
-        "Navigation",
+        "Platform Navigation",
         tab_labels,
         index=current_tab_index,
         horizontal=True,
@@ -552,710 +217,557 @@ if spy_df is not None and vti_df is not None:
         label_visibility="collapsed"
     )
     
-    # Only update session state if the tab actually changed
+    st.markdown('</div>', unsafe_allow_html=True)
+    
+    # Update session state if tab changed
     if selected_tab != st.session_state.selected_tab:
         st.session_state.selected_tab = selected_tab
         st.session_state.tab_index = tab_labels.index(selected_tab)
         st.rerun()
     
-    st.markdown("---")
-    
     # Display content based on selected tab
-    if st.session_state.selected_tab == "🧮 Margin Calculator":
-        with st.container():
-            # Margin calculator tab - now first and optimized
-            st.markdown('<div class="main-container fade-in">', unsafe_allow_html=True)
+    if st.session_state.selected_tab == "Margin Calculator":
+        # Professional Margin Calculator Interface
+        st.markdown(margin_calculator_explanation(), unsafe_allow_html=True)
+        
+        # Create professional layout
+        input_col, results_col = st.columns([1, 1], gap="large")
+        
+        with input_col:
+            st.markdown("""
+            <div class="professional-card">
+                <div class="card-header">
+                    <div class="card-title">Position Parameters</div>
+                    <div class="card-subtitle">Configure trading parameters</div>
+                </div>
+            </div>
+            """, unsafe_allow_html=True)
             
-            st.header("🧮 Advanced Margin Calculator")
+            # Account type selection
+            st.markdown('<div class="input-group">', unsafe_allow_html=True)
+            st.markdown('<div class="input-label">Account Type</div>', unsafe_allow_html=True)
             
-            # Add explanatory text
-            st.markdown(margin_calculator_explanation(), unsafe_allow_html=True)
+            account_col1, account_col2 = st.columns(2)
             
-            # Create responsive layout
-            input_col, results_col = st.columns([1, 1], gap="large")
+            with account_col1:
+                if st.button(
+                    "Reg-T Account",
+                    use_container_width=True,
+                    key="reg_t_btn"
+                ):
+                    st.session_state.account_type = 'reg_t'
             
-            with input_col:
-                st.subheader("📊 Investment Parameters")
-                
-                # Account type toggle
-                st.markdown("### 🏦 Account Type")
-                account_col1, account_col2 = st.columns(2)
-                
-                with account_col1:
-                    if st.button(
-                        "🏛️ Reg-T Account",
-                        use_container_width=True,
-                        key="reg_t_btn"
-                    ):
-                        st.session_state.account_type = 'reg_t'
-                
-                with account_col2:
-                    if st.button(
-                        "💼 Portfolio Margin Account", 
-                        use_container_width=True,
-                        key="portfolio_btn"
-                    ):
-                        st.session_state.account_type = 'portfolio'
-                
-                account_type = st.session_state.account_type
-                
-                # Display selected account with checkmark
-                if account_type == 'reg_t':
-                    st.success("✅ **Reg-T Account Selected**: Standard margin account with 2:1 maximum leverage")
-                    max_leverage = 2.0
-                    default_leverage = 2.0
-                    default_initial_margin = 50.0
-                else:
-                    st.success("✅ **Portfolio Margin Account Selected**: Advanced account with up to 7:1 leverage")
-                    max_leverage = 7.0
-                    default_leverage = 4.0
-                    default_initial_margin = 25.0
-                
-                st.markdown("---")
-                
-                # ETF and Position selection in three columns
-                etf_col1, etf_col2, etf_col3 = st.columns(3)
-                
-                with etf_col1:
-                    st.markdown("**Select ETF**")
-                    etf_selection = st.selectbox(
-                        "Select ETF",
-                        ["SPY", "VTI"],
-                        help="Choose the ETF you want to analyze",
-                        label_visibility="collapsed"
-                    )
-                
-                # Get current market price for selected ETF
-                if etf_selection == "SPY" and not spy_df.empty:
-                    current_market_price = spy_df['Close'].iloc[-1]
-                    selected_df = spy_df
-                elif etf_selection == "VTI" and not vti_df.empty:
-                    current_market_price = vti_df['Close'].iloc[-1]
-                    selected_df = vti_df
-                else:
-                    current_market_price = 0
-                    selected_df = pd.DataFrame()
-                
-                with etf_col2:
-                    st.markdown("**Input ETF Price**")
-                    custom_price = st.number_input(
-                        "Input ETF Price",
-                        min_value=0.01,
-                        value=float(current_market_price) if current_market_price > 0 else 100.0,
-                        step=0.01,
-                        help="Enter a custom price for analysis",
-                        label_visibility="collapsed",
-                        format="%.2f"
-                    )
-                    
-                    # Use custom price for calculations
-                    current_price = custom_price
-                
-                with etf_col3:
-                    st.markdown("**Select Position**")
-                    position_type = st.selectbox(
-                        "Select Position",
-                        ["Long", "Short"],
-                        index=0,
-                        help="Choose whether you're buying (long) or selling short",
-                        label_visibility="collapsed"
-                    )
-                
-                # Display current price with indication if it's custom or market price
-                if abs(custom_price - current_market_price) < 0.01:
-                    st.info(f"💲 Current {etf_selection} Price: ${current_price:.2f} (Market Price)")
-                else:
-                    st.info(f"💲 Using Custom {etf_selection} Price: ${current_price:.2f}")
-                
-                st.markdown("**Initial Investment Amount ($)**")
-                investment_amount = st.number_input(
-                    "Initial Investment Amount ($)",
-                    min_value=1000,
-                    value=100000000,
-                    step=1000,
-                    help="Total amount you want to invest (including margin)",
+            with account_col2:
+                if st.button(
+                    "Portfolio Margin Account", 
+                    use_container_width=True,
+                    key="portfolio_btn"
+                ):
+                    st.session_state.account_type = 'portfolio'
+            
+            account_type = st.session_state.account_type
+            
+            # Display selected account
+            if account_type == 'reg_t':
+                st.success("Reg-T Account Selected: Standard margin account with 2:1 maximum leverage")
+                max_leverage = 2.0
+                default_leverage = 2.0
+                default_initial_margin = 50.0
+            else:
+                st.success("Portfolio Margin Account Selected: Advanced account with up to 7:1 leverage")
+                max_leverage = 7.0
+                default_leverage = 4.0
+                default_initial_margin = 25.0
+            
+            st.markdown('</div>', unsafe_allow_html=True)
+            
+            # ETF and Position selection
+            etf_col1, etf_col2, etf_col3 = st.columns(3)
+            
+            with etf_col1:
+                st.markdown('<div class="input-label">Instrument</div>', unsafe_allow_html=True)
+                etf_selection = st.selectbox(
+                    "Select ETF",
+                    ["SPY", "VTI"],
+                    help="Choose the ETF instrument for analysis",
                     label_visibility="collapsed"
                 )
-                
-                # Investment Amount Card - cached for performance
-                st.markdown(generate_investment_card(investment_amount), unsafe_allow_html=True)
-                
-                # Define predefined values for different account types
-                if account_type == 'reg_t':
-                    leverage_options = [1.0, 1.5, 2.0]
-                    initial_margin_options = [100.0, 66.67, 50.0]
-                    default_leverage_index = 2  # 2.0x leverage (50% margin)
-                else:  # portfolio margin
-                    leverage_options = [1.0, 1.5, 2.0, 2.5, 3.0, 3.5, 4.0, 4.5, 5.0, 5.5, 6.0, 6.5, 7.0]
-                    initial_margin_options = [100.0, 66.67, 50.0, 40.0, 33.33, 28.57, 25.0, 22.22, 20.0, 18.18, 16.67, 15.38, 14.29]
-                    default_leverage_index = 6  # 4.0x leverage (25% margin)
-                
-                # Initialize session state for selected indices
-                if f'leverage_index_{account_type}' not in st.session_state:
-                    st.session_state[f'leverage_index_{account_type}'] = default_leverage_index
-                if f'margin_index_{account_type}' not in st.session_state:
-                    st.session_state[f'margin_index_{account_type}'] = default_leverage_index
-                
-                # Leverage parameter
-                st.markdown("**Leverage**")
-                leverage_index = st.selectbox(
-                    "Leverage",
-                    range(len(leverage_options)),
-                    index=st.session_state[f'leverage_index_{account_type}'],
-                    format_func=lambda x: f"{leverage_options[x]:.1f}x",
-                    help="Multiplier for your investment",
-                    label_visibility="collapsed",
-                    key=f"leverage_select_{account_type}"
-                )
-                
-                # Update margin index when leverage changes
-                if leverage_index != st.session_state[f'leverage_index_{account_type}']:
-                    st.session_state[f'leverage_index_{account_type}'] = leverage_index
-                    st.session_state[f'margin_index_{account_type}'] = leverage_index
-                    st.rerun()
-                
-                leverage = leverage_options[leverage_index]
-                
-                # Leverage Card - cached for performance
-                st.markdown(generate_leverage_card(leverage), unsafe_allow_html=True)
-                
-                # Initial Margin parameter
-                st.markdown("**Initial Margin**")
-                margin_index = st.selectbox(
-                    "Initial Margin",
-                    range(len(initial_margin_options)),
-                    index=st.session_state[f'margin_index_{account_type}'],
-                    format_func=lambda x: f"{initial_margin_options[x]:.2f}%",
-                    help="Percentage of position value you must provide upfront",
-                    label_visibility="collapsed",
-                    key=f"margin_select_{account_type}"
-                )
-                
-                # Update leverage index when margin changes
-                if margin_index != st.session_state[f'margin_index_{account_type}']:
-                    st.session_state[f'margin_index_{account_type}'] = margin_index
-                    st.session_state[f'leverage_index_{account_type}'] = margin_index
-                    st.rerun()
-                
-                initial_margin = initial_margin_options[margin_index]
-                
-                # Initial Margin Card - using selected values
-                st.markdown(f"""
-                <div class="param-card" style="background: linear-gradient(135deg, #e8f5e8 0%, #f0f8f0 100%); border: 2px solid #27ae60; padding: 1rem; margin: 0.5rem 0;">
-                    <div class="param-title" style="font-size: 1rem;">📋 Initial Margin</div>
-                    <div class="param-value" style="font-size: 1.1rem;">{initial_margin:.2f}%</div>
-                    <div class="param-description" style="font-size: 0.85rem;">
-                        The percentage of the position value you must provide upfront. Lower initial margin means higher leverage.
-                    </div>
-                </div>
-                """, unsafe_allow_html=True)
-                
-                # Advanced settings in expandable section
-                with st.expander("⚙️ Advanced Settings", expanded=False):
-                    col_a, col_b = st.columns(2)
-                    with col_a:
-                        interest_rate = st.slider(
-                            "Annual Interest Rate (%)",
-                            min_value=1.0,
-                            max_value=10.0,
-                            value=5.5,
-                            step=0.1,
-                            help="Cost of borrowing money on margin"
-                        )
-                        
-                    with col_b:
-                        holding_period = st.slider(
-                            "Expected Holding Period (months)",
-                            min_value=1,
-                            max_value=60,
-                            value=24,
-                            help="How long you plan to hold the position"
-                        )
-                    
-                    # Advanced settings parameter cards
-                    st.markdown("### ⚙️ Advanced Parameters")
-                    
-                    adv_col1, adv_col2 = st.columns(2)
-                    
-                    with adv_col1:
-                        st.markdown(f"""
-                        <div class="param-card" style="background: linear-gradient(135deg, #ffebee 0%, #fff5f5 100%); border: 2px solid #f44336; padding: 1rem; margin: 0.5rem 0;">
-                            <div class="param-title" style="font-size: 1rem;">
-                                💸 Interest Rate
-                            </div>
-                            <div class="param-value" style="font-size: 1.1rem;">{interest_rate}%</div>
-                            <div class="param-description" style="font-size: 0.85rem;">
-                                Annual cost of borrowing money on margin. This is charged on the borrowed portion of your investment.
-                            </div>
-                        </div>
-                        """, unsafe_allow_html=True)
-                    
-                    with adv_col2:
-                        st.markdown(f"""
-                        <div class="param-card" style="background: linear-gradient(135deg, #f3e5f5 0%, #faf2fc 100%); border: 2px solid #9c27b0; padding: 1rem; margin: 0.5rem 0;">
-                            <div class="param-title" style="font-size: 1rem;">
-                                📅 Holding Period
-                            </div>
-                            <div class="param-value" style="font-size: 1.1rem;">{holding_period} months</div>
-                            <div class="param-description" style="font-size: 0.85rem;">
-                                Expected time you'll hold the position. Affects total interest costs and scenario analysis.
-                            </div>
-                        </div>
-                        """, unsafe_allow_html=True)
             
-            with results_col:
-                st.subheader("📈 Calculation Results")
-                
-                # Use cached calculation function
-                metrics = calculate_margin_metrics(
-                    investment_amount, leverage, current_price, account_type, position_type
+            # Get current market price
+            if etf_selection == "SPY" and not spy_df.empty:
+                current_market_price = spy_df['Close'].iloc[-1]
+                selected_df = spy_df
+            elif etf_selection == "VTI" and not vti_df.empty:
+                current_market_price = vti_df['Close'].iloc[-1]
+                selected_df = vti_df
+            else:
+                current_market_price = 0
+                selected_df = pd.DataFrame()
+            
+            with etf_col2:
+                st.markdown('<div class="input-label">Price Override</div>', unsafe_allow_html=True)
+                custom_price = st.number_input(
+                    "Price Override",
+                    min_value=0.01,
+                    value=float(current_market_price) if current_market_price > 0 else 100.0,
+                    step=0.01,
+                    help="Override market price for scenario analysis",
+                    label_visibility="collapsed",
+                    format="%.2f"
                 )
+                current_price = custom_price
+            
+            with etf_col3:
+                st.markdown('<div class="input-label">Position Type</div>', unsafe_allow_html=True)
+                position_type = st.selectbox(
+                    "Position Type",
+                    ["Long", "Short"],
+                    index=0,
+                    help="Long (buy) or Short (sell) position",
+                    label_visibility="collapsed"
+                )
+            
+            # Price information
+            if abs(custom_price - current_market_price) < 0.01:
+                st.info(f"Using Market Price: ${current_price:.2f}")
+            else:
+                st.info(f"Using Custom Price: ${current_price:.2f}")
+            
+            # Investment amount
+            st.markdown('<div class="input-group">', unsafe_allow_html=True)
+            st.markdown('<div class="input-label">Position Size</div>', unsafe_allow_html=True)
+            investment_amount = st.number_input(
+                "Position Size",
+                min_value=1000,
+                value=100000000,
+                step=1000,
+                help="Total position size including leverage",
+                label_visibility="collapsed"
+            )
+            st.markdown('<div class="input-description">Total market exposure including borrowed funds</div>', unsafe_allow_html=True)
+            st.markdown('</div>', unsafe_allow_html=True)
+            
+            # Leverage configuration
+            if account_type == 'reg_t':
+                leverage_options = [1.0, 1.5, 2.0]
+                initial_margin_options = [100.0, 66.67, 50.0]
+                default_leverage_index = 2
+            else:
+                leverage_options = [1.0, 1.5, 2.0, 2.5, 3.0, 3.5, 4.0, 4.5, 5.0, 5.5, 6.0, 6.5, 7.0]
+                initial_margin_options = [100.0, 66.67, 50.0, 40.0, 33.33, 28.57, 25.0, 22.22, 20.0, 18.18, 16.67, 15.38, 14.29]
+                default_leverage_index = 6
+            
+            # Initialize session state for selected indices
+            if f'leverage_index_{account_type}' not in st.session_state:
+                st.session_state[f'leverage_index_{account_type}'] = default_leverage_index
+            if f'margin_index_{account_type}' not in st.session_state:
+                st.session_state[f'margin_index_{account_type}'] = default_leverage_index
+            
+            # Leverage selection
+            st.markdown('<div class="input-group">', unsafe_allow_html=True)
+            st.markdown('<div class="input-label">Leverage Ratio</div>', unsafe_allow_html=True)
+            leverage_index = st.selectbox(
+                "Leverage",
+                range(len(leverage_options)),
+                index=st.session_state[f'leverage_index_{account_type}'],
+                format_func=lambda x: f"{leverage_options[x]:.1f}x",
+                help="Position leverage multiplier",
+                label_visibility="collapsed",
+                key=f"leverage_select_{account_type}"
+            )
+            
+            if leverage_index != st.session_state[f'leverage_index_{account_type}']:
+                st.session_state[f'leverage_index_{account_type}'] = leverage_index
+                st.session_state[f'margin_index_{account_type}'] = leverage_index
+                st.rerun()
+            
+            leverage = leverage_options[leverage_index]
+            st.markdown('<div class="input-description">Capital multiplication factor</div>', unsafe_allow_html=True)
+            st.markdown('</div>', unsafe_allow_html=True)
+            
+            # Initial margin
+            st.markdown('<div class="input-group">', unsafe_allow_html=True)
+            st.markdown('<div class="input-label">Initial Margin Requirement</div>', unsafe_allow_html=True)
+            margin_index = st.selectbox(
+                "Initial Margin",
+                range(len(initial_margin_options)),
+                index=st.session_state[f'margin_index_{account_type}'],
+                format_func=lambda x: f"{initial_margin_options[x]:.2f}%",
+                help="Required capital percentage",
+                label_visibility="collapsed",
+                key=f"margin_select_{account_type}"
+            )
+            
+            if margin_index != st.session_state[f'margin_index_{account_type}']:
+                st.session_state[f'margin_index_{account_type}'] = margin_index
+                st.session_state[f'leverage_index_{account_type}'] = margin_index
+                st.rerun()
+            
+            initial_margin = initial_margin_options[margin_index]
+            st.markdown('<div class="input-description">Minimum equity requirement</div>', unsafe_allow_html=True)
+            st.markdown('</div>', unsafe_allow_html=True)
+            
+            # Advanced parameters
+            with st.expander("Advanced Risk Parameters", expanded=False):
+                col_a, col_b = st.columns(2)
+                with col_a:
+                    interest_rate = st.slider(
+                        "Annual Interest Rate (%)",
+                        min_value=1.0,
+                        max_value=10.0,
+                        value=5.5,
+                        step=0.1,
+                        help="Cost of borrowing on margin"
+                    )
+                    
+                with col_b:
+                    holding_period = st.slider(
+                        "Expected Holding Period (months)",
+                        min_value=1,
+                        max_value=60,
+                        value=24,
+                        help="Position duration for cost analysis"
+                    )
+        
+        with results_col:
+            st.markdown("""
+            <div class="professional-card">
+                <div class="card-header">
+                    <div class="card-title">Risk Analytics</div>
+                    <div class="card-subtitle">Position analysis & exposure metrics</div>
+                </div>
+            </div>
+            """, unsafe_allow_html=True)
+            
+            # Calculate metrics
+            metrics = calculate_margin_metrics(
+                investment_amount, leverage, current_price, account_type, position_type
+            )
+            
+            # Investment breakdown
+            st.markdown(generate_investment_breakdown(
+                investment_amount, metrics['cash_investment'], metrics['margin_loan']
+            ), unsafe_allow_html=True)
+            
+            if current_price > 0:
+                # Key metrics
+                daily_interest_cost = (metrics['margin_loan'] * interest_rate / 100) / 365
+                annual_interest_cost = metrics['margin_loan'] * interest_rate / 100
+                breakeven_price = current_price + (annual_interest_cost / metrics['shares_purchased'] / (holding_period / 12)) if metrics['shares_purchased'] > 0 else 0
                 
-                # Display key metrics in an elegant format
+                # Professional metrics grid
                 st.markdown(f"""
-                <div class="metric-container">
-                    <h3 style="margin: 0; font-size: 1.2rem;">💰 Investment Breakdown</h3>
-                    <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 1rem; margin-top: 1rem;">
-                        <div>
-                            <div style="font-size: 0.9rem; opacity: 0.8;">Your Cash</div>
-                            <div style="font-size: 1.4rem; font-weight: bold;">${metrics['cash_investment']:,.0f}</div>
-                        </div>
-                        <div>
-                            <div style="font-size: 0.9rem; opacity: 0.8;">Margin Loan</div>
-                            <div style="font-size: 1.4rem; font-weight: bold;">${metrics['margin_loan']:,.0f}</div>
-                        </div>
-                        <div>
-                            <div style="font-size: 0.9rem; opacity: 0.8;">Buying Power</div>
-                            <div style="font-size: 1.4rem; font-weight: bold;">${investment_amount:,.0f}</div>
-                        </div>
+                <div class="professional-card">
+                    <div class="card-header">
+                        <div class="card-title">Position Metrics</div>
                     </div>
-                    <div style="margin-top: 1rem; font-size: 0.9rem; opacity: 0.9; line-height: 1.4;">
-                        <strong>What this means:</strong> Your Cash is your own money, Margin Loan is borrowed from your broker, 
-                        and Buying Power is the total amount of securities you can purchase (Your Cash + Margin Loan).
+                    <div class="metrics-grid">
+                        {generate_professional_metric_card("Shares Purchased", metrics['shares_purchased'], format_type="number")}
+                        {generate_professional_metric_card("Daily Interest Cost", daily_interest_cost)}
+                        {generate_professional_metric_card("Breakeven Price", breakeven_price)}
                     </div>
                 </div>
                 """, unsafe_allow_html=True)
                 
-                if current_price > 0:
-                    # Calculate additional metrics for comprehensive analysis
-                    daily_interest_cost = (metrics['margin_loan'] * interest_rate / 100) / 365
-                    annual_interest_cost = metrics['margin_loan'] * interest_rate / 100
-                    breakeven_price = current_price + (annual_interest_cost / metrics['shares_purchased'] / (holding_period / 12)) if metrics['shares_purchased'] > 0 else 0
-                    
-                    # Three-column metrics display
-                    metric_col1, metric_col2, metric_col3 = st.columns(3)
-                    
-                    with metric_col1:
-                        st.metric(
-                            "🔢 Shares Purchasable",
-                            f"{metrics['shares_purchased']:,.2f}",
-                            f"At ${current_price:.2f}/share"
-                        )
-                    
-                    with metric_col2:
-                        st.metric(
-                            f"💸 Daily Interest Cost ({interest_rate}% p.a)",
-                            f"${daily_interest_cost:,.2f}",
-                            f"${daily_interest_cost * 30:,.0f}/month"
-                        )
-                    
-                    with metric_col3:
-                        breakeven_change = ((breakeven_price - current_price) / current_price * 100) if current_price > 0 else 0
-                        st.metric(
-                            "🎯 Breakeven Price",
-                            f"${breakeven_price:.2f}",
-                            f"{breakeven_change:+.1f}% needed"
-                        )
-                    
-                    # Metrics explanation expandable section
-                    with st.expander("💡 Understanding Your Metrics", expanded=False):
-                        st.markdown("### 📊 Metric Explanations")
-                        
-                        exp_col1, exp_col2, exp_col3 = st.columns(3)
-                        
-                        with exp_col1:
-                            st.markdown(f"""
-                            <div class="param-card" style="background: linear-gradient(135deg, #e3f2fd 0%, #f1f8fe 100%); border: 2px solid #2196f3; padding: 1rem; margin: 0.5rem 0;">
-                                <div class="param-title" style="font-size: 1rem;">
-                                    🔢 Shares Purchasable
-                                </div>
-                                <div class="param-value" style="font-size: 1.1rem;">{metrics['shares_purchased']:,.2f} shares</div>
-                                <div class="param-description" style="font-size: 0.85rem;">
-                                    This shows how many shares of {etf_selection} you can buy with your total buying power. 
-                                    More shares mean higher exposure to price movements, both up and down. This determines 
-                                    your position size and profit/loss per dollar of price change.
-                                </div>
-                            </div>
-                            """, unsafe_allow_html=True)
-                        
-                        with exp_col2:
-                            st.markdown(f"""
-                            <div class="param-card" style="background: linear-gradient(135deg, #ffebee 0%, #fff5f5 100%); border: 2px solid #f44336; padding: 1rem; margin: 0.5rem 0;">
-                                <div class="param-title" style="font-size: 1rem;">
-                                    💸 Daily Interest Cost ({interest_rate}% p.a)
-                                </div>
-                                <div class="param-value" style="font-size: 1.1rem;">${daily_interest_cost:,.2f}/day</div>
-                                <div class="param-description" style="font-size: 0.85rem;">
-                                    This is what you pay every single day to borrow money for your position. Think of it as 
-                                    a daily "rental fee" for using leverage. The longer you hold, the more it costs. 
-                                    This cost runs whether your position is profitable or not.
-                                </div>
-                            </div>
-                            """, unsafe_allow_html=True)
-                        
-                        with exp_col3:
-                            st.markdown(f"""
-                            <div class="param-card" style="background: linear-gradient(135deg, #e8f5e8 0%, #f0f8f0 100%); border: 2px solid #27ae60; padding: 1rem; margin: 0.5rem 0;">
-                                <div class="param-title" style="font-size: 1rem;">
-                                    🎯 Breakeven Price
-                                </div>
-                                <div class="param-value" style="font-size: 1.1rem;">${breakeven_price:.2f}</div>
-                                <div class="param-description" style="font-size: 0.85rem;">
-                                    This is the minimum price {etf_selection} needs to reach for you to break even after 
-                                    paying all interest costs. Any price above this means profit, below means loss. 
-                                    This helps you set realistic price targets and exit strategies.
-                                </div>
-                            </div>
-                            """, unsafe_allow_html=True)
-                    
-                    # Maintenance Margin Card - simplified for performance
-                    st.markdown(f"""
-                    <div class="metric-container" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); margin: 1rem 0;">
-                        <h3 style="margin: 0; font-size: 1.2rem;">🛡️ Maintenance Margin</h3>
-                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-top: 1rem;">
-                            <div>
-                                <div style="font-size: 0.9rem; opacity: 0.8;">Percentage</div>
-                                <div style="font-size: 1.4rem; font-weight: bold;">{metrics['maintenance_margin_pct']}%</div>
-                            </div>
-                            <div>
-                                <div style="font-size: 0.9rem; opacity: 0.8;">Dollar Amount</div>
-                                <div style="font-size: 1.4rem; font-weight: bold;">${metrics['maintenance_margin_dollar']:,.0f}</div>
-                            </div>
-                        </div>
-                        <div style="margin-top: 1rem; font-size: 0.9rem; opacity: 0.9; line-height: 1.4;">
-                            <strong>What this means:</strong> You must keep at least ${metrics['maintenance_margin_dollar']:,.0f} in your account 
-                            as equity. If your position loses value and your equity falls below this amount, your broker will 
-                            issue a "margin call" requiring you to deposit more money or sell some positions. This protects 
-                            both you and the broker from excessive losses.
-                        </div>
+                # Maintenance margin analysis
+                st.markdown(f"""
+                <div class="professional-card">
+                    <div class="card-header">
+                        <div class="card-title">Margin Requirements</div>
+                        <div class="card-subtitle">Regulatory compliance thresholds</div>
                     </div>
-                    """, unsafe_allow_html=True)
-                    
-                    # Interest Costs Card
-                    monthly_interest = (metrics['margin_loan'] * interest_rate / 100) / 12
-                    annual_interest = metrics['margin_loan'] * interest_rate / 100
-                    custom_period_interest = (metrics['margin_loan'] * interest_rate / 100) * (holding_period / 12)
-                    
-                    st.markdown(f"""
-                    <div class="metric-container" style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); margin: 1rem 0;">
-                        <h3 style="margin: 0; font-size: 1.2rem;">💰 Interest Costs</h3>
-                        <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 1rem; margin-top: 1rem;">
-                            <div>
-                                <div style="font-size: 0.9rem; opacity: 0.8;">Monthly</div>
-                                <div style="font-size: 1.4rem; font-weight: bold;">${monthly_interest:,.0f}</div>
-                            </div>
-                            <div>
-                                <div style="font-size: 0.9rem; opacity: 0.8;">Annual</div>
-                                <div style="font-size: 1.4rem; font-weight: bold;">${annual_interest:,.0f}</div>
-                            </div>
-                            <div>
-                                <div style="font-size: 0.9rem; opacity: 0.8;">Custom period ({holding_period} months)</div>
-                                <div style="font-size: 1.4rem; font-weight: bold;">${custom_period_interest:,.0f}</div>
-                            </div>
-                        </div>
-                        <div style="margin-top: 1rem; font-size: 0.9rem; opacity: 0.9; line-height: 1.4;">
-                            <strong>What this means:</strong> These are the total interest costs you'll pay over different time periods. 
-                            The longer you hold your leveraged position, the more interest you accumulate. Factor these costs 
-                            into your profit calculations and exit strategy decisions.
-                        </div>
+                    <div class="metrics-grid">
+                        {generate_professional_metric_card("Maintenance Margin %", metrics['maintenance_margin_pct'], format_type="percentage")}
+                        {generate_professional_metric_card("Maintenance Margin $", metrics['maintenance_margin_dollar'])}
                     </div>
-                    """, unsafe_allow_html=True)
-                    
-                    # Risk assessment - enhanced with specific format requested
-                    if leverage > 1 and metrics['margin_call_price'] > 0 and metrics['margin_call_price'] < current_price:
-                        if metrics['margin_call_drop'] < 15:
-                            risk_level, risk_color = "🔴 High Risk", "#e74c3c"
-                        elif metrics['margin_call_drop'] < 25:
-                            risk_level, risk_color = "🟡 Medium Risk", "#f39c12"
-                        else:
-                            risk_level, risk_color = "🟢 Lower Risk", "#2ecc71"
-                        
-                        st.markdown(f"""
-                        <div class="risk-indicator" style="background: linear-gradient(135deg, {risk_color}20, {risk_color}10); border-left: 4px solid {risk_color};">
-                            <h4 style="margin: 0; color: {risk_color};">{risk_level}</h4>
-                            <p style="margin: 0.5rem 0 0 0; color: #2c3e50;">
-                                <strong>Margin Call at:</strong> ${metrics['margin_call_price']:.2f}<br>
-                                <strong>Price Drop Tolerance:</strong> {metrics['margin_call_drop']:.1f}%
-                            </p>
-                            <div style="margin: 1rem 0; padding: 0.75rem; background: rgba(255,255,255,0.7); border-radius: 8px; border-left: 3px solid {risk_color};">
-                                <div style="color: #2c3e50; font-size: 0.95rem;">
-                                    A <strong style="color: {risk_color};">{metrics['margin_call_drop']:.1f}%</strong> price drop would trigger a margin call at <strong style="color: {risk_color};">${metrics['margin_call_price']:.2f}</strong> price per share
-                                </div>
-                                <div style="color: #2c3e50; font-size: 0.95rem; margin-top: 0.8rem; padding: 0.5rem; background: rgba(240,240,240,0.8); border-radius: 6px;">
-                                    <strong>📊 Margin Call Scenario:</strong><br>
-                                    • <strong>Current Market Value:</strong> ${investment_amount:,.0f} (Your Equity/Cash + Margin Loan)<br>
-                                    • <strong>Margin Call Triggered When Market Value Drops To:</strong> <span style="color: {risk_color}; font-weight: bold;">${metrics['shares_purchased'] * metrics['margin_call_price']:,.0f}</span><br>
-                                    • <strong>Total Loss at Margin Call:</strong> <span style="color: {risk_color}; font-weight: bold;">${investment_amount - (metrics['shares_purchased'] * metrics['margin_call_price']):,.0f}</span> ({metrics['margin_call_drop']:.1f}% of your position)
-                                </div>
-                            </div>
-                        </div>
-                        """, unsafe_allow_html=True)
+                    <p class="typography-body">
+                        Minimum equity threshold of ${metrics['maintenance_margin_dollar']:,.0f} must be maintained 
+                        to avoid margin call liquidation. Monitor position closely as market moves against you.
+                    </p>
+                </div>
+                """, unsafe_allow_html=True)
+                
+                # Interest cost analysis
+                monthly_interest = (metrics['margin_loan'] * interest_rate / 100) / 12
+                annual_interest = metrics['margin_loan'] * interest_rate / 100
+                custom_period_interest = (metrics['margin_loan'] * interest_rate / 100) * (holding_period / 12)
+                
+                st.markdown(f"""
+                <div class="professional-card">
+                    <div class="card-header">
+                        <div class="card-title">Cost Structure</div>
+                        <div class="card-subtitle">Interest cost projections</div>
+                    </div>
+                    <div class="metrics-grid">
+                        {generate_professional_metric_card("Monthly Interest", monthly_interest)}
+                        {generate_professional_metric_card("Annual Interest", annual_interest)}
+                        {generate_professional_metric_card(f"Custom Period ({holding_period}m)", custom_period_interest)}
+                    </div>
+                </div>
+                """, unsafe_allow_html=True)
+                
+                # Risk assessment
+                if leverage > 1 and metrics['margin_call_price'] > 0 and metrics['margin_call_price'] < current_price:
+                    if metrics['margin_call_drop'] < 15:
+                        risk_level, risk_class = "Critical Risk", "risk-high"
+                    elif metrics['margin_call_drop'] < 25:
+                        risk_level, risk_class = "Elevated Risk", "risk-medium"
                     else:
-                        st.markdown("""
-                        <div class="risk-indicator" style="background: linear-gradient(135deg, #2ecc7120, #2ecc7110); border-left: 4px solid #2ecc71;">
-                            <h4 style="margin: 0; color: #2ecc71;">🟢 No Leverage Risk</h4>
-                            <p style="margin: 0.5rem 0 0 0; color: #2c3e50;">You're not using leverage, so there's no margin call risk.</p>
+                        risk_level, risk_class = "Manageable Risk", "risk-low"
+                    
+                    st.markdown(f"""
+                    <div class="risk-indicator {risk_class}">
+                        <div class="card-title">{risk_level}</div>
+                        <p class="typography-body">
+                            <strong>Margin Call Trigger:</strong> ${metrics['margin_call_price']:.2f}<br>
+                            <strong>Price Drop Tolerance:</strong> {metrics['margin_call_drop']:.1f}%
+                        </p>
+                        <div class="command-bar">
+                            <span class="command-prompt">$</span>
+                            <span class="command-text">liquidation_risk --price_drop={metrics['margin_call_drop']:.1f}% --trigger=${metrics['margin_call_price']:.2f}</span>
                         </div>
-                        """, unsafe_allow_html=True)
-            
-            st.divider()
-            
-            # Performance simulation section - coming soon
-            st.subheader("🎯 Performance Simulation")
-            
-            # Coming soon expandable section
-            with st.expander("🚀 Coming Soon - Advanced Performance Simulation Tools", expanded=False):
-                st.markdown("### 📊 What's Coming")
-                
-                st.markdown("""
-                <p style="font-size: 1.1rem; color: #6c757d; margin-bottom: 1.5rem; line-height: 1.6;">
-                    Advanced performance simulation tools are under development to provide sophisticated scenario analysis.
-                </p>
-                """, unsafe_allow_html=True)
-                
-                st.markdown("#### 🔧 Planned Features:")
-                
-                # Create columns for feature cards
-                col1, col2 = st.columns(2)
-                
-                with col1:
-                    st.markdown("""
-                    <div style="background: linear-gradient(135deg, #e3f2fd 0%, #f1f8fe 100%); border: 2px solid #2196f3; border-radius: 10px; padding: 1rem; margin-bottom: 1rem;">
-                        <h5 style="color: #1976d2; margin: 0 0 0.5rem 0;">🎲 Monte Carlo Simulations</h5>
-                        <p style="color: #6c757d; font-size: 0.9rem; margin: 0;">Run thousands of scenarios to understand potential outcomes and risk distributions.</p>
                     </div>
                     """, unsafe_allow_html=True)
-                    
+                else:
                     st.markdown("""
-                    <div style="background: linear-gradient(135deg, #fff3e0 0%, #fafafa 100%); border: 2px solid #ff9800; border-radius: 10px; padding: 1rem; margin-bottom: 1rem;">
-                        <h5 style="color: #f57c00; margin: 0 0 0.5rem 0;">🛠️ Custom Scenario Builder</h5>
-                        <p style="color: #6c757d; font-size: 0.9rem; margin: 0;">Create your own market scenarios with custom parameters and stress tests.</p>
+                    <div class="risk-indicator risk-low">
+                        <div class="card-title">No Leverage Risk</div>
+                        <p class="typography-body">Position not using leverage - no margin call risk present.</p>
                     </div>
                     """, unsafe_allow_html=True)
-                
-                with col2:
-                    st.markdown("""
-                    <div style="background: linear-gradient(135deg, #e8f5e8 0%, #f0f8f0 100%); border: 2px solid #27ae60; border-radius: 10px; padding: 1rem; margin-bottom: 1rem;">
-                        <h5 style="color: #27ae60; margin: 0 0 0.5rem 0;">📈 Historical Volatility Modeling</h5>
-                        <p style="color: #6c757d; font-size: 0.9rem; margin: 0;">Analyze historical price movements to model future volatility patterns.</p>
-                    </div>
-                    """, unsafe_allow_html=True)
-                
-                st.markdown("""
-                <div style="background: linear-gradient(135deg, #f3e5f5 0%, #faf2fc 100%); border: 2px solid #9c27b0; border-radius: 10px; padding: 1rem; margin-bottom: 1rem;">
-                    <h5 style="color: #7b1fa2; margin: 0 0 0.5rem 0;">⚖️ Risk-Adjusted Returns</h5>
-                    <p style="color: #6c757d; font-size: 0.9rem; margin: 0;">Calculate Sharpe ratios, maximum drawdowns, and other risk metrics.</p>
-                </div>
-                """, unsafe_allow_html=True)
-                
-                st.markdown("""
-                <div style="background: linear-gradient(135deg, #ffebee 0%, #fff5f5 100%); border: 2px solid #f44336; border-radius: 10px; padding: 1rem; margin-bottom: 1rem;">
-                    <h5 style="color: #d32f2f; margin: 0 0 0.5rem 0;">📊 Interactive Performance Charts</h5>
-                    <p style="color: #6c757d; font-size: 0.9rem; margin: 0;">Visualize performance scenarios with interactive charts showing profit/loss distributions, probability cones, and stress test results.</p>
-                </div>
-                """, unsafe_allow_html=True)
-                
-                st.markdown("""
-                <div style="text-align: center; margin-top: 2rem; padding: 1rem; background: linear-gradient(135deg, #667eea, #764ba2); border-radius: 10px; color: white;">
-                    <h5 style="margin: 0 0 0.5rem 0;">🗓️ Expected Release</h5>
-                    <p style="margin: 0; font-size: 1.1rem; font-weight: 600;">Q2 2025</p>
-                </div>
-                """, unsafe_allow_html=True)
-            
-            st.markdown('</div>', unsafe_allow_html=True)
 
-    elif st.session_state.selected_tab == "📊 Historical Backtest":
-        with st.container():
-            # Historical Backtest tab - now featuring the powerful backtest engine
-            show_historical_backtest()
+    elif st.session_state.selected_tab == "Historical Backtest":
+        # Historical Backtest with professional interface
+        show_historical_backtest()
     
-    elif st.session_state.selected_tab == "📈 Market Overview":
-        with st.container():
-            # Market Overview tab - unchanged but with optimized data access
-            st.header("📊 Market Overview")
-            
-            # Add explanatory text
-            st.markdown(market_overview_explanation(), unsafe_allow_html=True)
-            
-            # Summary statistics in two columns
-            col1, col2 = st.columns(2, gap="large")
-            
-            with col1:
-                st.subheader("📈 S&P 500 ETF (SPY)")
-                # Calculate key metrics
-                if not spy_df.empty:
-                    latest_price = spy_df['Close'].iloc[-1]
-                    price_change = spy_df['Close'].iloc[-1] - spy_df['Close'].iloc[0]
-                    pct_change = (price_change / spy_df['Close'].iloc[0] * 100) if spy_df['Close'].iloc[0] != 0 else 0
-                    
-                    # Display metrics in a clean format
-                    st.metric("Latest Price", f"${latest_price:.2f}", f"{pct_change:.2f}%")
-                    
-                    # Display key statistics
-                    st.markdown("**📊 Key Statistics:**")
-                    stats = {
-                        "52-Week High": f"${spy_df['High'].max():.2f}",
-                        "52-Week Low": f"${spy_df['Low'].min():.2f}",
-                        "Average Volume": f"{spy_df['Volume'].mean():,.0f}",
-                        "Total Dividends": f"${spy_dividends_df['Dividends'].sum():.2f}"
-                    }
-                    for key, value in stats.items():
-                        st.text(f"{key}: {value}")
-             
-            with col2:
-                st.subheader("🏢 Total Market ETF (VTI)")
-                # Calculate key metrics
-                if not vti_df.empty:
-                    latest_price = vti_df['Close'].iloc[-1]
-                    price_change = vti_df['Close'].iloc[-1] - vti_df['Close'].iloc[0]
-                    pct_change = (price_change / vti_df['Close'].iloc[0] * 100) if vti_df['Close'].iloc[0] != 0 else 0
-                    
-                    # Display metrics in a clean format
-                    st.metric("Latest Price", f"${latest_price:.2f}", f"{pct_change:.2f}%")
-                    
-                    # Display key statistics
-                    st.markdown("**📊 Key Statistics:**")
-                    stats = {
-                        "52-Week High": f"${vti_df['High'].max():.2f}",
-                        "52-Week Low": f"${vti_df['Low'].min():.2f}",
-                        "Average Volume": f"{vti_df['Volume'].mean():,.0f}",
-                        "Total Dividends": f"${vti_dividends_df['Dividends'].sum():.2f}"
-                    }
-                    for key, value in stats.items():
-                        st.text(f"{key}: {value}")
-            
-            st.markdown('</div>', unsafe_allow_html=True)
+    elif st.session_state.selected_tab == "Market Overview":
+        # Professional Market Overview
+        st.markdown(market_overview_explanation(), unsafe_allow_html=True)
         
-    elif st.session_state.selected_tab == "💹 Price Analysis":
-        with st.container():
-            # Price Analysis tab with optimized date filtering
-            st.header("📈 Price Analysis")
-            st.markdown(price_analysis_explanation(), unsafe_allow_html=True)
+        # Summary statistics
+        col1, col2 = st.columns(2, gap="large")
+        
+        with col1:
+            st.markdown("""
+            <div class="professional-card">
+                <div class="card-header">
+                    <div class="card-title">S&P 500 ETF (SPY)</div>
+                    <div class="card-subtitle">Large-cap equity exposure</div>
+                </div>
+            </div>
+            """, unsafe_allow_html=True)
             
-            # Date range selector integrated into the same card
-            st.subheader("📅 Select Date Range")
-            st.markdown(date_range_explanation(), unsafe_allow_html=True)
-            
-            col1, col2, col3 = st.columns([2, 2, 1])
-            with col1:
-                price_start_date = st.date_input("Start Date", value=start_date, key="price_start")
-            with col2:
-                price_end_date = st.date_input("End Date", value=end_date, key="price_end")
-            with col3:
-                st.markdown("<br>", unsafe_allow_html=True)
-                price_apply_btn = st.button("Apply Filter", use_container_width=True, key="price_apply")
-            
-            st.divider()
-            
-            # Optimized date filtering using pandas datetime indexing
             if not spy_df.empty:
-                spy_price_filtered = spy_df.loc[price_start_date:price_end_date]
-            else:
-                spy_price_filtered = spy_df
+                latest_price = spy_df['Close'].iloc[-1]
+                price_change = spy_df['Close'].iloc[-1] - spy_df['Close'].iloc[0]
+                pct_change = (price_change / spy_df['Close'].iloc[0] * 100) if spy_df['Close'].iloc[0] != 0 else 0
                 
+                st.markdown(f"""
+                <div class="metrics-grid">
+                    {generate_professional_metric_card("Current Price", latest_price)}
+                    {generate_professional_metric_card("Total Return", pct_change, format_type="percentage")}
+                    {generate_professional_metric_card("52W High", spy_df['High'].max())}
+                    {generate_professional_metric_card("52W Low", spy_df['Low'].min())}
+                    {generate_professional_metric_card("Avg Volume", spy_df['Volume'].mean(), format_type="number")}
+                    {generate_professional_metric_card("Total Dividends", spy_dividends_df['Dividends'].sum())}
+                </div>
+                """, unsafe_allow_html=True)
+         
+        with col2:
+            st.markdown("""
+            <div class="professional-card">
+                <div class="card-header">
+                    <div class="card-title">Total Market ETF (VTI)</div>
+                    <div class="card-subtitle">Broad market equity exposure</div>
+                </div>
+            </div>
+            """, unsafe_allow_html=True)
+            
             if not vti_df.empty:
-                vti_price_filtered = vti_df.loc[price_start_date:price_end_date]
-            else:
-                vti_price_filtered = vti_df
-            
-            # Plot SPY candlestick chart
-            st.subheader("📊 S&P 500 ETF (SPY) Price Chart")
-            if not spy_price_filtered.empty:
-                fig = plot_candlestick(spy_price_filtered, 'S&P 500 ETF Candlestick Chart', 'SPY')
-                st.plotly_chart(fig, use_container_width=True)
-            else:
-                st.info("No SPY data available for the selected date range.")
-            
-            st.divider()
-            
-            # Plot VTI candlestick chart
-            st.subheader("🏢 Total Stock Market ETF (VTI) Price Chart")
-            if not vti_price_filtered.empty:
-                fig = plot_candlestick(vti_price_filtered, 'Total Stock Market ETF Candlestick Chart', 'VTI')
-                st.plotly_chart(fig, use_container_width=True)
-            else:
-                st.info("No VTI data available for the selected date range.")
-            st.markdown('</div>', unsafe_allow_html=True)
-        
-    elif st.session_state.selected_tab == "💰 Dividend Analysis":
-        with st.container():
-            # Dividend Analysis tab with optimized date filtering
-            st.header("💰 Dividend Analysis")
-            st.markdown(dividend_analysis_explanation(), unsafe_allow_html=True)
-            
-            # Date range selector integrated into the same card
-            st.subheader("📅 Select Date Range")
-            st.markdown(date_range_explanation(), unsafe_allow_html=True)
-            
-            col1, col2, col3 = st.columns([2, 2, 1])
-            with col1:
-                div_start_date = st.date_input("Start Date", value=start_date, key="div_start")
-            with col2:
-                div_end_date = st.date_input("End Date", value=end_date, key="div_end")
-            with col3:
-                st.markdown("<br>", unsafe_allow_html=True)
-                div_apply_btn = st.button("Apply Filter", use_container_width=True, key="div_apply")
-            
-            st.divider()
-            
-            # Optimized dividend data filtering
-            if not spy_dividends_df.empty:
-                spy_div_filtered = spy_dividends_df.loc[div_start_date:div_end_date]
-            else:
-                spy_div_filtered = spy_dividends_df
+                latest_price = vti_df['Close'].iloc[-1]
+                price_change = vti_df['Close'].iloc[-1] - vti_df['Close'].iloc[0]
+                pct_change = (price_change / vti_df['Close'].iloc[0] * 100) if vti_df['Close'].iloc[0] != 0 else 0
                 
-            if not vti_dividends_df.empty:
-                vti_div_filtered = vti_dividends_df.loc[div_start_date:div_end_date]
-            else:
-                vti_div_filtered = vti_dividends_df
-            
-            # Plot SPY dividends with matplotlib
-            st.subheader("💵 S&P 500 ETF Dividends (SPY)")
-            if not spy_div_filtered.empty:
-                fig = plot_dividend_bars_mpl(spy_div_filtered, 'S&P 500 ETF Dividend Payments', 'SPY')
-                if fig is not None:
-                    st.pyplot(fig, clear_figure=True)
-            else:
-                st.info("No SPY dividend data available for the selected date range.")
-            
-            st.divider()
-            
-            # Plot VTI dividends with matplotlib
-            st.subheader("💰 Total Stock Market ETF Dividends (VTI)")
-            if not vti_div_filtered.empty:
-                fig = plot_dividend_bars_mpl(vti_div_filtered, 'Total Stock Market ETF Dividend Payments', 'VTI')
-                if fig is not None:
-                    st.pyplot(fig, clear_figure=True)
-            else:
-                st.info("No VTI dividend data available for the selected date range.")
+                st.markdown(f"""
+                <div class="metrics-grid">
+                    {generate_professional_metric_card("Current Price", latest_price)}
+                    {generate_professional_metric_card("Total Return", pct_change, format_type="percentage")}
+                    {generate_professional_metric_card("52W High", vti_df['High'].max())}
+                    {generate_professional_metric_card("52W Low", vti_df['Low'].min())}
+                    {generate_professional_metric_card("Avg Volume", vti_df['Volume'].mean(), format_type="number")}
+                    {generate_professional_metric_card("Total Dividends", vti_dividends_df['Dividends'].sum())}
+                </div>
+                """, unsafe_allow_html=True)
         
-    # Footer with information
+    elif st.session_state.selected_tab == "Price Analysis":
+        # Professional Price Analysis
+        st.markdown(price_analysis_explanation(), unsafe_allow_html=True)
+        
+        # Date range selector
+        st.markdown("""
+        <div class="professional-card">
+            <div class="card-header">
+                <div class="card-title">Analysis Period</div>
+                <div class="card-subtitle">Configure time range for technical analysis</div>
+            </div>
+        </div>
+        """, unsafe_allow_html=True)
+        
+        col1, col2, col3 = st.columns([2, 2, 1])
+        with col1:
+            price_start_date = st.date_input("Start Date", value=start_date, key="price_start")
+        with col2:
+            price_end_date = st.date_input("End Date", value=end_date, key="price_end")
+        with col3:
+            st.markdown("<br>", unsafe_allow_html=True)
+            price_apply_btn = st.button("Apply Filter", use_container_width=True, key="price_apply")
+        
+        # Filter data
+        if not spy_df.empty:
+            spy_price_filtered = spy_df.loc[price_start_date:price_end_date]
+        else:
+            spy_price_filtered = spy_df
+            
+        if not vti_df.empty:
+            vti_price_filtered = vti_df.loc[price_start_date:price_end_date]
+        else:
+            vti_price_filtered = vti_df
+        
+        # SPY chart
+        st.markdown("""
+        <div class="professional-card">
+            <div class="card-header">
+                <div class="card-title">S&P 500 ETF Price Action</div>
+                <div class="card-subtitle">Technical analysis & price discovery</div>
+            </div>
+        </div>
+        """, unsafe_allow_html=True)
+        
+        if not spy_price_filtered.empty:
+            fig = plot_candlestick(spy_price_filtered, 'SPY Price Analysis', 'SPY')
+            st.plotly_chart(fig, use_container_width=True)
+        else:
+            st.info("No SPY data available for selected period")
+        
+        # VTI chart
+        st.markdown("""
+        <div class="professional-card">
+            <div class="card-header">
+                <div class="card-title">Total Market ETF Price Action</div>
+                <div class="card-subtitle">Broad market technical analysis</div>
+            </div>
+        </div>
+        """, unsafe_allow_html=True)
+        
+        if not vti_price_filtered.empty:
+            fig = plot_candlestick(vti_price_filtered, 'VTI Price Analysis', 'VTI')
+            st.plotly_chart(fig, use_container_width=True)
+        else:
+            st.info("No VTI data available for selected period")
+        
+    elif st.session_state.selected_tab == "Dividend Analysis":
+        # Professional Dividend Analysis
+        st.markdown(dividend_analysis_explanation(), unsafe_allow_html=True)
+        
+        # Date range selector
+        st.markdown("""
+        <div class="professional-card">
+            <div class="card-header">
+                <div class="card-title">Analysis Period</div>
+                <div class="card-subtitle">Configure time range for dividend analysis</div>
+            </div>
+        </div>
+        """, unsafe_allow_html=True)
+        
+        col1, col2, col3 = st.columns([2, 2, 1])
+        with col1:
+            div_start_date = st.date_input("Start Date", value=start_date, key="div_start")
+        with col2:
+            div_end_date = st.date_input("End Date", value=end_date, key="div_end")
+        with col3:
+            st.markdown("<br>", unsafe_allow_html=True)
+            div_apply_btn = st.button("Apply Filter", use_container_width=True, key="div_apply")
+        
+        # Filter dividend data
+        if not spy_dividends_df.empty:
+            spy_div_filtered = spy_dividends_df.loc[div_start_date:div_end_date]
+        else:
+            spy_div_filtered = spy_dividends_df
+            
+        if not vti_dividends_df.empty:
+            vti_div_filtered = vti_dividends_df.loc[div_start_date:div_end_date]
+        else:
+            vti_div_filtered = vti_dividends_df
+        
+        # SPY dividends
+        st.markdown("""
+        <div class="professional-card">
+            <div class="card-header">
+                <div class="card-title">S&P 500 ETF Dividend Flow</div>
+                <div class="card-subtitle">Income distribution analysis</div>
+            </div>
+        </div>
+        """, unsafe_allow_html=True)
+        
+        if not spy_div_filtered.empty:
+            fig = plot_dividend_bars_mpl(spy_div_filtered, 'SPY Dividend Analysis', 'SPY')
+            if fig is not None:
+                st.pyplot(fig, clear_figure=True)
+        else:
+            st.info("No SPY dividend data available for selected period")
+        
+        # VTI dividends
+        st.markdown("""
+        <div class="professional-card">
+            <div class="card-header">
+                <div class="card-title">Total Market ETF Dividend Flow</div>
+                <div class="card-subtitle">Broad market income analysis</div>
+            </div>
+        </div>
+        """, unsafe_allow_html=True)
+        
+        if not vti_div_filtered.empty:
+            fig = plot_dividend_bars_mpl(vti_div_filtered, 'VTI Dividend Analysis', 'VTI')
+            if fig is not None:
+                st.pyplot(fig, clear_figure=True)
+        else:
+            st.info("No VTI dividend data available for selected period")
+    
+    # Professional footer
     st.markdown(app_footer(), unsafe_allow_html=True)
     
 else:
-    # Error message if data loading fails
-    st.error("❌ Failed to load data. Please check the data path and ensure all required files are present.")
-    st.markdown(f"Looking for data in: {data_dir}")
-    
-    # Show help information
-    st.subheader("🔧 Troubleshooting")
+    # Professional error handling
     st.markdown("""
-    Please ensure that the following files exist in the data directory:
-    - SPY.csv
-    - SPY Dividends.csv
-    - VTI.csv
-    - VTI Dividends.csv
+    <div class="professional-card">
+        <div class="card-header">
+            <div class="card-title">System Error</div>
+            <div class="card-subtitle">Data loading failure</div>
+        </div>
+        <p class="typography-body">
+            Failed to load market data. Please verify data path configuration and ensure 
+            all required data files are present in the specified directory.
+        </p>
+        <div class="command-bar">
+            <span class="command-prompt">$</span>
+            <span class="command-text">data.path --directory={data_dir}</span>
+        </div>
+    </div>
+    """, unsafe_allow_html=True)
     
-    Each file should contain historical price data with columns for Date, Open, High, Low, Close, and Volume.
-    Dividend files should contain Date and Dividends columns.
-    """) 
+    st.markdown("""
+    <div class="professional-card">
+        <div class="card-header">
+            <div class="card-title">Required Files</div>
+        </div>
+        <p class="typography-body">
+            The following data files must be present:
+        </p>
+        <ul class="typography-body">
+            <li>SPY.csv - S&P 500 ETF price data</li>
+            <li>SPY Dividends.csv - S&P 500 ETF dividend data</li>
+            <li>VTI.csv - Total Market ETF price data</li>
+            <li>VTI Dividends.csv - Total Market ETF dividend data</li>
+        </ul>
+    </div>
+    """, unsafe_allow_html=True) 
