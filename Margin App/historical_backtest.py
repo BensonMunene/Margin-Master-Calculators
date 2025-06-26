@@ -22,7 +22,7 @@ def load_comprehensive_data():
         github_dir = "Data"
         
         # Choose which directory to use (True for local, False for GitHub)
-        use_local = False
+        use_local = True
         data_dir = local_dir if use_local else github_dir
         
         # Load ONLY the Excel file - it contains everything we need
@@ -425,7 +425,7 @@ def run_liquidation_reentry_backtest(
     # Comprehensive metrics dictionary
     metrics = {
         # Core Performance
-        'Initial Investment ($)': initial_cash,
+        'Equity ($)': initial_cash,
         'Final Equity ($)': final_equity,
         'Total Return (%)': total_return,
         'CAGR (%)': cagr,
@@ -623,7 +623,7 @@ def run_historical_backtest(
         'Number of Margin Calls': num_margin_calls,
         'Final Portfolio Value ($)': df_results['Portfolio_Value'].iloc[-1],
         'Final Equity ($)': final_equity,
-        'Initial Investment ($)': cash_investment,
+        'Equity ($)': cash_investment,
         'Leverage Used': leverage
     }
     
@@ -1039,7 +1039,7 @@ def run_profit_threshold_backtest(
     # Comprehensive metrics
     metrics = {
         # Core Performance
-        'Initial Investment ($)': initial_equity,
+        'Equity ($)': initial_equity,
         'Final Equity ($)': final_equity,
         'Total Return (%)': total_return,
         'CAGR (%)': cagr,
@@ -1406,7 +1406,7 @@ def run_margin_restart_backtest(
     # Fresh capital metrics
     metrics = {
         # Core Performance - Fresh Capital Strategy
-        'Initial Investment ($)': cash_per_round,
+        'Equity ($)': cash_per_round,
         'Final Equity ($)': equity_series.iloc[-1] if len(equity_series) > 0 else cash_per_round,
         'Total Return (%)': total_return_pct,
         'CAGR (%)': cagr,
@@ -2212,38 +2212,259 @@ def create_restart_summary_chart(rounds_df: pd.DataFrame, summary: Dict, etf_cho
 def render_historical_backtest_tab():
     """Main function to render the Historical Backtest tab"""
     
-    st.markdown('<div class="main-container fade-in">', unsafe_allow_html=True)
+    st.markdown('<div class="main-container">', unsafe_allow_html=True)
     
-    # Header with enhanced styling
+    # Professional header
     st.markdown("""
-    <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); 
-                padding: 2rem; border-radius: 15px; margin-bottom: 2rem; text-align: center;
-                box-shadow: 0 10px 30px rgba(102, 126, 234, 0.3);
-                border: 1px solid rgba(255, 255, 255, 0.2);">
-        <h1 style="color: white; margin: 0; font-size: 2.5rem; text-shadow: 0 2px 4px rgba(0,0,0,0.3);">📊 Historical Backtest Engine</h1>
-        <p style="color: rgba(255,255,255,0.95); margin: 1rem 0 0 0; font-size: 1.2rem; text-shadow: 0 1px 2px rgba(0,0,0,0.2);">
-            Simulate leveraged ETF strategies with real historical data, margin requirements, and interest costs
+    <div class="terminal-header">
+        <h1 style="color: var(--accent-orange); margin: 0; font-size: 1.8rem; text-transform: uppercase;">HISTORICAL BACKTEST ENGINE</h1>
+        <p style="color: var(--text-secondary); margin: 0.5rem 0 0 0; font-size: 0.9rem; text-transform: uppercase;">
+            LEVERAGE SIMULATION WITH MARGIN REQUIREMENTS AND INTEREST CALCULATIONS
         </p>
     </div>
     """, unsafe_allow_html=True)
     
-    # Load data - ONLY from ETFs and Fed Funds Data.xlsx
+    # Load data
     excel_data, _, _, _, _ = load_comprehensive_data()
     
     if excel_data is None:
-        st.error("❌ Failed to load ETFs and Fed Funds Data.xlsx. Please check the Excel file.")
+        st.error("DATA LOAD FAILURE: ETFs and Fed Funds Data.xlsx not found or corrupted")
         return
     
 
     
-    # Add backtest mode selection
-    st.markdown("### 🎯 Select Backtest Mode")
+    # Backtest mode selection
+    st.markdown("<h2>BACKTEST MODE SELECTION</h2>", unsafe_allow_html=True)
+    
+    # Add custom CSS for these specific buttons and tooltips
+    st.markdown("""
+    <style>
+    /* Backtest mode selection buttons */
+    div[data-testid="column"] button {
+        background-color: #1a1a1a !important;
+        color: #ff8c00 !important;
+        border: 2px solid #ff8c00 !important;
+        font-weight: 600 !important;
+    }
+    
+    /* Force text to be visible - target the span inside button */
+    div[data-testid="column"] button span {
+        color: #ff8c00 !important;
+    }
+    
+    div[data-testid="column"] button:hover {
+        background-color: #ff8c00 !important;
+        color: #ffffff !important;
+        border-color: #ffa500 !important;
+    }
+    
+    div[data-testid="column"] button:hover span {
+        color: #ffffff !important;
+    }
+    
+    /* Force all tooltips to be visible */
+    [role="tooltip"] {
+        background-color: #ff8c00 !important;
+        color: #000000 !important;
+        font-weight: 700 !important;
+        padding: 8px 12px !important;
+        border: 2px solid #ffa500 !important;
+    }
+    
+    [role="tooltip"] * {
+        color: #000000 !important;
+    }
+    
+    /* Tooltip arrows */
+    [role="tooltip"]::before,
+    [role="tooltip"]::after {
+        border-color: #ff8c00 transparent !important;
+    }
+    
+    /* Parameter inputs - white background with black text */
+    .stSelectbox > div > div > select,
+    .stDateInput > div > div > input,
+    .stNumberInput > div > div > input,
+    .stTextInput > div > div > input {
+        background-color: #ffffff !important;
+        color: #000000 !important;
+        border: 1px solid #cccccc !important;
+        font-family: 'IBM Plex Mono', monospace !important;
+    }
+    
+    /* Ensure dropdown options are also readable */
+    .stSelectbox option {
+        background-color: #ffffff !important;
+        color: #000000 !important;
+    }
+    
+    /* Number input buttons */
+    .stNumberInput button {
+        background-color: #f0f0f0 !important;
+        color: #000000 !important;
+        border: 1px solid #cccccc !important;
+    }
+    
+    .stNumberInput button:hover {
+        background-color: #e0e0e0 !important;
+    }
+    
+    /* Labels should remain in the terminal theme color */
+    .stSelectbox label,
+    .stDateInput label,
+    .stNumberInput label,
+    .stTextInput label {
+        color: #ff8c00 !important;
+    }
+    </style>
+    """, unsafe_allow_html=True)
+    
+    # Additional CSS specifically for these three buttons
+    st.markdown("""
+    <style>
+    /* Target buttons by their specific keys */
+    button[kind="primary"][key="liquidation_backtest_btn"],
+    button[kind="primary"][key="restart_backtest_btn"],
+    button[kind="primary"][key="profit_threshold_btn"],
+    div[data-testid="column"]:nth-child(1) button,
+    div[data-testid="column"]:nth-child(2) button,
+    div[data-testid="column"]:nth-child(3) button {
+        color: #ff8c00 !important;
+        font-weight: 600 !important;
+        text-transform: uppercase !important;
+        letter-spacing: 1px !important;
+        transition: all 0.3s ease !important;
+    }
+    
+    /* FRESH CAPITAL RESTART button - WHITE TEXT */
+    div[data-testid="column"]:nth-child(2) button {
+        color: #ffffff !important;
+        border-color: #ffffff !important;
+        box-shadow: 0 0 10px rgba(255, 255, 255, 0.2) !important;
+    }
+    
+    /* Button text spans - orange for 1st and 3rd, white for 2nd */
+    div[data-testid="column"]:nth-child(1) button span,
+    div[data-testid="column"]:nth-child(3) button span,
+    div[data-testid="column"] button p {
+        color: #ff8c00 !important;
+        display: block !important;
+        visibility: visible !important;
+    }
+    
+    /* FRESH CAPITAL RESTART button span - WHITE TEXT */
+    div[data-testid="column"]:nth-child(2) button span {
+        color: #ffffff !important;
+        display: block !important;
+        visibility: visible !important;
+        font-weight: 700 !important;
+    }
+    
+    /* On hover effects */
+    div[data-testid="column"]:nth-child(1) button:hover span,
+    div[data-testid="column"]:nth-child(3) button:hover span {
+        color: #000000 !important;
+    }
+    
+    div[data-testid="column"]:nth-child(1) button:hover,
+    div[data-testid="column"]:nth-child(3) button:hover {
+        background-color: #ff8c00 !important;
+        transform: translateY(-2px) !important;
+        box-shadow: 0 4px 15px rgba(255, 140, 0, 0.4) !important;
+    }
+    
+    /* FRESH CAPITAL RESTART hover - white background, black text */
+    div[data-testid="column"]:nth-child(2) button:hover {
+        background-color: #ffffff !important;
+        color: #000000 !important;
+        transform: translateY(-2px) !important;
+        box-shadow: 0 4px 15px rgba(255, 255, 255, 0.4) !important;
+    }
+    
+    div[data-testid="column"]:nth-child(2) button:hover span {
+        color: #000000 !important;
+    }
+    
+    /* Calendar / Date Picker Styling - Make text readable across all modes */
+    .stDateInput div[data-baseweb="calendar"] {
+        background-color: #ffffff !important;
+    }
+    
+    /* Calendar header, navigation, and all text elements */
+    .stDateInput div[data-baseweb="calendar"] button,
+    .stDateInput div[data-baseweb="calendar"] span,
+    .stDateInput div[data-baseweb="calendar"] div {
+        color: #000000 !important;
+        font-weight: normal !important;
+    }
+    
+    /* Calendar days */
+    .stDateInput div[data-baseweb="calendar"] td,
+    .stDateInput div[data-baseweb="calendar"] th {
+        color: #000000 !important;
+        background-color: #ffffff !important;
+        font-weight: normal !important;
+    }
+    
+    /* Calendar navigation buttons */
+    .stDateInput div[data-baseweb="calendar"] button:hover {
+        background-color: #f0f0f0 !important;
+        color: #000000 !important;
+    }
+    
+    /* Selected date */
+    .stDateInput div[data-baseweb="calendar"] [aria-selected="true"] {
+        background-color: #ff8c00 !important;
+        color: #ffffff !important;
+    }
+    
+    /* Today's date */
+    .stDateInput div[data-baseweb="calendar"] [aria-label*="Today"] {
+        background-color: #e8f4fd !important;
+        color: #000000 !important;
+    }
+    
+    /* Calendar month/year dropdowns */
+    .stDateInput div[data-baseweb="select"] {
+        background-color: #ffffff !important;
+    }
+    
+    .stDateInput div[data-baseweb="select"] div,
+    .stDateInput div[data-baseweb="select"] span {
+        color: #000000 !important;
+        font-weight: normal !important;
+    }
+    
+    /* Comprehensive calendar fix - target all possible calendar elements */
+    div[data-baseweb="calendar"] *,
+    div[data-baseweb="datepicker"] *,
+    .react-datepicker *,
+    [class*="calendar"] *,
+    [class*="datepicker"] * {
+        color: #000000 !important;
+        font-weight: normal !important;
+    }
+    
+    /* Calendar container background */
+    div[data-baseweb="calendar"],
+    div[data-baseweb="datepicker"],
+    .react-datepicker {
+        background-color: #ffffff !important;
+        border: 1px solid #cccccc !important;
+    }
+    
+    /* Calendar popup/overlay positioning */
+    div[data-baseweb="calendar"][data-floating-ui-portal] {
+        z-index: 999999 !important;
+    }
+    </style>
+    """, unsafe_allow_html=True)
     
     backtest_col1, backtest_col2, backtest_col3 = st.columns(3)
     
     with backtest_col1:
         if st.button(
-            "⚡ Liquidation-Reentry",
+            "LIQUIDATION-REENTRY",
             use_container_width=True,
             help="Realistic simulation: liquidate on margin call, wait 2 days, re-enter with remaining equity",
             key="liquidation_backtest_btn"
@@ -2252,7 +2473,7 @@ def render_historical_backtest_tab():
     
     with backtest_col2:
         if st.button(
-            "🔄 Fresh Capital Restart", 
+            "FRESH CAPITAL RESTART", 
             use_container_width=True,
             help="Comparison mode: unlimited fresh capital after each margin call",
             key="restart_backtest_btn"
@@ -2261,9 +2482,9 @@ def render_historical_backtest_tab():
     
     with backtest_col3:
         if st.button(
-            "📈 Profit Threshold", 
+            "PROFIT THRESHOLD", 
             use_container_width=True,
-            help="Rebalance back to target leverage when portfolio grows by specified percentage (e.g., 100% growth)",
+            help="Rebalance back to target leverage when portfolio grows by specified percentage",
             key="profit_threshold_btn"
         ):
             st.session_state.backtest_mode = 'profit_threshold'
@@ -2272,63 +2493,74 @@ def render_historical_backtest_tab():
     if 'backtest_mode' not in st.session_state:
         st.session_state.backtest_mode = 'standard'
     
-    # Display selected mode
+    # Display selected mode with custom styling
     if st.session_state.backtest_mode == 'standard':
-        st.info("✅ **Enhanced Liquidation-Reentry Mode**: Realistic simulation with margin call liquidation and 2-day re-entry delay")
+        st.markdown("""
+        <div style="background-color: #1a1a1a; border: 1px solid #ff8c00; padding: 1rem; color: #e0e0e0;">
+            <strong style="color: #ff8c00;">LIQUIDATION-REENTRY MODE:</strong> Realistic simulation with margin call liquidation and 2-day re-entry delay
+        </div>
+        """, unsafe_allow_html=True)
         mode_description = """
-    <div class="card">
-            <h3>⚡ Enhanced Liquidation-Reentry Strategy</h3>
-            <p>This advanced backtest simulates realistic margin trading with forced liquidation and strategic re-entry:</p>
-            <ul>
-                <li>✅ <strong>Forced Liquidation</strong>: Immediate position closure when margin call triggered</li>
-                <li>✅ <strong>2-Day Wait Period</strong>: Realistic cooling-off period after liquidation</li>
-                <li>✅ <strong>Smart Re-entry</strong>: Re-enters with remaining equity using same leverage</li>
-                <li>✅ <strong>Capital Tracking</strong>: Shows true cost of leverage over time</li>
-                <li>✅ <strong>Institutional Metrics</strong>: Advanced risk analytics and performance attribution</li>
-        </ul>
+    <div class="terminal-card">
+            <h3 style="color: var(--accent-orange);">LIQUIDATION-REENTRY STRATEGY</h3>
+            <div style="color: var(--text-secondary); margin-top: 1rem;">
+                <strong>STRATEGY COMPONENTS:</strong><br/>
+                • FORCED LIQUIDATION: Immediate position closure on margin call<br/>
+                • 2-DAY WAIT PERIOD: Cooling-off period after liquidation<br/>
+                • AUTOMATIC RE-ENTRY: Deploy remaining equity at same leverage<br/>
+                • CAPITAL TRACKING: Monitor equity depletion over cycles<br/>
+                • RISK ANALYTICS: Institutional-grade performance metrics
+            </div>
     </div>
         """
     elif st.session_state.backtest_mode == 'profit_threshold':
-        st.success("✅ **Profit Threshold Rebalancing Mode**: Rebalance back to target leverage when portfolio grows by specified percentage")
+        st.markdown("""
+        <div style="background-color: #1a1a1a; border: 1px solid #00ff00; padding: 1rem; color: #e0e0e0;">
+            <strong style="color: #00ff00;">PROFIT THRESHOLD MODE:</strong> Rebalance to target leverage at growth milestones
+        </div>
+        """, unsafe_allow_html=True)
         mode_description = """
-        <div class="card">
-            <h3>📈 Profit Threshold Rebalancing Strategy</h3>
-            <p><strong>Growth-Based Leverage Rebalancing:</strong> This sophisticated mode rebalances back to target leverage when portfolio growth hits specified thresholds:</p>
-            <ul>
-                <li>🎯 <strong>Profit Monitoring</strong>: Tracks portfolio growth percentage from initial position</li>
-                <li>📈 <strong>Growth Threshold</strong>: User-configurable threshold (default: 100% growth)</li>
-                <li>⚖️ <strong>Leverage Rebalancing</strong>: When threshold hit, rebalance back to target leverage</li>
-                <li>💰 <strong>Borrow More Strategy</strong>: Only borrows more to buy additional shares (never sells)</li>
-                <li>🔄 <strong>Compound Growth</strong>: Locks in profits by scaling position size with target leverage</li>
-                <li>📊 <strong>Growth Analytics</strong>: Tracks all rebalancing events and profit thresholds</li>
-                <li>🎲 <strong>Risk Management</strong>: Maintains consistent leverage exposure as wealth grows</li>
-            </ul>
-            <div style="background: #e8f5e8; padding: 1rem; border-left: 4px solid #4caf50; margin: 1rem 0;">
-                <strong>💡 Example:</strong> Start with $1M @ 2x leverage ($2M position). Portfolio grows to $4M (100% growth). 
-                Current leverage: 1.33x. <strong>REBALANCE:</strong> Borrow $2M more → $6M position @ 2x leverage.
+        <div class="terminal-card">
+            <h3 style="color: var(--accent-orange);">PROFIT THRESHOLD REBALANCING</h3>
+            <div style="color: var(--text-secondary); margin-top: 1rem;">
+                <strong>STRATEGY COMPONENTS:</strong><br/>
+                • GROWTH MONITORING: Track portfolio growth from initial position<br/>
+                • CONFIGURABLE THRESHOLD: User-defined growth target (default: 100%)<br/>
+                • LEVERAGE RESTORATION: Rebalance to target when threshold reached<br/>
+                • BORROW-ONLY STRATEGY: Add leverage without selling shares<br/>
+                • COMPOUND GROWTH: Scale position size with accumulated profits<br/>
+                • ANALYTICS TRACKING: Monitor all rebalancing events<br/>
+                • CONSISTENT EXPOSURE: Maintain target leverage as wealth grows
+            </div>
+            <div class="terminal-card" style="border-color: var(--info-blue); margin-top: 1rem;">
+                <strong>EXAMPLE:</strong> $1M @ 2X → $4M (100% growth) → LEVERAGE: 1.33X → REBALANCE: BORROW $2M → $6M @ 2X
             </div>
         </div>
         """
     else:  # restart mode
-        st.success("✅ **Restart Mode Selected**: Alternative simulation with unlimited fresh capital (for comparison)")
+        st.markdown("""
+        <div style="background-color: #1a1a1a; border: 1px solid #00ff00; padding: 1rem; color: #e0e0e0;">
+            <strong style="color: #00ff00;">FRESH CAPITAL MODE:</strong> Unlimited capital simulation for comparison analysis
+        </div>
+        """, unsafe_allow_html=True)
         mode_description = """
-        <div class="card">
-            <h3>🔄 Restart with Fresh Capital Mode</h3>
-            <p>This mode provides comparison analysis by assuming unlimited fresh capital for each restart:</p>
-            <ul>
-                <li>✅ Fresh capital deployed after each margin call (based on Initial Investment)</li>
-                <li>✅ 2-day waiting period after liquidation (same as liquidation-reentry)</li>
-                <li>✅ Shows frequency and timing of margin calls with unlimited resources</li>
-                <li>✅ Tracks survival time between margin calls</li>
-                <li>📊 Useful for understanding leverage frequency patterns</li>
-            </ul>
+        <div class="terminal-card">
+            <h3 style="color: var(--accent-orange);">FRESH CAPITAL RESTART</h3>
+            <div style="color: var(--text-secondary); margin-top: 1rem;">
+                <strong>STRATEGY COMPONENTS:</strong><br/>
+                • UNLIMITED CAPITAL: Deploy fresh funds after each margin call<br/>
+                • 2-DAY WAIT PERIOD: Same cooling-off as liquidation-reentry<br/>
+                • FREQUENCY ANALYSIS: Track margin call occurrence patterns<br/>
+                • SURVIVAL METRICS: Monitor position duration statistics<br/>
+                • COMPARISON TOOL: Benchmark against realistic strategies
+            </div>
         </div>
         """
     
     st.markdown(mode_description, unsafe_allow_html=True)
     
     # Input parameters
-    st.subheader("🔧 Backtest Parameters")
+    st.markdown("<h2>BACKTEST PARAMETERS</h2>", unsafe_allow_html=True)
     
     # Get available date range for validation
     min_date = excel_data.index.min().date()
@@ -2362,29 +2594,80 @@ def render_historical_backtest_tab():
             key="backtest_end_date"
         )
         
-        # Initial Investment for Profit Threshold mode ONLY - stays in column 1 below End Date
+        # Equity for Profit Threshold mode ONLY - stays in column 1 below End Date
         if st.session_state.backtest_mode == 'profit_threshold':
-            initial_investment = st.number_input(
-                "Initial Investment ($)",
-                min_value=10000,
-                value=100000000,
-                step=10000,
-                help="Total position size (including leverage)",
-                key="backtest_initial_investment"
+            # Custom formatted equity input with commas
+            equity_default = "50,000,000"
+            if f"equity_formatted_{st.session_state.backtest_mode}" not in st.session_state:
+                st.session_state[f"equity_formatted_{st.session_state.backtest_mode}"] = equity_default
+            
+            equity_input = st.text_input(
+                "Equity ($)",
+                value=st.session_state[f"equity_formatted_{st.session_state.backtest_mode}"],
+                help="Your cash equity (not including leverage). Format: 50,000,000",
+                key=f"equity_text_{st.session_state.backtest_mode}",
+                placeholder="50,000,000"
             )
+            
+            # Parse and validate the formatted input
+            try:
+                # Remove commas and convert to number
+                equity_clean = equity_input.replace(",", "").replace("$", "").replace(" ", "")
+                equity = float(equity_clean)
+                
+                # Validate minimum value
+                if equity < 5000:
+                    st.error("Minimum equity is $5,000")
+                    equity = 5000
+                
+                # Update session state with properly formatted value
+                formatted_value = f"{equity:,.0f}"
+                if formatted_value != equity_input:
+                    st.session_state[f"equity_formatted_{st.session_state.backtest_mode}"] = formatted_value
+                    st.rerun()
+                    
+            except (ValueError, TypeError):
+                st.error("Please enter a valid number (e.g., 50,000,000)")
+                equity = 50000000  # Default fallback
         
     with input_col2:
-        # Initial Investment for Liquidation-Reentry and Fresh Capital Restart modes - goes to column 2
+        # Equity for Liquidation-Reentry and Fresh Capital Restart modes - goes to column 2
         if st.session_state.backtest_mode in ['standard', 'restart']:
-            help_text = "Fresh capital deployed per restart cycle" if st.session_state.backtest_mode == 'restart' else "Total position size (including leverage)"
-            initial_investment = st.number_input(
-                "Initial Investment ($)",
-                min_value=10000,
-                value=100000000,
-                step=10000,
+            help_text = "Your cash equity per restart cycle. Format: 50,000,000" if st.session_state.backtest_mode == 'restart' else "Your cash equity (not including leverage). Format: 50,000,000"
+            
+            # Custom formatted equity input with commas
+            equity_default = "50,000,000"
+            if f"equity_formatted_{st.session_state.backtest_mode}" not in st.session_state:
+                st.session_state[f"equity_formatted_{st.session_state.backtest_mode}"] = equity_default
+            
+            equity_input = st.text_input(
+                "Equity ($)",
+                value=st.session_state[f"equity_formatted_{st.session_state.backtest_mode}"],
                 help=help_text,
-                key="backtest_initial_investment"
+                key=f"equity_text_{st.session_state.backtest_mode}",
+                placeholder="50,000,000"
             )
+            
+            # Parse and validate the formatted input
+            try:
+                # Remove commas and convert to number
+                equity_clean = equity_input.replace(",", "").replace("$", "").replace(" ", "")
+                equity = float(equity_clean)
+                
+                # Validate minimum value
+                if equity < 5000:
+                    st.error("Minimum equity is $5,000")
+                    equity = 5000
+                
+                # Update session state with properly formatted value
+                formatted_value = f"{equity:,.0f}"
+                if formatted_value != equity_input:
+                    st.session_state[f"equity_formatted_{st.session_state.backtest_mode}"] = formatted_value
+                    st.rerun()
+                    
+            except (ValueError, TypeError):
+                st.error("Please enter a valid number (e.g., 50,000,000)")
+                equity = 50000000  # Default fallback
         
         account_type = st.selectbox(
             "Account Type",
@@ -2440,15 +2723,22 @@ def render_historical_backtest_tab():
     with input_col3:
         # Validate date range
         if start_date >= end_date:
-            st.error("❌ Start date must be before end date")
+            st.markdown("""
+            <div style="background-color: #1a1a1a; border: 2px solid #ff0000; padding: 1rem; color: #e0e0e0;">
+                <strong style="color: #ff0000;">ERROR:</strong> Start date must be before end date
+            </div>
+            """, unsafe_allow_html=True)
             return
         
-        # Ensure initial_investment is defined (it should be from either column 1 or 2)
-        if 'initial_investment' not in locals():
-            initial_investment = 100000000  # Fallback default value
+        # Ensure equity is defined (it should be from either column 1 or 2)
+        if 'equity' not in locals():
+            equity = 50000000  # Fallback default value
         
-        # Calculate summary values
-        cash_needed = initial_investment / leverage
+        # Calculate total investment from equity and leverage
+        initial_investment = equity * leverage
+        
+        # Calculate summary values (these are now for display purposes)
+        cash_needed = equity  # This is the user's equity input
         margin_loan = initial_investment - cash_needed
         
         # Calculate actual trading days by counting data observations
@@ -2461,45 +2751,68 @@ def render_historical_backtest_tab():
         # Mode-specific parameter summary card
         if st.session_state.backtest_mode == 'constant_leverage':
             st.markdown(f"""
-            <div style="background: #f0f8ff; padding: 1rem; border-radius: 10px; margin-top: 1rem;">
+            <div class="terminal-card" style="border-color: var(--accent-orange); margin-top: 1rem;">
 
             </div>
             """, unsafe_allow_html=True)
         elif st.session_state.backtest_mode == 'profit_threshold':
             st.markdown(f"""
-            <div style="background: #f0f8ff; padding: 1rem; border-radius: 10px; margin-top: 1rem;">
-                <strong>📈 Profit Threshold Rebalancing Summary:</strong><br>
-                Period: <strong>{start_date} to {end_date}</strong><br>
-                Duration: <strong>{trading_days:,} trading days</strong><br><br>
-                <strong>🎯 Profit Threshold Configuration:</strong><br>
-                Target Leverage: <strong>{leverage:.1f}x</strong><br>
-                Profit Threshold: <strong>{profit_threshold_pct:.0f}%</strong><br>
-                Transaction Cost: <strong>{transaction_cost_bps} bps (rebalancing only)</strong><br>
-                Strategy: <strong>Rebalance to target leverage when portfolio grows by {profit_threshold_pct:.0f}%</strong><br><br>
-                <strong>💰 Initial Position:</strong><br>
-                Starting Equity: <strong>${cash_needed:,.0f}</strong><br>
-                Initial Margin Loan: <strong>${margin_loan:,.0f}</strong><br>
-                Total Initial Position: <strong>${initial_investment:,.0f}</strong><br>
-                Rebalance Trigger: <strong>Portfolio reaches ${initial_investment * (1 + profit_threshold_pct/100):,.0f}</strong>
+            <div class="terminal-card" style="border-color: var(--accent-orange); margin-top: 1rem; padding: 0.75rem;">
+                <div style="color: var(--accent-orange); font-weight: 600; font-size: 0.9rem; margin-bottom: 0.25rem;">PROFIT THRESHOLD REBALANCING SUMMARY</div>
+                <div class="data-grid" style="grid-row-gap: 0.25rem;">
+                    <div class="data-label" style="font-size: 0.75rem;">PERIOD:</div>
+                    <div class="data-value" style="font-size: 0.75rem;">{start_date} TO {end_date}</div>
+                    <div class="data-label" style="font-size: 0.75rem;">DURATION:</div>
+                    <div class="data-value" style="font-size: 0.75rem;">{trading_days:,} TRADING DAYS</div>
+                </div>
+                <div style="color: var(--accent-orange); font-weight: 600; font-size: 0.85rem; margin: 0.5rem 0 0.25rem 0;">CONFIGURATION</div>
+                <div class="data-grid" style="grid-row-gap: 0.25rem;">
+                    <div class="data-label" style="font-size: 0.75rem;">LEVERAGE:</div>
+                    <div class="data-value" style="font-size: 0.75rem;">{leverage:.1f}X</div>
+                    <div class="data-label" style="font-size: 0.75rem;">THRESHOLD:</div>
+                    <div class="data-value" style="font-size: 0.75rem;">{profit_threshold_pct:.0f}%</div>
+                    <div class="data-label" style="font-size: 0.75rem;">COSTS:</div>
+                    <div class="data-value" style="font-size: 0.75rem;">{transaction_cost_bps} BPS</div>
+                </div>
+                <div style="color: var(--accent-orange); font-weight: 600; font-size: 0.85rem; margin: 0.5rem 0 0.25rem 0;">POSITION</div>
+                <div class="data-grid" style="grid-row-gap: 0.25rem;">
+                    <div class="data-label" style="font-size: 0.75rem;">EQUITY:</div>
+                    <div class="data-value" style="font-size: 0.75rem;">${cash_needed:,.0f}</div>
+                    <div class="data-label" style="font-size: 0.75rem;">LOAN:</div>
+                    <div class="data-value" style="font-size: 0.75rem;">${margin_loan:,.0f}</div>
+                    <div class="data-label" style="font-size: 0.75rem;">TOTAL:</div>
+                    <div class="data-value" style="font-size: 0.75rem;">${initial_investment:,.0f}</div>
+                    <div class="data-label" style="font-size: 0.75rem;">REBALANCE AT:</div>
+                    <div class="data-value" style="font-size: 0.75rem;">${initial_investment * (1 + profit_threshold_pct/100):,.0f}</div>
+                </div>
             </div>
             """, unsafe_allow_html=True)
         else:
             st.markdown(f"""
-        <div style="background: #f0f8ff; padding: 1rem; border-radius: 10px; margin-top: 1rem;">
-            <strong>📊 Backtest Summary:</strong><br>
-            Period: <strong>{start_date} to {end_date}</strong><br>
-            Duration: <strong>{trading_days:,} trading days</strong><br><br>
-            <strong>💰 Position Summary:</strong><br>
-            Cash Required: <strong>${cash_needed:,.0f}</strong><br>
-            Margin Loan: <strong>${margin_loan:,.0f}</strong><br>
-            Total Position: <strong>${initial_investment:,.0f}</strong>
+        <div class="terminal-card" style="border-color: var(--accent-orange); margin-top: 1rem;">
+            <div style="color: var(--accent-orange); font-weight: 600; margin-bottom: 0.5rem;">BACKTEST SUMMARY</div>
+            <div class="data-grid">
+                <div class="data-label">PERIOD:</div>
+                <div class="data-value">{start_date} TO {end_date}</div>
+                <div class="data-label">DURATION:</div>
+                <div class="data-value">{trading_days:,} TRADING DAYS</div>
+            </div>
+            <div style="color: var(--accent-orange); font-weight: 600; margin: 1rem 0 0.5rem 0;">POSITION SUMMARY</div>
+            <div class="data-grid">
+                <div class="data-label">YOUR EQUITY:</div>
+                <div class="data-value">${cash_needed:,.0f}</div>
+                <div class="data-label">MARGIN LOAN:</div>
+                <div class="data-value">${margin_loan:,.0f}</div>
+                <div class="data-label">TOTAL POSITION:</div>
+                <div class="data-value">${initial_investment:,.0f}</div>
+            </div>
         </div>
         """, unsafe_allow_html=True)
     
     # Run backtest button
-    if st.button("🚀 Run Historical Backtest", use_container_width=True, type="primary", key="run_backtest_button"):
+    if st.button("RUN HISTORICAL BACKTEST", use_container_width=True, type="primary", key="run_backtest_button"):
         
-        with st.spinner("🔄 Running comprehensive backtest simulation..."):
+        with st.spinner("RUNNING COMPREHENSIVE BACKTEST SIMULATION..."):
             
             if st.session_state.backtest_mode == 'profit_threshold':
                 # Run profit threshold backtest
@@ -2520,7 +2833,11 @@ def render_historical_backtest_tab():
                     return
                 
                 # Display profit threshold results
-                st.success(f"✅ **Profit Threshold Backtest Complete** - Analyzed {len(results_df):,} trading days with {metrics.get('Total Rebalances', 0)} profit-based rebalancing events and {metrics.get('Total Liquidations', 0)} liquidations")
+                st.markdown(f"""
+                <div style="background-color: #1a1a1a; border: 1px solid #00ff00; padding: 1rem; color: #e0e0e0;">
+                    <strong style="color: #00ff00;">PROFIT THRESHOLD BACKTEST COMPLETE:</strong> Analyzed {len(results_df):,} trading days with {metrics.get('Total Rebalances', 0)} profit-based rebalancing events and {metrics.get('Total Liquidations', 0)} liquidations
+                </div>
+                """, unsafe_allow_html=True)
                 
                 # Enhanced metrics summary for profit threshold
                 st.markdown("### 📊 Profit Threshold Performance Dashboard")
@@ -2530,63 +2847,79 @@ def render_historical_backtest_tab():
                 metric_row1_col1, metric_row1_col2, metric_row1_col3, metric_row1_col4 = st.columns(4)
                 
                 with metric_row1_col1:
-                    st.metric(
-                        "Total Return",
-                        f"{metrics['Total Return (%)']:.1f}%",
-                        delta=f"CAGR: {metrics['CAGR (%)']:.1f}%"
-                    )
+                    st.markdown(f"""
+                    <div style="background-color: #1a1a1a; border: 1px solid #333333; padding: 1rem; text-align: center;">
+                        <div style="color: #ff8c00; font-size: 0.8rem; font-weight: 600; text-transform: uppercase; margin-bottom: 0.5rem;">Total Return</div>
+                        <div style="color: #ffffff; font-size: 1.5rem; font-weight: 700; margin-bottom: 0.5rem;">{metrics['Total Return (%)']:.1f}%</div>
+                        <div style="color: #a0a0a0; font-size: 0.9rem;">CAGR: {metrics['CAGR (%)']:.1f}%</div>
+                    </div>
+                    """, unsafe_allow_html=True)
                     
                 with metric_row1_col2:
-                    st.metric(
-                        "Final Equity",
-                        f"${metrics['Final Equity ($)']:,.0f}",
-                        delta=f"Max: ${metrics['Max Equity Achieved ($)']:,.0f}"
-                    )
+                    st.markdown(f"""
+                    <div style="background-color: #1a1a1a; border: 1px solid #333333; padding: 1rem; text-align: center;">
+                        <div style="color: #ff8c00; font-size: 0.8rem; font-weight: 600; text-transform: uppercase; margin-bottom: 0.5rem;">Final Equity</div>
+                        <div style="color: #ffffff; font-size: 1.5rem; font-weight: 700; margin-bottom: 0.5rem;">${metrics['Final Equity ($)']:,.0f}</div>
+                        <div style="color: #a0a0a0; font-size: 0.9rem;">Max: ${metrics['Max Equity Achieved ($)']:,.0f}</div>
+                    </div>
+                    """, unsafe_allow_html=True)
                 
                 with metric_row1_col3:
-                    st.metric(
-                        "Portfolio Growth",
-                        f"{metrics['Final Portfolio Growth (%)']:.1f}%",
-                        delta=f"Max: {metrics['Max Portfolio Growth (%)']:.1f}%"
-                    )
+                    st.markdown(f"""
+                    <div style="background-color: #1a1a1a; border: 1px solid #333333; padding: 1rem; text-align: center;">
+                        <div style="color: #ff8c00; font-size: 0.8rem; font-weight: 600; text-transform: uppercase; margin-bottom: 0.5rem;">Portfolio Growth</div>
+                        <div style="color: #ffffff; font-size: 1.5rem; font-weight: 700; margin-bottom: 0.5rem;">{metrics['Final Portfolio Growth (%)']:.1f}%</div>
+                        <div style="color: #a0a0a0; font-size: 0.9rem;">Max: {metrics['Max Portfolio Growth (%)']:.1f}%</div>
+                    </div>
+                    """, unsafe_allow_html=True)
                     
                 with metric_row1_col4:
-                    st.metric(
-                        "Sharpe Ratio",
-                        f"{metrics['Sharpe Ratio']:.3f}",
-                        delta=f"Max DD: {metrics['Max Drawdown (%)']:.1f}%"
-                    )
+                    st.markdown(f"""
+                    <div style="background-color: #1a1a1a; border: 1px solid #333333; padding: 1rem; text-align: center;">
+                        <div style="color: #ff8c00; font-size: 0.8rem; font-weight: 600; text-transform: uppercase; margin-bottom: 0.5rem;">Sharpe Ratio</div>
+                        <div style="color: #ffffff; font-size: 1.5rem; font-weight: 700; margin-bottom: 0.5rem;">{metrics['Sharpe Ratio']:.3f}</div>
+                        <div style="color: #a0a0a0; font-size: 0.9rem;">Max DD: {metrics['Max Drawdown (%)']:.1f}%</div>
+                    </div>
+                    """, unsafe_allow_html=True)
                 
                 st.markdown("#### Profit Threshold Analytics")
                 metric_row2_col1, metric_row2_col2, metric_row2_col3, metric_row2_col4 = st.columns(4)
                 
                 with metric_row2_col1:
-                    st.metric(
-                        "Profit Threshold",
-                        f"{metrics['Profit Threshold (%)']:.0f}%",
-                        delta=f"{metrics['Total Rebalances']} rebalances"
-                    )
+                    st.markdown(f"""
+                    <div style="background-color: #1a1a1a; border: 1px solid #333333; padding: 1rem; text-align: center;">
+                        <div style="color: #ff8c00; font-size: 0.8rem; font-weight: 600; text-transform: uppercase; margin-bottom: 0.5rem;">Profit Threshold</div>
+                        <div style="color: #ffffff; font-size: 1.5rem; font-weight: 700; margin-bottom: 0.5rem;">{metrics['Profit Threshold (%)']:.0f}%</div>
+                        <div style="color: #a0a0a0; font-size: 0.9rem;">{metrics['Total Rebalances']} rebalances</div>
+                    </div>
+                    """, unsafe_allow_html=True)
                     
                 with metric_row2_col2:
-                    st.metric(
-                        "Avg Leverage",
-                        f"{metrics['Average Actual Leverage']:.2f}x",
-                        delta=f"Target: {metrics['Target Leverage']:.1f}x"
-                    )
+                    st.markdown(f"""
+                    <div style="background-color: #1a1a1a; border: 1px solid #333333; padding: 1rem; text-align: center;">
+                        <div style="color: #ff8c00; font-size: 0.8rem; font-weight: 600; text-transform: uppercase; margin-bottom: 0.5rem;">Avg Leverage</div>
+                        <div style="color: #ffffff; font-size: 1.5rem; font-weight: 700; margin-bottom: 0.5rem;">{metrics['Average Actual Leverage']:.2f}x</div>
+                        <div style="color: #a0a0a0; font-size: 0.9rem;">Target: {metrics['Target Leverage']:.1f}x</div>
+                    </div>
+                    """, unsafe_allow_html=True)
                 
                 with metric_row2_col3:
-                    st.metric(
-                        "Transaction Costs",
-                        f"${metrics['Total Transaction Costs ($)']:,.0f}",
-                        delta=f"{metrics['Transaction Cost (% of Equity)']:.2f}% of equity"
-                    )
+                    st.markdown(f"""
+                    <div style="background-color: #1a1a1a; border: 1px solid #333333; padding: 1rem; text-align: center;">
+                        <div style="color: #ff8c00; font-size: 0.8rem; font-weight: 600; text-transform: uppercase; margin-bottom: 0.5rem;">Transaction Costs</div>
+                        <div style="color: #ffffff; font-size: 1.5rem; font-weight: 700; margin-bottom: 0.5rem;">${metrics['Total Transaction Costs ($)']:,.0f}</div>
+                        <div style="color: #a0a0a0; font-size: 0.9rem;">{metrics['Transaction Cost (% of Equity)']:.2f}% of equity</div>
+                    </div>
+                    """, unsafe_allow_html=True)
                     
                 with metric_row2_col4:
-                    st.metric(
-                        "All-In Costs",
-                        f"${metrics['All-In Cost ($)']:,.0f}",
-                        delta=f"Interest + Trading - Dividends"
-                    )
+                    st.markdown(f"""
+                    <div style="background-color: #1a1a1a; border: 1px solid #333333; padding: 1rem; text-align: center;">
+                        <div style="color: #ff8c00; font-size: 0.8rem; font-weight: 600; text-transform: uppercase; margin-bottom: 0.5rem;">All-In Costs</div>
+                        <div style="color: #ffffff; font-size: 1.5rem; font-weight: 700; margin-bottom: 0.5rem;">${metrics['All-In Cost ($)']:,.0f}</div>
+                        <div style="color: #a0a0a0; font-size: 0.9rem;">Interest + Trading - Dividends</div>
+                    </div>
+                    """, unsafe_allow_html=True)
                 
                 # Strategy insights
                 total_rebalances = metrics['Total Rebalances']
@@ -2594,15 +2927,19 @@ def render_historical_backtest_tab():
                 threshold = metrics['Profit Threshold (%)']
                 
                 if total_rebalances > 0:
-                    st.success(f"""
-                    ✅ **Profit Threshold Strategy Success**: {total_rebalances} rebalancing events triggered by {threshold:.0f}% growth thresholds. 
-                    Final portfolio growth: {growth_achieved:.1f}%. Strategy successfully locked in profits by scaling position size.
-                    """)
+                    st.markdown(f"""
+                    <div style="background-color: #1a1a1a; border: 1px solid #00ff00; padding: 1rem; color: #e0e0e0; margin-top: 1rem;">
+                        <strong style="color: #00ff00;">PROFIT THRESHOLD STRATEGY SUCCESS:</strong> {total_rebalances} rebalancing events triggered by {threshold:.0f}% growth thresholds. 
+                        Final portfolio growth: {growth_achieved:.1f}%. Strategy successfully locked in profits by scaling position size.
+                    </div>
+                    """, unsafe_allow_html=True)
                 else:
-                    st.info(f"""
-                    💡 **No Rebalancing**: Portfolio never reached {threshold:.0f}% growth threshold during backtest period. 
-                    Consider lowering threshold or extending backtest period to see strategy in action.
-                    """)
+                    st.markdown(f"""
+                    <div style="background-color: #1a1a1a; border: 1px solid #00a2ff; padding: 1rem; color: #e0e0e0; margin-top: 1rem;">
+                        <strong style="color: #00a2ff;">NO REBALANCING:</strong> Portfolio never reached {threshold:.0f}% growth threshold during backtest period. 
+                        Consider lowering threshold or extending backtest period to see strategy in action.
+                    </div>
+                    """, unsafe_allow_html=True)
                 
                 # Enhanced portfolio performance chart
                 st.markdown("### 📈 Portfolio Performance Analytics")
@@ -2714,7 +3051,11 @@ def render_historical_backtest_tab():
                     return
                 
                 # Display enhanced results
-                st.success(f"✅ **Liquidation-Reentry Backtest Complete** - Analyzed {len(results_df):,} trading days with {metrics.get('Total Liquidations', 0)} liquidation events")
+                st.markdown(f"""
+                <div style="background-color: #1a1a1a; border: 1px solid #00ff00; padding: 1rem; color: #e0e0e0;">
+                    <strong style="color: #00ff00;">LIQUIDATION-REENTRY BACKTEST COMPLETE:</strong> Analyzed {len(results_df):,} trading days with {metrics.get('Total Liquidations', 0)} liquidation events
+                </div>
+                """, unsafe_allow_html=True)
                 
                 # Enhanced metrics summary with institutional-level presentation
                 st.markdown("### 📊 Performance Dashboard")
@@ -2724,64 +3065,79 @@ def render_historical_backtest_tab():
                 metric_row1_col1, metric_row1_col2, metric_row1_col3, metric_row1_col4 = st.columns(4)
                 
                 with metric_row1_col1:
-                    st.metric(
-                        "Total Return",
-                        f"{metrics['Total Return (%)']:.1f}%",
-                        delta=f"CAGR: {metrics['CAGR (%)']:.1f}%"
-                    )
+                    st.markdown(f"""
+                    <div style="background-color: #1a1a1a; border: 1px solid #333333; padding: 1rem; text-align: center;">
+                        <div style="color: #ff8c00; font-size: 0.8rem; font-weight: 600; text-transform: uppercase; margin-bottom: 0.5rem;">Total Return</div>
+                        <div style="color: #ffffff; font-size: 1.5rem; font-weight: 700; margin-bottom: 0.5rem;">{metrics['Total Return (%)']:.1f}%</div>
+                        <div style="color: #a0a0a0; font-size: 0.9rem;">CAGR: {metrics['CAGR (%)']:.1f}%</div>
+                    </div>
+                    """, unsafe_allow_html=True)
                     
                 with metric_row1_col2:
-                    st.metric(
-                        "Final Equity",
-                        f"${metrics['Final Equity ($)']:,.0f}",
-                        delta=f"Max: ${metrics['Max Equity Achieved ($)']:,.0f}"
-                    )
+                    st.markdown(f"""
+                    <div style="background-color: #1a1a1a; border: 1px solid #333333; padding: 1rem; text-align: center;">
+                        <div style="color: #ff8c00; font-size: 0.8rem; font-weight: 600; text-transform: uppercase; margin-bottom: 0.5rem;">Final Equity</div>
+                        <div style="color: #ffffff; font-size: 1.5rem; font-weight: 700; margin-bottom: 0.5rem;">${metrics['Final Equity ($)']:,.0f}</div>
+                        <div style="color: #a0a0a0; font-size: 0.9rem;">Max: ${metrics['Max Equity Achieved ($)']:,.0f}</div>
+                    </div>
+                    """, unsafe_allow_html=True)
                 
                 with metric_row1_col3:
-                    st.metric(
-                        "Sharpe Ratio",
-                        f"{metrics['Sharpe Ratio']:.3f}",
-                        delta=f"Sortino: {metrics['Sortino Ratio']:.3f}"
-                    )
+                    st.markdown(f"""
+                    <div style="background-color: #1a1a1a; border: 1px solid #333333; padding: 1rem; text-align: center;">
+                        <div style="color: #ff8c00; font-size: 0.8rem; font-weight: 600; text-transform: uppercase; margin-bottom: 0.5rem;">Sharpe Ratio</div>
+                        <div style="color: #ffffff; font-size: 1.5rem; font-weight: 700; margin-bottom: 0.5rem;">{metrics['Sharpe Ratio']:.3f}</div>
+                        <div style="color: #a0a0a0; font-size: 0.9rem;">Sortino: {metrics['Sortino Ratio']:.3f}</div>
+                    </div>
+                    """, unsafe_allow_html=True)
                     
                 with metric_row1_col4:
-                    st.metric(
-                        "Max Drawdown",
-                        f"{metrics['Max Drawdown (%)']:.1f}%",
-                        delta=f"Duration: {metrics['Max Drawdown Duration (days)']:.0f} days"
-                    )
+                    st.markdown(f"""
+                    <div style="background-color: #1a1a1a; border: 1px solid #333333; padding: 1rem; text-align: center;">
+                        <div style="color: #ff8c00; font-size: 0.8rem; font-weight: 600; text-transform: uppercase; margin-bottom: 0.5rem;">Max Drawdown</div>
+                        <div style="color: #ffffff; font-size: 1.5rem; font-weight: 700; margin-bottom: 0.5rem;">{metrics['Max Drawdown (%)']:.1f}%</div>
+                        <div style="color: #a0a0a0; font-size: 0.9rem;">Duration: {metrics['Max Drawdown Duration (days)']:.0f} days</div>
+                    </div>
+                    """, unsafe_allow_html=True)
                 
                 st.markdown("#### Trading & Risk Analytics")
                 metric_row2_col1, metric_row2_col2, metric_row2_col3, metric_row2_col4 = st.columns(4)
                 
                 with metric_row2_col1:
-                    st.metric(
-                        "Total Liquidations",
-                        f"{int(metrics['Total Liquidations'])}",
-                        delta=f"Avg every {metrics['Avg Days Between Liquidations']:.0f} days"
-                    )
+                    st.markdown(f"""
+                    <div style="background-color: #1a1a1a; border: 1px solid #333333; padding: 1rem; text-align: center;">
+                        <div style="color: #ff8c00; font-size: 0.8rem; font-weight: 600; text-transform: uppercase; margin-bottom: 0.5rem;">Total Liquidations</div>
+                        <div style="color: #ffffff; font-size: 1.5rem; font-weight: 700; margin-bottom: 0.5rem;">{int(metrics['Total Liquidations'])}</div>
+                        <div style="color: #a0a0a0; font-size: 0.9rem;">Avg every {metrics['Avg Days Between Liquidations']:.0f} days</div>
+                    </div>
+                    """, unsafe_allow_html=True)
                     
                 with metric_row2_col2:
-                    st.metric(
-                        "Time in Market",
-                        f"{metrics['Time in Market (%)']:.1f}%",
-                        delta=f"{metrics['Active Position Days']} active days"
-                    )
+                    st.markdown(f"""
+                    <div style="background-color: #1a1a1a; border: 1px solid #333333; padding: 1rem; text-align: center;">
+                        <div style="color: #ff8c00; font-size: 0.8rem; font-weight: 600; text-transform: uppercase; margin-bottom: 0.5rem;">Time in Market</div>
+                        <div style="color: #ffffff; font-size: 1.5rem; font-weight: 700; margin-bottom: 0.5rem;">{metrics['Time in Market (%)']:.1f}%</div>
+                        <div style="color: #a0a0a0; font-size: 0.9rem;">{metrics['Active Position Days']} active days</div>
+                    </div>
+                    """, unsafe_allow_html=True)
                 
                 with metric_row2_col3:
-                    st.metric(
-                        "Avg Loss per Liquidation",
-                        f"{metrics['Avg Loss Per Liquidation (%)']:.1f}%",
-                        delta=f"Worst: {metrics['Worst Single Loss (%)']:.1f}%",
-                        delta_color="inverse"
-                    )
+                    st.markdown(f"""
+                    <div style="background-color: #1a1a1a; border: 1px solid #333333; padding: 1rem; text-align: center;">
+                        <div style="color: #ff8c00; font-size: 0.8rem; font-weight: 600; text-transform: uppercase; margin-bottom: 0.5rem;">Avg Loss per Liquidation</div>
+                        <div style="color: #ffffff; font-size: 1.5rem; font-weight: 700; margin-bottom: 0.5rem;">{metrics['Avg Loss Per Liquidation (%)']:.1f}%</div>
+                        <div style="color: #a0a0a0; font-size: 0.9rem;">Worst: {metrics['Worst Single Loss (%)']:.1f}%</div>
+                    </div>
+                    """, unsafe_allow_html=True)
                     
                 with metric_row2_col4:
-                    st.metric(
-                        "Net Interest Cost",
-                        f"${metrics['Net Interest Cost ($)']:,.0f}",
-                        delta=f"Interest: ${metrics['Total Interest Paid ($)']:,.0f}"
-                    )
+                    st.markdown(f"""
+                    <div style="background-color: #1a1a1a; border: 1px solid #333333; padding: 1rem; text-align: center;">
+                        <div style="color: #ff8c00; font-size: 0.8rem; font-weight: 600; text-transform: uppercase; margin-bottom: 0.5rem;">Net Interest Cost</div>
+                        <div style="color: #ffffff; font-size: 1.5rem; font-weight: 700; margin-bottom: 0.5rem;">${metrics['Net Interest Cost ($)']:,.0f}</div>
+                        <div style="color: #a0a0a0; font-size: 0.9rem;">Interest: ${metrics['Total Interest Paid ($)']:,.0f}</div>
+                    </div>
+                    """, unsafe_allow_html=True)
                 
                 # Reality check and strategy insights
                 if metrics['Total Liquidations'] > 0:
@@ -2789,22 +3145,32 @@ def render_historical_backtest_tab():
                     avg_survival = metrics['Avg Days Between Liquidations']
                     
                     if loss_rate > 80:
-                        st.error(f"""
-                        🚨 **HIGH RISK STRATEGY**: {loss_rate:.0f}% of positions ended in liquidation. 
-                        Average survival time: {avg_survival:.0f} days. Consider reducing leverage significantly.
-                        """)
+                        st.markdown(f"""
+                        <div style="background-color: #1a1a1a; border: 2px solid #ff0000; padding: 1rem; color: #e0e0e0;">
+                            <strong style="color: #ff0000;">HIGH RISK STRATEGY:</strong> {loss_rate:.0f}% of positions ended in liquidation. 
+                            Average survival time: {avg_survival:.0f} days. Consider reducing leverage significantly.
+                        </div>
+                        """, unsafe_allow_html=True)
                     elif loss_rate > 50:
-                        st.warning(f"""
-                        ⚠️ **MODERATE RISK**: {loss_rate:.0f}% liquidation rate with {avg_survival:.0f} days average survival. 
-                        This strategy requires significant capital reserves and risk management.
-                        """)
+                        st.markdown(f"""
+                        <div style="background-color: #1a1a1a; border: 1px solid #ffff00; padding: 1rem; color: #e0e0e0;">
+                            <strong style="color: #ffff00;">MODERATE RISK:</strong> {loss_rate:.0f}% liquidation rate with {avg_survival:.0f} days average survival. 
+                            This strategy requires significant capital reserves and risk management.
+                        </div>
+                        """, unsafe_allow_html=True)
                     else:
-                        st.info(f"""
-                        💡 **Strategy Analysis**: {loss_rate:.0f}% liquidation rate. Positions survived an average of {avg_survival:.0f} days. 
-                        While manageable, consider position sizing and stop-loss strategies.
-                        """)
+                        st.markdown(f"""
+                        <div style="background-color: #1a1a1a; border: 1px solid #00a2ff; padding: 1rem; color: #e0e0e0;">
+                            <strong style="color: #00a2ff;">STRATEGY ANALYSIS:</strong> {loss_rate:.0f}% liquidation rate. Positions survived an average of {avg_survival:.0f} days. 
+                            While manageable, consider position sizing and stop-loss strategies.
+                        </div>
+                        """, unsafe_allow_html=True)
                 else:
-                    st.success("✅ **No Liquidations**: No liquidations occurred during this backtest period")
+                    st.markdown("""
+                    <div style="background-color: #1a1a1a; border: 1px solid #00ff00; padding: 1rem; color: #e0e0e0; margin-top: 1rem;">
+                        <strong style="color: #00ff00;">NO LIQUIDATIONS:</strong> No liquidations occurred during this backtest period
+                    </div>
+                    """, unsafe_allow_html=True)
                 
                 # Enhanced portfolio performance chart
                 st.markdown("### 📈 Performance Analytics Advanced Visualizations")
@@ -3009,63 +3375,79 @@ def render_historical_backtest_tab():
                 metric_row1_col1, metric_row1_col2, metric_row1_col3, metric_row1_col4 = st.columns(4)
                 
                 with metric_row1_col1:
-                    st.metric(
-                        "Total Return",
-                        f"{metrics['Total Return (%)']:.1f}%",
-                        delta=f"CAGR: {metrics['CAGR (%)']:.1f}%"
-                    )
+                    st.markdown(f"""
+                    <div style="background-color: #1a1a1a; border: 1px solid #333333; padding: 1rem; text-align: center;">
+                        <div style="color: #ff8c00; font-size: 0.8rem; font-weight: 600; text-transform: uppercase; margin-bottom: 0.5rem;">Total Return</div>
+                        <div style="color: #ffffff; font-size: 1.5rem; font-weight: 700; margin-bottom: 0.5rem;">{metrics['Total Return (%)']:.1f}%</div>
+                        <div style="color: #a0a0a0; font-size: 0.9rem;">CAGR: {metrics['CAGR (%)']:.1f}%</div>
+                    </div>
+                    """, unsafe_allow_html=True)
                     
                 with metric_row1_col2:
-                    st.metric(
-                        "Final Equity",
-                        f"${metrics['Final Equity ($)']:,.0f}",
-                        delta=f"Max: ${metrics['Max Equity Achieved ($)']:,.0f}"
-                    )
+                    st.markdown(f"""
+                    <div style="background-color: #1a1a1a; border: 1px solid #333333; padding: 1rem; text-align: center;">
+                        <div style="color: #ff8c00; font-size: 0.8rem; font-weight: 600; text-transform: uppercase; margin-bottom: 0.5rem;">Final Equity</div>
+                        <div style="color: #ffffff; font-size: 1.5rem; font-weight: 700; margin-bottom: 0.5rem;">${metrics['Final Equity ($)']:,.0f}</div>
+                        <div style="color: #a0a0a0; font-size: 0.9rem;">Max: ${metrics['Max Equity Achieved ($)']:,.0f}</div>
+                    </div>
+                    """, unsafe_allow_html=True)
                 
                 with metric_row1_col3:
-                    st.metric(
-                        "Sharpe Ratio",
-                        f"{metrics['Sharpe Ratio']:.3f}",
-                        delta=f"Sortino: {metrics['Sortino Ratio']:.3f}"
-                    )
+                    st.markdown(f"""
+                    <div style="background-color: #1a1a1a; border: 1px solid #333333; padding: 1rem; text-align: center;">
+                        <div style="color: #ff8c00; font-size: 0.8rem; font-weight: 600; text-transform: uppercase; margin-bottom: 0.5rem;">Sharpe Ratio</div>
+                        <div style="color: #ffffff; font-size: 1.5rem; font-weight: 700; margin-bottom: 0.5rem;">{metrics['Sharpe Ratio']:.3f}</div>
+                        <div style="color: #a0a0a0; font-size: 0.9rem;">Sortino: {metrics['Sortino Ratio']:.3f}</div>
+                    </div>
+                    """, unsafe_allow_html=True)
                     
                 with metric_row1_col4:
-                    st.metric(
-                        "Max Drawdown",
-                        f"{metrics['Max Drawdown (%)']:.1f}%",
-                        delta=f"Duration: {metrics['Max Drawdown Duration (days)']:.0f} days"
-                    )
+                    st.markdown(f"""
+                    <div style="background-color: #1a1a1a; border: 1px solid #333333; padding: 1rem; text-align: center;">
+                        <div style="color: #ff8c00; font-size: 0.8rem; font-weight: 600; text-transform: uppercase; margin-bottom: 0.5rem;">Max Drawdown</div>
+                        <div style="color: #ffffff; font-size: 1.5rem; font-weight: 700; margin-bottom: 0.5rem;">{metrics['Max Drawdown (%)']:.1f}%</div>
+                        <div style="color: #a0a0a0; font-size: 0.9rem;">Duration: {metrics['Max Drawdown Duration (days)']:.0f} days</div>
+                    </div>
+                    """, unsafe_allow_html=True)
                 
                 st.markdown("#### Fresh Capital Strategy Analytics")
                 metric_row2_col1, metric_row2_col2, metric_row2_col3, metric_row2_col4 = st.columns(4)
                 
                 with metric_row2_col1:
-                    st.metric(
-                        "Total Liquidations",
-                        f"{int(metrics['Total Liquidations'])}",
-                        delta=f"Rate: {metrics['Liquidation Rate (%)']:.1f}%"
-                    )
+                    st.markdown(f"""
+                    <div style="background-color: #1a1a1a; border: 1px solid #333333; padding: 1rem; text-align: center;">
+                        <div style="color: #ff8c00; font-size: 0.8rem; font-weight: 600; text-transform: uppercase; margin-bottom: 0.5rem;">Total Liquidations</div>
+                        <div style="color: #ffffff; font-size: 1.5rem; font-weight: 700; margin-bottom: 0.5rem;">{int(metrics['Total Liquidations'])}</div>
+                        <div style="color: #a0a0a0; font-size: 0.9rem;">Rate: {metrics['Liquidation Rate (%)']:.1f}%</div>
+                    </div>
+                    """, unsafe_allow_html=True)
                     
                 with metric_row2_col2:
-                    st.metric(
-                        "Total Capital Deployed",
-                        f"${metrics['Total Capital Deployed ($)']:,.0f}",
-                        delta=f"${metrics['Fresh Capital Per Round ($)']:,.0f} per round"
-                    )
+                    st.markdown(f"""
+                    <div style="background-color: #1a1a1a; border: 1px solid #333333; padding: 1rem; text-align: center;">
+                        <div style="color: #ff8c00; font-size: 0.8rem; font-weight: 600; text-transform: uppercase; margin-bottom: 0.5rem;">Total Capital Deployed</div>
+                        <div style="color: #ffffff; font-size: 1.5rem; font-weight: 700; margin-bottom: 0.5rem;">${metrics['Total Capital Deployed ($)']:,.0f}</div>
+                        <div style="color: #a0a0a0; font-size: 0.9rem;">${metrics['Fresh Capital Per Round ($)']:,.0f} per round</div>
+                    </div>
+                    """, unsafe_allow_html=True)
                 
                 with metric_row2_col3:
-                    st.metric(
-                        "Avg Survival Days",
-                        f"{metrics['Avg Days Between Liquidations']:.0f}",
-                        delta=f"Time in Market: {metrics['Time in Market (%)']:.1f}%"
-                    )
+                    st.markdown(f"""
+                    <div style="background-color: #1a1a1a; border: 1px solid #333333; padding: 1rem; text-align: center;">
+                        <div style="color: #ff8c00; font-size: 0.8rem; font-weight: 600; text-transform: uppercase; margin-bottom: 0.5rem;">Avg Survival Days</div>
+                        <div style="color: #ffffff; font-size: 1.5rem; font-weight: 700; margin-bottom: 0.5rem;">{metrics['Avg Days Between Liquidations']:.0f}</div>
+                        <div style="color: #a0a0a0; font-size: 0.9rem;">Time in Market: {metrics['Time in Market (%)']:.1f}%</div>
+                    </div>
+                    """, unsafe_allow_html=True)
                     
                 with metric_row2_col4:
-                    st.metric(
-                        "Net Interest Cost",
-                        f"${metrics['Net Interest Cost ($)']:,.0f}",
-                        delta=f"Interest: ${metrics['Total Interest Paid ($)']:,.0f}"
-                    )
+                    st.markdown(f"""
+                    <div style="background-color: #1a1a1a; border: 1px solid #333333; padding: 1rem; text-align: center;">
+                        <div style="color: #ff8c00; font-size: 0.8rem; font-weight: 600; text-transform: uppercase; margin-bottom: 0.5rem;">Net Interest Cost</div>
+                        <div style="color: #ffffff; font-size: 1.5rem; font-weight: 700; margin-bottom: 0.5rem;">${metrics['Net Interest Cost ($)']:,.0f}</div>
+                        <div style="color: #a0a0a0; font-size: 0.9rem;">Interest: ${metrics['Total Interest Paid ($)']:,.0f}</div>
+                    </div>
+                    """, unsafe_allow_html=True)
                 
                 # Fresh capital specific insights
                 total_capital = metrics['Total Capital Deployed ($)']
@@ -3073,20 +3455,26 @@ def render_historical_backtest_tab():
                 liquidation_rate = metrics['Liquidation Rate (%)']
                 
                 if liquidation_rate > 80:
-                    st.error(f"""
-                    🚨 **HIGH RISK STRATEGY**: {liquidation_rate:.0f}% liquidation rate with fresh capital. 
-                    Total capital deployed: ${total_capital:,.0f}. This strategy would require substantial capital reserves.
-                    """)
+                    st.markdown(f"""
+                    <div style="background-color: #1a1a1a; border: 2px solid #ff0000; padding: 1rem; color: #e0e0e0; margin-top: 1rem;">
+                        <strong style="color: #ff0000;">🚨 HIGH RISK STRATEGY:</strong> {liquidation_rate:.0f}% liquidation rate with fresh capital. 
+                        Total capital deployed: ${total_capital:,.0f}. This strategy would require substantial capital reserves.
+                    </div>
+                    """, unsafe_allow_html=True)
                 elif liquidation_rate > 50:
-                    st.warning(f"""
-                    ⚠️ **MODERATE RISK**: {liquidation_rate:.0f}% liquidation rate. 
-                    Fresh capital deployment: ${total_capital:,.0f}. Consider risk management protocols.
-                    """)
+                    st.markdown(f"""
+                    <div style="background-color: #1a1a1a; border: 1px solid #ffff00; padding: 1rem; color: #e0e0e0; margin-top: 1rem;">
+                        <strong style="color: #ffff00;">⚠️ MODERATE RISK:</strong> {liquidation_rate:.0f}% liquidation rate. 
+                        Fresh capital deployment: ${total_capital:,.0f}. Consider risk management protocols.
+                    </div>
+                    """, unsafe_allow_html=True)
                 else:
-                    st.info(f"""
-                    💡 **Fresh Capital Analysis**: {liquidation_rate:.0f}% liquidation rate with unlimited capital assumption. 
-                    Total deployment: ${total_capital:,.0f}. Compare with liquidation-reentry mode for realistic assessment.
-                    """)
+                    st.markdown(f"""
+                    <div style="background-color: #1a1a1a; border: 1px solid #00a2ff; padding: 1rem; color: #e0e0e0; margin-top: 1rem;">
+                        <strong style="color: #00a2ff;">💡 Fresh Capital Analysis:</strong> {liquidation_rate:.0f}% liquidation rate with unlimited capital assumption. 
+                        Total deployment: ${total_capital:,.0f}. Compare with liquidation-reentry mode for realistic assessment.
+                    </div>
+                    """, unsafe_allow_html=True)
                 
                 # Enhanced portfolio performance chart (same as liquidation-reentry)
                 st.markdown("### 📈 Performance Analytics Advanced Visualizations")

@@ -1,815 +1,860 @@
 import streamlit as st
 
-# Professional Bloomberg Terminal-style CSS
+# Professional Bloomberg Terminal-inspired CSS
 def load_css():
     return """
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;600;700&family=Inter:wght@300;400;500;600;700;800&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600;700&family=Inter:wght@400;500;600;700&display=swap');
         
-        /* CSS Variables for Professional Theme */
+        /* Bloomberg Terminal Dark Theme */
         :root {
-            --bg-primary: #0a0b0d;
-            --bg-secondary: #1a1d21;
-            --bg-tertiary: #242831;
-            --bg-card: #1e2329;
-            --bg-surface: #2b2f36;
+            --bg-primary: #000000;
+            --bg-secondary: #0a0a0a;
+            --bg-tertiary: #141414;
+            --bg-card: #1a1a1a;
+            --bg-hover: #242424;
             
-            --text-primary: #ffffff;
-            --text-secondary: #b7bdc8;
-            --text-muted: #6c7293;
-            --text-accent: #f7931a;
+            --text-primary: #e0e0e0;
+            --text-secondary: #a0a0a0;
+            --text-muted: #666666;
             
-            --border-primary: #2b2f36;
-            --border-secondary: #404853;
-            --border-accent: #f7931a;
+            --accent-orange: #ff8c00;
+            --accent-amber: #ffa500;
+            --positive-green: #00ff00;
+            --negative-red: #ff0000;
+            --warning-yellow: #ffff00;
+            --info-blue: #00a2ff;
             
-            --green-primary: #00d4aa;
-            --green-secondary: #00b894;
-            --red-primary: #ff6b6b;
-            --red-secondary: #ee5a52;
-            --blue-primary: #74b9ff;
-            --blue-secondary: #0984e3;
-            --orange-primary: #f7931a;
-            --orange-secondary: #e17055;
-            
-            --gradient-primary: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            --gradient-dark: linear-gradient(135deg, #1e2329 0%, #242831 100%);
-            --gradient-accent: linear-gradient(135deg, #f7931a 0%, #e17055 100%);
-            
-            --shadow-sm: 0 2px 4px rgba(0, 0, 0, 0.3);
-            --shadow-md: 0 4px 8px rgba(0, 0, 0, 0.4);
-            --shadow-lg: 0 8px 16px rgba(0, 0, 0, 0.5);
-            --shadow-xl: 0 16px 32px rgba(0, 0, 0, 0.6);
-            
-            --border-radius-sm: 4px;
-            --border-radius-md: 8px;
-            --border-radius-lg: 12px;
-            --border-radius-xl: 16px;
-            
-            --transition-fast: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-            --transition-normal: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-            --transition-slow: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+            --border-color: #333333;
+            --border-light: #404040;
         }
         
-        /* Global Overrides */
-        .main .block-container {
-            padding: 0 !important;
-            max-width: 100% !important;
-            background: var(--bg-primary);
-        }
-        
+        /* Global Dark Background */
         .stApp {
-            background: var(--bg-primary);
+            background-color: var(--bg-primary);
             color: var(--text-primary);
         }
         
-        .stApp > header {
-            background: transparent;
+        /* Main container */
+        .main .block-container {
+            padding: 1rem 2rem;
+            max-width: 1920px;
+            background-color: var(--bg-primary);
         }
         
-        /* Hide Streamlit components */
-        #MainMenu {visibility: hidden;}
-        footer {visibility: hidden;}
-        header {visibility: hidden;}
-        .stDeployButton {display: none;}
-        
-        /* Typography System */
-        .typography-h1 {
-            font-family: 'Inter', sans-serif;
-            font-size: 2.5rem;
-            font-weight: 800;
-            color: var(--text-primary);
-            line-height: 1.2;
-            letter-spacing: -0.025em;
-            margin: 0;
+        /* Typography - Bloomberg style */
+        * {
+            font-family: 'IBM Plex Mono', 'Consolas', 'Monaco', monospace !important;
         }
         
-        .typography-h2 {
-            font-family: 'Inter', sans-serif;
-            font-size: 1.875rem;
-            font-weight: 700;
-            color: var(--text-primary);
-            line-height: 1.3;
-            letter-spacing: -0.025em;
-            margin: 0;
-        }
-        
-        .typography-h3 {
-            font-family: 'Inter', sans-serif;
-            font-size: 1.5rem;
+        h1, h2, h3, h4, h5, h6 {
+            color: var(--accent-orange);
             font-weight: 600;
-            color: var(--text-primary);
-            line-height: 1.4;
-            margin: 0;
-        }
-        
-        .typography-h4 {
-            font-family: 'Inter', sans-serif;
-            font-size: 1.25rem;
-            font-weight: 600;
-            color: var(--text-secondary);
-            line-height: 1.4;
-            margin: 0;
-        }
-        
-        .typography-body {
-            font-family: 'Inter', sans-serif;
-            font-size: 0.875rem;
-            font-weight: 400;
-            color: var(--text-secondary);
-            line-height: 1.6;
-            margin: 0;
-        }
-        
-        .typography-caption {
-            font-family: 'JetBrains Mono', monospace;
-            font-size: 0.75rem;
-            font-weight: 400;
-            color: var(--text-muted);
-            line-height: 1.5;
-            margin: 0;
-        }
-        
-        .typography-mono {
-            font-family: 'JetBrains Mono', monospace;
-            font-size: 0.875rem;
-            font-weight: 500;
-            color: var(--text-primary);
-            line-height: 1.5;
-        }
-        
-        /* Terminal Header */
-        .terminal-header {
-            background: var(--bg-secondary);
-            border: 1px solid var(--border-primary);
-            border-radius: var(--border-radius-lg);
-            padding: 2rem;
-            margin-bottom: 2rem;
-            box-shadow: var(--shadow-lg);
-            position: relative;
-            overflow: hidden;
-        }
-        
-        .terminal-header::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            height: 4px;
-            background: var(--gradient-accent);
-        }
-        
-        .terminal-title {
-            font-family: 'JetBrains Mono', monospace;
-            font-size: 1.5rem;
-            font-weight: 700;
-            color: var(--text-primary);
             text-transform: uppercase;
-            letter-spacing: 0.1em;
-            margin: 0 0 0.5rem 0;
-        }
-        
-        .terminal-subtitle {
-            font-family: 'Inter', sans-serif;
-            font-size: 1rem;
-            font-weight: 400;
-            color: var(--text-muted);
-            margin: 0;
-        }
-        
-        .terminal-status {
-            display: flex;
-            gap: 1rem;
-            margin-top: 1rem;
-        }
-        
-        .status-indicator {
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-            font-family: 'JetBrains Mono', monospace;
-            font-size: 0.75rem;
-            color: var(--text-muted);
-        }
-        
-        .status-dot {
-            width: 8px;
-            height: 8px;
-            border-radius: 50%;
-            background: var(--green-primary);
-            animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
-        }
-        
-        @keyframes pulse {
-            0%, 100% { opacity: 1; }
-            50% { opacity: 0.5; }
-        }
-        
-        /* Professional Navigation */
-        .nav-container {
-            background: var(--bg-secondary);
-            border: 1px solid var(--border-primary);
-            border-radius: var(--border-radius-lg);
-            padding: 1rem;
-            margin-bottom: 2rem;
-            box-shadow: var(--shadow-md);
-        }
-        
-        .nav-tabs {
-            display: flex;
-            gap: 0.5rem;
-            background: var(--bg-tertiary);
-            padding: 0.5rem;
-            border-radius: var(--border-radius-md);
-            overflow-x: auto;
-        }
-        
-        .nav-tab {
-            background: transparent;
-            border: 1px solid transparent;
-            border-radius: var(--border-radius-sm);
-            padding: 0.75rem 1.5rem;
-            font-family: 'Inter', sans-serif;
-            font-size: 0.875rem;
-            font-weight: 500;
-            color: var(--text-muted);
-            cursor: pointer;
-            transition: var(--transition-fast);
-            white-space: nowrap;
-            min-width: 0;
-            flex-shrink: 0;
-        }
-        
-        .nav-tab:hover {
-            background: var(--bg-surface);
-            color: var(--text-secondary);
-            border-color: var(--border-secondary);
-        }
-        
-        .nav-tab.active {
-            background: var(--gradient-accent);
-            color: var(--text-primary);
-            border-color: var(--border-accent);
-            font-weight: 600;
-            box-shadow: var(--shadow-sm);
-        }
-        
-        /* Professional Cards */
-        .professional-card {
-            background: var(--bg-card);
-            border: 1px solid var(--border-primary);
-            border-radius: var(--border-radius-lg);
-            padding: 1.5rem;
-            margin-bottom: 1.5rem;
-            box-shadow: var(--shadow-md);
-            transition: var(--transition-normal);
-            position: relative;
-            overflow: hidden;
-        }
-        
-        .professional-card:hover {
-            transform: translateY(-2px);
-            box-shadow: var(--shadow-lg);
-            border-color: var(--border-secondary);
-        }
-        
-        .card-header {
-            display: flex;
-            justify-content: between;
-            align-items: center;
+            letter-spacing: 0.5px;
             margin-bottom: 1rem;
-            padding-bottom: 0.75rem;
-            border-bottom: 1px solid var(--border-primary);
         }
         
-        .card-title {
-            font-family: 'Inter', sans-serif;
-            font-size: 1.125rem;
-            font-weight: 600;
-            color: var(--text-primary);
-            margin: 0;
-        }
-        
-        .card-subtitle {
-            font-family: 'Inter', sans-serif;
-            font-size: 0.875rem;
-            color: var(--text-muted);
-            margin: 0.25rem 0 0 0;
-        }
-        
-        /* Financial Metrics Grid */
-        .metrics-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-            gap: 1rem;
-            margin: 1rem 0;
-        }
-        
-        .metric-card {
-            background: var(--bg-surface);
-            border: 1px solid var(--border-primary);
-            border-radius: var(--border-radius-md);
-            padding: 1.25rem;
-            transition: var(--transition-fast);
-            position: relative;
-            overflow: hidden;
-        }
-        
-        .metric-card::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            height: 3px;
-            background: var(--gradient-accent);
-            opacity: 0;
-            transition: var(--transition-fast);
-        }
-        
-        .metric-card:hover::before {
-            opacity: 1;
-        }
-        
-        .metric-label {
-            font-family: 'Inter', sans-serif;
-            font-size: 0.75rem;
-            font-weight: 500;
-            color: var(--text-muted);
-            text-transform: uppercase;
-            letter-spacing: 0.05em;
-            margin: 0 0 0.5rem 0;
-        }
-        
-        .metric-value {
-            font-family: 'JetBrains Mono', monospace;
+        h1 {
             font-size: 1.5rem;
-            font-weight: 600;
+            border-bottom: 2px solid var(--accent-orange);
+            padding-bottom: 0.5rem;
+        }
+        
+        h2 {
+            font-size: 1.25rem;
+            color: var(--accent-amber);
+        }
+        
+        h3 {
+            font-size: 1.1rem;
             color: var(--text-primary);
-            margin: 0 0 0.25rem 0;
         }
         
-        .metric-change {
-            font-family: 'JetBrains Mono', monospace;
-            font-size: 0.875rem;
-            font-weight: 500;
-            margin: 0;
-        }
-        
-        .metric-change.positive {
-            color: var(--green-primary);
-        }
-        
-        .metric-change.negative {
-            color: var(--red-primary);
-        }
-        
-        .metric-change.neutral {
-            color: var(--text-muted);
-        }
-        
-        /* Professional Tables */
-        .professional-table {
-            background: var(--bg-card);
-            border: 1px solid var(--border-primary);
-            border-radius: var(--border-radius-lg);
-            overflow: hidden;
-            box-shadow: var(--shadow-md);
-        }
-        
-        .table-header {
-            background: var(--bg-tertiary);
-            padding: 1rem 1.5rem;
-            border-bottom: 1px solid var(--border-primary);
-        }
-        
-        .table-title {
-            font-family: 'Inter', sans-serif;
-            font-size: 1rem;
-            font-weight: 600;
+        p, div, span, li {
             color: var(--text-primary);
-            margin: 0;
+            line-height: 1.5;
         }
         
-        /* Input Components */
-        .input-group {
-            margin-bottom: 1.5rem;
+        /* Remove all Streamlit default styling */
+        .css-1d391kg, .css-1dp5vir, .css-1cpxqw2 {
+            background-color: var(--bg-primary) !important;
         }
         
-        .input-label {
-            font-family: 'Inter', sans-serif;
-            font-size: 0.875rem;
-            font-weight: 500;
+        /* Professional Card Styling */
+        .terminal-card {
+            background-color: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 0;
+            padding: 1rem;
+            margin: 0.5rem 0;
+            font-family: 'IBM Plex Mono', monospace;
+        }
+        
+        .terminal-card:hover {
+            background-color: var(--bg-hover);
+            border-color: var(--accent-orange);
+        }
+        
+        /* Data Display Terminal Style */
+        .data-grid {
+            display: grid;
+            grid-template-columns: auto 1fr;
+            gap: 0.5rem;
+            padding: 0.5rem;
+            background-color: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+        }
+        
+        .data-label {
             color: var(--text-secondary);
-            margin: 0 0 0.5rem 0;
-            display: block;
+            text-transform: uppercase;
+            font-size: 0.8rem;
+            font-weight: 500;
         }
         
-        .input-description {
-            font-family: 'Inter', sans-serif;
-            font-size: 0.75rem;
-            color: var(--text-muted);
-            margin: 0.25rem 0 0 0;
-            line-height: 1.4;
+        .data-value {
+            color: var(--text-primary);
+            font-weight: 600;
+            text-align: right;
         }
         
-        /* Streamlit Component Overrides */
-        .stSelectbox > div > div {
-            background: var(--bg-surface) !important;
-            border: 1px solid var(--border-primary) !important;
-            border-radius: var(--border-radius-md) !important;
-            color: var(--text-primary) !important;
+        .data-value.positive {
+            color: var(--positive-green);
         }
         
-        .stSelectbox > div > div > div {
-            color: var(--text-primary) !important;
+        .data-value.negative {
+            color: var(--negative-red);
         }
         
-        .stNumberInput > div > div > input {
-            background: var(--bg-surface) !important;
-            border: 1px solid var(--border-primary) !important;
-            border-radius: var(--border-radius-md) !important;
-            color: var(--text-primary) !important;
-            font-family: 'JetBrains Mono', monospace !important;
-        }
-        
-        .stNumberInput > div > div > input:focus {
-            border-color: var(--border-accent) !important;
-            box-shadow: 0 0 0 2px rgba(247, 147, 26, 0.2) !important;
-        }
-        
-        .stButton > button {
-            background: var(--gradient-accent) !important;
-            border: none !important;
-            border-radius: var(--border-radius-md) !important;
-            padding: 0.75rem 1.5rem !important;
-            font-family: 'Inter', sans-serif !important;
-            font-weight: 600 !important;
-            color: var(--text-primary) !important;
-            transition: var(--transition-fast) !important;
-            box-shadow: var(--shadow-sm) !important;
-        }
-        
-        .stButton > button:hover {
-            transform: translateY(-1px) !important;
-            box-shadow: var(--shadow-md) !important;
-        }
-        
-        .stButton > button:active {
-            transform: translateY(0) !important;
-        }
-        
-        /* Radio Button Styling for Navigation */
+        /* Terminal-style tabs */
         div[role="radiogroup"] {
-            background: var(--bg-tertiary) !important;
+            background-color: var(--bg-secondary) !important;
             padding: 0.5rem !important;
-            border-radius: var(--border-radius-lg) !important;
+            border: 1px solid var(--border-color) !important;
             display: flex !important;
-            gap: 0.5rem !important;
-            overflow-x: auto !important;
+            gap: 0 !important;
         }
         
         div[role="radiogroup"] > label {
-            background: transparent !important;
-            border: 1px solid transparent !important;
-            border-radius: var(--border-radius-md) !important;
-            padding: 0.875rem 1.5rem !important;
-            font-family: 'Inter', sans-serif !important;
-            font-size: 0.875rem !important;
-            font-weight: 500 !important;
-            color: var(--text-muted) !important;
-            transition: var(--transition-fast) !important;
-            cursor: pointer !important;
-            white-space: nowrap !important;
-            min-width: 0 !important;
-            flex-shrink: 0 !important;
+            background-color: var(--bg-tertiary) !important;
+            border: 1px solid var(--border-color) !important;
+            border-radius: 0 !important;
+            padding: 0.75rem 1.5rem !important;
             margin: 0 !important;
+            transition: all 0.2s ease !important;
+            color: var(--text-secondary) !important;
+            font-weight: 500 !important;
+            font-size: 0.9rem !important;
+            text-transform: uppercase !important;
+            letter-spacing: 0.5px !important;
         }
         
         div[role="radiogroup"] > label:hover {
-            background: var(--bg-surface) !important;
-            color: var(--text-secondary) !important;
-            border-color: var(--border-secondary) !important;
+            background-color: var(--bg-hover) !important;
+            color: var(--accent-orange) !important;
+            border-color: var(--accent-orange) !important;
         }
         
         div[role="radiogroup"] > label[data-checked="true"] {
-            background: var(--gradient-accent) !important;
-            color: var(--text-primary) !important;
-            border-color: var(--border-accent) !important;
+            background-color: var(--accent-orange) !important;
+            color: var(--bg-primary) !important;
+            border-color: var(--accent-orange) !important;
+            font-weight: 700 !important;
+        }
+        
+        /* Professional Buttons */
+        .stButton > button {
+            background-color: var(--bg-tertiary) !important;
+            color: var(--accent-orange) !important;
+            border: 1px solid var(--accent-orange) !important;
+            border-radius: 0 !important;
+            padding: 0.5rem 1.5rem !important;
             font-weight: 600 !important;
-            box-shadow: var(--shadow-sm) !important;
+            text-transform: uppercase !important;
+            letter-spacing: 0.5px !important;
+            transition: all 0.2s !important;
+            font-family: 'IBM Plex Mono', monospace !important;
         }
         
-        div[role="radiogroup"] > label > div:first-child {
-            display: none !important;
+        .stButton > button:hover {
+            background-color: var(--accent-orange) !important;
+            color: var(--bg-primary) !important;
+            box-shadow: 0 0 10px rgba(255, 140, 0, 0.5) !important;
         }
         
-        /* Alert Styling */
-        .stAlert {
-            background: var(--bg-surface) !important;
-            border: 1px solid var(--border-primary) !important;
-            border-radius: var(--border-radius-md) !important;
+        .stButton > button:focus {
+            background-color: var(--accent-orange) !important;
+            color: var(--bg-primary) !important;
+            outline: none !important;
+        }
+        
+        .stButton > button:active {
+            background-color: var(--accent-amber) !important;
+            color: var(--bg-primary) !important;
+        }
+        
+        /* Input fields - White background with BOLD BLACK text for readability */
+        .stTextInput > div > div > input,
+        .stNumberInput > div > div > input,
+        .stSelectbox > div > div > select,
+        .stDateInput > div > div > input,
+        .stSlider > div > div > div > div,
+        .stSlider input,
+        input[type="text"],
+        input[type="number"],
+        input[type="date"],
+        select,
+        textarea {
+            background-color: #ffffff !important;
+            color: #000000 !important;
+            border: 1px solid #cccccc !important;
+            border-radius: 0 !important;
+            font-family: 'IBM Plex Mono', monospace !important;
+            padding: 0.5rem !important;
+            font-weight: 700 !important;
+            font-size: 0.95rem !important;
+        }
+        
+        .stTextInput > div > div > input:focus,
+        .stNumberInput > div > div > input:focus,
+        .stSelectbox > div > div > select:focus,
+        .stDateInput > div > div > input:focus,
+        .stSlider > div > div > div > div:focus,
+        input[type="text"]:focus,
+        input[type="number"]:focus,
+        input[type="date"]:focus,
+        select:focus,
+        textarea:focus {
+            border-color: var(--accent-orange) !important;
+            box-shadow: 0 0 5px rgba(255, 140, 0, 0.3) !important;
+            font-weight: 700 !important;
+        }
+        
+        /* Dropdown options - BOLD BLACK text */
+        .stSelectbox option,
+        select option {
+            background-color: #ffffff !important;
+            color: #000000 !important;
+            font-weight: 700 !important;
+            font-family: 'IBM Plex Mono', monospace !important;
+        }
+        
+        /* Force selectbox text to be BOLD BLACK */
+        .stSelectbox > div > div > div,
+        .stSelectbox > div > div > div > div,
+        .stSelectbox span,
+        .stSelectbox div[data-baseweb="select"] > div,
+        .stSelectbox div[data-baseweb="select"] span {
+            color: #000000 !important;
+            font-weight: 700 !important;
+            font-family: 'IBM Plex Mono', monospace !important;
+        }
+        
+        /* Target the actual displayed text in selectbox */
+        .stSelectbox > div > div > div[data-baseweb="select"] > div > div {
+            color: #000000 !important;
+            font-weight: 700 !important;
+            font-family: 'IBM Plex Mono', monospace !important;
+        }
+        
+        /* Comprehensive selectbox text targeting - BOLD BLACK nuclear option */
+        [data-baseweb="select"] *,
+        .stSelectbox *,
+        div[data-testid="stSelectbox"] *,
+        div[role="combobox"] *,
+        div[role="listbox"] * {
+            color: #000000 !important;
+            font-weight: 700 !important;
+            font-family: 'IBM Plex Mono', monospace !important;
+        }
+        
+        /* Ensure dropdown arrow and container are styled properly */
+        .stSelectbox > div > div {
+            background-color: #ffffff !important;
+        }
+        
+        /* Force any remaining gray text to BOLD BLACK */
+        .stSelectbox div[style*="color"],
+        .stSelectbox span[style*="color"] {
+            color: #000000 !important;
+            font-weight: 700 !important;
+            font-family: 'IBM Plex Mono', monospace !important;
+        }
+        
+        /* Number input increment/decrement buttons - BOLD STYLING */
+        .stNumberInput button {
+            background-color: #f0f0f0 !important;
+            color: #000000 !important;
+            border: 1px solid #cccccc !important;
+            font-weight: 700 !important;
+            font-family: 'IBM Plex Mono', monospace !important;
+        }
+        
+        .stNumberInput button:hover {
+            background-color: #e0e0e0 !important;
+            color: #000000 !important;
+            font-weight: 700 !important;
+        }
+        
+        /* Ensure number input buttons show + and - clearly with BOLD text */
+        .stNumberInput button span {
+            color: #000000 !important;
+            font-weight: 700 !important;
+            font-family: 'IBM Plex Mono', monospace !important;
+        }
+        
+        /* Slider styling - BOLD BLACK text */
+        .stSlider > div > div > div > div {
+            color: #000000 !important;
+            font-weight: 700 !important;
+            font-family: 'IBM Plex Mono', monospace !important;
+        }
+        
+        .stSlider label {
+            color: var(--accent-orange) !important;
+            font-weight: 700 !important;
+        }
+        
+        /* Radio button text - BOLD BLACK */
+        .stRadio > div > label > div > div {
+            color: #000000 !important;
+            font-weight: 700 !important;
+            font-family: 'IBM Plex Mono', monospace !important;
+        }
+        
+        /* Checkbox text - BOLD BLACK */
+        .stCheckbox > label > div > div {
+            color: #000000 !important;
+            font-weight: 700 !important;
+            font-family: 'IBM Plex Mono', monospace !important;
+        }
+        
+        /* Text area - BOLD BLACK */
+        .stTextArea > div > div > textarea {
+            background-color: #ffffff !important;
+            color: #000000 !important;
+            font-weight: 700 !important;
+            font-family: 'IBM Plex Mono', monospace !important;
+            border: 1px solid #cccccc !important;
+        }
+        
+        /* COMPREHENSIVE INPUT STYLING - Catch all form elements */
+        div[data-testid="stTextInput"] input,
+        div[data-testid="stNumberInput"] input,
+        div[data-testid="stDateInput"] input,
+        div[data-testid="stSelectbox"] div,
+        div[data-testid="stSlider"] div,
+        div[data-testid="stTextArea"] textarea,
+        div[data-testid="stRadio"] div,
+        div[data-testid="stCheckbox"] div {
+            color: #000000 !important;
+            font-weight: 700 !important;
+            font-family: 'IBM Plex Mono', monospace !important;
+        }
+        
+        /* Input labels should remain orange but bold */
+        .stTextInput > label,
+        .stNumberInput > label,
+        .stSelectbox > label,
+        .stDateInput > label,
+        .stSlider > label,
+        .stTextArea > label,
+        .stRadio > label,
+        .stCheckbox > label {
+            color: var(--accent-orange) !important;
+            font-weight: 700 !important;
+            font-family: 'IBM Plex Mono', monospace !important;
+            text-transform: uppercase !important;
+        }
+        
+        /* Metrics - Bloomberg style */
+        [data-testid="metric-container"] {
+            background-color: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 0;
+            padding: 1rem;
+        }
+        
+        [data-testid="metric-container"] [data-testid="metric-label"] {
+            color: var(--text-secondary);
+            font-size: 0.8rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        
+        [data-testid="metric-container"] [data-testid="metric-value"] {
+            color: var(--accent-amber);
+            font-size: 1.5rem;
+            font-weight: 700;
+        }
+        
+        [data-testid="metric-container"] [data-testid="metric-delta"] {
+            font-size: 0.9rem;
+        }
+        
+        /* Tables - Terminal style */
+        .dataframe {
+            background-color: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            color: var(--text-primary);
+            font-size: 0.85rem;
+        }
+        
+        .dataframe thead tr th {
+            background-color: var(--bg-tertiary);
+            color: var(--accent-orange);
+            font-weight: 600;
+            text-transform: uppercase;
+            border-bottom: 2px solid var(--accent-orange);
+            padding: 0.5rem;
+            text-align: left;
+        }
+        
+        .dataframe tbody tr {
+            border-bottom: 1px solid var(--border-color);
+        }
+        
+        .dataframe tbody tr:hover {
+            background-color: var(--bg-hover);
+        }
+        
+        .dataframe tbody tr td {
+            padding: 0.5rem;
+            font-family: 'IBM Plex Mono', monospace;
+        }
+        
+        /* Plotly charts dark theme */
+        .js-plotly-plot {
+            background-color: var(--bg-secondary) !important;
+        }
+        
+        /* Expander - Terminal style */
+        .streamlit-expanderHeader {
+            background-color: var(--bg-tertiary) !important;
+            border: 1px solid var(--border-color) !important;
+            border-radius: 0 !important;
             color: var(--text-primary) !important;
         }
         
-        .stSuccess {
-            border-left: 4px solid var(--green-primary) !important;
+        .streamlit-expanderHeader:hover {
+            border-color: var(--accent-orange) !important;
+            color: var(--accent-orange) !important;
         }
         
-        .stError {
-            border-left: 4px solid var(--red-primary) !important;
+        /* Sidebar styling */
+        .css-1d391kg {
+            background-color: var(--bg-secondary);
+            border-right: 1px solid var(--border-color);
         }
         
-        .stWarning {
-            border-left: 4px solid var(--orange-primary) !important;
-        }
-        
-        .stInfo {
-            border-left: 4px solid var(--blue-primary) !important;
-        }
-        
-        /* Risk Indicators */
-        .risk-indicator {
-            border-radius: var(--border-radius-lg);
-            padding: 1.5rem;
-            margin: 1rem 0;
-            position: relative;
-            overflow: hidden;
-            backdrop-filter: blur(10px);
-        }
-        
-        .risk-high {
-            background: linear-gradient(135deg, rgba(255, 107, 107, 0.1), rgba(238, 90, 82, 0.05));
-            border: 1px solid rgba(255, 107, 107, 0.3);
-        }
-        
-        .risk-medium {
-            background: linear-gradient(135deg, rgba(247, 147, 26, 0.1), rgba(225, 112, 85, 0.05));
-            border: 1px solid rgba(247, 147, 26, 0.3);
-        }
-        
-        .risk-low {
-            background: linear-gradient(135deg, rgba(0, 212, 170, 0.1), rgba(0, 184, 148, 0.05));
-            border: 1px solid rgba(0, 212, 170, 0.3);
-        }
-        
-        /* Loading States */
-        .loading-skeleton {
-            background: linear-gradient(90deg, var(--bg-surface) 25%, var(--bg-tertiary) 50%, var(--bg-surface) 75%);
-            background-size: 200% 100%;
-            animation: loading 1.5s infinite;
-            border-radius: var(--border-radius-md);
-        }
-        
-        @keyframes loading {
-            0% { background-position: 200% 0; }
-            100% { background-position: -200% 0; }
-        }
-        
-        /* Terminal-style Command Bar */
-        .command-bar {
-            background: var(--bg-primary);
-            border: 1px solid var(--border-secondary);
-            border-radius: var(--border-radius-md);
-            padding: 0.75rem 1rem;
-            margin: 1rem 0;
-            font-family: 'JetBrains Mono', monospace;
-            font-size: 0.875rem;
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-        }
-        
-        .command-prompt {
-            color: var(--green-primary);
-            font-weight: 600;
-        }
-        
-        .command-text {
+        /* Alert boxes - Terminal style */
+        .stAlert {
+            background-color: var(--bg-card);
+            border-radius: 0;
+            border-left: 4px solid var(--accent-orange);
             color: var(--text-primary);
-            flex: 1;
         }
         
-        .command-cursor {
-            width: 8px;
-            height: 1em;
-            background: var(--text-primary);
-            animation: blink 1s infinite;
+        .stAlert[data-baseweb="notification"][kind="info"] {
+            border-left-color: var(--info-blue);
         }
         
-        @keyframes blink {
-            0%, 50% { opacity: 1; }
-            51%, 100% { opacity: 0; }
+        .stAlert[data-baseweb="notification"][kind="warning"] {
+            border-left-color: var(--warning-yellow);
         }
         
-        /* Responsive Design */
-        @media (max-width: 768px) {
-            .terminal-header {
-                padding: 1.5rem;
-            }
-            
-            .terminal-title {
-                font-size: 1.25rem;
-            }
-            
-            .metrics-grid {
-                grid-template-columns: 1fr;
-            }
-            
-            .nav-tabs {
-                flex-direction: column;
-                gap: 0.25rem;
-            }
-            
-            .nav-tab {
-                padding: 0.75rem 1rem;
-                text-align: center;
-            }
+        .stAlert[data-baseweb="notification"][kind="error"] {
+            border-left-color: var(--negative-red);
         }
         
-        /* Performance Optimizations */
-        * {
-            box-sizing: border-box;
+        .stAlert[data-baseweb="notification"][kind="success"] {
+            border-left-color: var(--positive-green);
         }
         
-        .gpu-accelerated {
-            transform: translateZ(0);
-            backface-visibility: hidden;
-            perspective: 1000;
+        /* Progress bars */
+        .stProgress > div > div > div {
+            background-color: var(--accent-orange);
         }
         
-        /* Scrollbar Styling */
+        /* Sliders */
+        .st-emotion-cache-1inwz65 {
+            background-color: var(--bg-secondary) !important;
+        }
+        
+        /* Hide Streamlit branding */
+        #MainMenu {visibility: hidden;}
+        footer {visibility: hidden;}
+        header {visibility: hidden;}
+        
+        /* Custom scrollbar */
         ::-webkit-scrollbar {
-            width: 8px;
-            height: 8px;
+            width: 10px;
+            height: 10px;
         }
         
         ::-webkit-scrollbar-track {
-            background: var(--bg-tertiary);
-            border-radius: var(--border-radius-sm);
+            background: var(--bg-secondary);
         }
         
         ::-webkit-scrollbar-thumb {
-            background: var(--border-secondary);
-            border-radius: var(--border-radius-sm);
+            background: var(--border-color);
+            border-radius: 0;
         }
         
         ::-webkit-scrollbar-thumb:hover {
-            background: var(--text-muted);
+            background: var(--accent-orange);
+        }
+        
+        /* Data terminal header */
+        .terminal-header {
+            background-color: var(--bg-secondary);
+            border: 1px solid var(--accent-orange);
+            padding: 1rem;
+            margin-bottom: 1rem;
+            text-align: center;
+        }
+        
+        .terminal-title {
+            color: var(--accent-orange);
+            font-size: 1.8rem;
+            font-weight: 700;
+            letter-spacing: 2px;
+            margin: 0;
+        }
+        
+        .terminal-subtitle {
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+            letter-spacing: 1px;
+            margin: 0.5rem 0 0 0;
+        }
+        
+        /* Grid layout for metrics */
+        .metric-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+            margin: 1rem 0;
+        }
+        
+        .metric-box {
+            background-color: var(--bg-card);
+            border: 1px solid var(--border-color);
+            padding: 1rem;
+            text-align: center;
+        }
+        
+        .metric-label {
+            color: var(--text-secondary);
+            font-size: 0.8rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 0.5rem;
+        }
+        
+        .metric-value {
+            color: var(--accent-amber);
+            font-size: 1.5rem;
+            font-weight: 700;
+        }
+        
+        .metric-delta {
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+            margin-top: 0.25rem;
+        }
+        
+        .metric-delta.positive {
+            color: var(--positive-green);
+        }
+        
+        .metric-delta.negative {
+            color: var(--negative-red);
+        }
+        
+        /* Backtest mode selection buttons - ensure visibility */
+        [data-testid="stHorizontalBlock"] button,
+        div[data-testid="column"] button {
+            background-color: #1a1a1a !important;
+            color: #ff8c00 !important;
+            border: 2px solid #ff8c00 !important;
+        }
+        
+        [data-testid="stHorizontalBlock"] button:hover,
+        div[data-testid="column"] button:hover {
+            background-color: #ff8c00 !important;
+            color: #000000 !important;
+        }
+        
+        /* Selected/active button state */
+        [data-testid="stHorizontalBlock"] button[data-active="true"],
+        div[data-testid="column"] button[data-active="true"] {
+            background-color: #ff8c00 !important;
+            color: #000000 !important;
+            font-weight: 700 !important;
+        }
+        
+        /* Fix any white text issues */
+        button span {
+            color: inherit !important;
+        }
+        
+        /* Tooltip/help text styling - comprehensive coverage */
+        div[data-baseweb="tooltip"],
+        div[data-baseweb="tooltip"] > div,
+        .st-emotion-cache-1gulkj5,
+        [data-testid="tooltipHoverTarget"] + div,
+        [role="tooltip"],
+        div[data-testid="stTooltipContent"] {
+            background-color: var(--accent-orange) !important;
+            border: 1px solid var(--accent-amber) !important;
+        }
+        
+        div[data-baseweb="tooltip"] div,
+        div[data-baseweb="tooltip"] span,
+        div[data-baseweb="tooltip"] p,
+        [role="tooltip"] div,
+        [role="tooltip"] span,
+        [role="tooltip"] p,
+        [data-testid="stTooltipContent"] div,
+        [data-testid="stTooltipContent"] span,
+        [data-testid="stTooltipContent"] p {
+            color: var(--bg-primary) !important;
+            font-weight: 600 !important;
+        }
+        
+        /* Streamlit tooltip styling - all possible classes */
+        [class*="tooltip"],
+        [class*="Tooltip"] {
+            background-color: var(--accent-orange) !important;
+            color: var(--bg-primary) !important;
+            border: 1px solid var(--accent-amber) !important;
+        }
+        
+        [class*="tooltip"] *,
+        [class*="Tooltip"] * {
+            color: var(--bg-primary) !important;
+        }
+        
+        /* Help icon styling */
+        [data-testid="stTooltipIcon"],
+        [data-testid="tooltipHoverTarget"] {
+            color: var(--accent-orange) !important;
+        }
+        
+        /* Popover/popup styling */
+        [data-testid="stPopover"],
+        .st-emotion-cache-1n76uvr,
+        .st-emotion-cache-1n76uvr * {
+            background-color: var(--accent-orange) !important;
+            color: var(--bg-primary) !important;
+        }
+        
+        /* Spinner styling */
+        .stSpinner > div {
+            color: var(--accent-orange) !important;
+            font-family: 'IBM Plex Mono', monospace !important;
+            font-weight: 600 !important;
+            text-transform: uppercase !important;
+        }
+        
+        .stSpinner svg {
+            fill: var(--accent-orange) !important;
+        }
+        
+        /* Force tooltip text to be visible - nuclear option */
+        div[style*="position: absolute"][style*="z-index"] {
+            background-color: var(--accent-orange) !important;
+        }
+        
+        div[style*="position: absolute"][style*="z-index"] * {
+            color: var(--bg-primary) !important;
+        }
+        
+        /* Global tooltip override - last resort */
+        body [role="tooltip"],
+        body [data-baseweb="tooltip"],
+        body .tooltipContainer,
+        body .tooltip-text,
+        body [class*="tooltip"]:not(button):not(div[data-testid="column"]) {
+            background-color: #ff8c00 !important;
+            color: #000000 !important;
+            border: 2px solid #ffa500 !important;
+            font-weight: 700 !important;
+        }
+        
+        body [role="tooltip"] *,
+        body [data-baseweb="tooltip"] *,
+        body .tooltipContainer *,
+        body .tooltip-text *,
+        body [class*="tooltip"]:not(button):not(div[data-testid="column"]) * {
+            color: #000000 !important;
+        }
+        
+        /* Remove rounded corners everywhere */
+        * {
+            border-radius: 0 !important;
+        }
+        
+        /* Calendar / Date Picker Styling - Make text readable across all apps */
+        .stDateInput div[data-baseweb="calendar"] {
+            background-color: #ffffff !important;
+        }
+        
+        /* Calendar header, navigation, and all text elements */
+        .stDateInput div[data-baseweb="calendar"] button,
+        .stDateInput div[data-baseweb="calendar"] span,
+        .stDateInput div[data-baseweb="calendar"] div {
+            color: #000000 !important;
+            font-weight: normal !important;
+        }
+        
+        /* Calendar days */
+        .stDateInput div[data-baseweb="calendar"] td,
+        .stDateInput div[data-baseweb="calendar"] th {
+            color: #000000 !important;
+            background-color: #ffffff !important;
+            font-weight: normal !important;
+        }
+        
+        /* Calendar navigation buttons */
+        .stDateInput div[data-baseweb="calendar"] button:hover {
+            background-color: #f0f0f0 !important;
+            color: #000000 !important;
+        }
+        
+        /* Selected date */
+        .stDateInput div[data-baseweb="calendar"] [aria-selected="true"] {
+            background-color: #ff8c00 !important;
+            color: #ffffff !important;
+        }
+        
+        /* Today's date */
+        .stDateInput div[data-baseweb="calendar"] [aria-label*="Today"] {
+            background-color: #e8f4fd !important;
+            color: #000000 !important;
+        }
+        
+        /* Calendar month/year dropdowns */
+        .stDateInput div[data-baseweb="select"] {
+            background-color: #ffffff !important;
+        }
+        
+        .stDateInput div[data-baseweb="select"] div,
+        .stDateInput div[data-baseweb="select"] span {
+            color: #000000 !important;
+            font-weight: normal !important;
+        }
+        
+        /* Comprehensive calendar fix - target all possible calendar elements */
+        div[data-baseweb="calendar"] *,
+        div[data-baseweb="datepicker"] *,
+        .react-datepicker *,
+        [class*="calendar"] *,
+        [class*="datepicker"] * {
+            color: #000000 !important;
+            font-weight: normal !important;
+        }
+        
+        /* Calendar container background */
+        div[data-baseweb="calendar"],
+        div[data-baseweb="datepicker"],
+        .react-datepicker {
+            background-color: #ffffff !important;
+            border: 1px solid #cccccc !important;
+        }
+        
+        /* Calendar popup/overlay positioning */
+        div[data-baseweb="calendar"][data-floating-ui-portal] {
+            z-index: 999999 !important;
         }
     </style>
     """
 
-# Professional Terminal Header
-def terminal_header():
+# Professional terminal-style header
+def app_header():
     return """
     <div class="terminal-header">
         <div class="terminal-title">MARGIN ANALYTICS TERMINAL</div>
-        <div class="terminal-subtitle">Advanced Portfolio Management & Risk Analysis Platform</div>
-        <div class="terminal-status">
-            <div class="status-indicator">
-                <div class="status-dot"></div>
-                LIVE DATA
-            </div>
-            <div class="status-indicator">
-                <div class="status-dot"></div>
-                SYSTEM OPERATIONAL
-            </div>
-            <div class="status-indicator">
-                <div class="status-dot"></div>
-                MARKETS OPEN
-            </div>
-        </div>
+        <div class="terminal-subtitle">PROFESSIONAL TRADING ANALYSIS PLATFORM</div>
     </div>
     """
 
-# Professional app header
-def app_header():
-    return terminal_header()
-
-# Professional navigation explanation
-def navigation_explanation():
-    return """
-    <div class="professional-card">
-        <div class="card-header">
-            <div class="card-title">Platform Navigation</div>
-        </div>
-        <p class="typography-body">
-            Navigate through different analytical modules using the tabs above. Each module provides 
-            specialized tools for portfolio analysis, risk management, and strategic planning.
-        </p>
-    </div>
-    """
-
-# Explanation card for date range
+# Remove all other emoji-heavy functions and replace with clean, professional versions
 def date_range_explanation():
     return """
-    <div class="input-description">
-        Select the analysis period for historical data evaluation. Time range affects all calculations, 
-        backtests, and performance metrics across the platform.
+    <div class="terminal-card">
+        <div class="data-label">DATE RANGE SELECTION</div>
+        <div style="color: var(--text-secondary); font-size: 0.85rem; margin-top: 0.5rem;">
+            SELECT TIME PERIOD FOR ANALYSIS. HISTORICAL DATA AVAILABLE FROM 2000-PRESENT.
+        </div>
     </div>
     """
 
-# Explanation for Market Overview tab
 def market_overview_explanation():
     return """
-    <div class="professional-card">
-        <div class="card-header">
-            <div class="card-title">Market Intelligence Dashboard</div>
-            <div class="card-subtitle">Real-time ETF Performance Analytics</div>
+    <div class="terminal-card">
+        <div class="data-label">MARKET OVERVIEW</div>
+        <div style="color: var(--text-secondary); font-size: 0.85rem; margin-top: 0.5rem;">
+            COMPREHENSIVE ETF PERFORMANCE METRICS. COMPARING S&P 500 (SPY) AND TOTAL MARKET (VTI) INDICES.
         </div>
-        <p class="typography-body">
-            Comprehensive analysis of major ETF instruments including S&P 500 (SPY) and Total Market (VTI) 
-            exposure. Monitor key performance indicators, volatility metrics, and market trends to inform 
-            strategic positioning decisions.
-        </p>
     </div>
     """
 
-# Explanation for Price Analysis tab
 def price_analysis_explanation():
     return """
-    <div class="professional-card">
-        <div class="card-header">
-            <div class="card-title">Technical Price Analysis</div>
-            <div class="card-subtitle">Advanced Charting & Pattern Recognition</div>
-        </div>
-        <p class="typography-body">
-            Professional-grade candlestick charts with technical indicators. Green candles indicate 
-            bullish periods (close > open), red candles indicate bearish periods (close < open). 
-            Wicks represent intraperiod high/low price discovery ranges.
-        </p>
-        <div class="command-bar">
-            <span class="command-prompt">$</span>
-            <span class="command-text">analyze --symbol=SPY --timeframe=1M --indicators=MACD,RSI</span>
-            <div class="command-cursor"></div>
+    <div class="terminal-card">
+        <div class="data-label">PRICE ANALYSIS</div>
+        <div style="color: var(--text-secondary); font-size: 0.85rem; margin-top: 0.5rem;">
+            CANDLESTICK CHARTS DISPLAY OHLC DATA. GREEN: BULLISH CLOSE. RED: BEARISH CLOSE.
         </div>
     </div>
     """
 
-# Explanation for Dividend Analysis tab
 def dividend_analysis_explanation():
     return """
-    <div class="professional-card">
-        <div class="card-header">
-            <div class="card-title">Dividend Flow Analysis</div>
-            <div class="card-subtitle">Income Distribution & Yield Tracking</div>
-        </div>
-        <p class="typography-body">
-            Quantitative analysis of dividend distributions and yield patterns. Monitor quarterly 
-            payouts, seasonal variations, and income sustainability metrics for portfolio income planning.
-        </p>
-        <div class="metrics-grid">
-            <div class="metric-card">
-                <div class="metric-label">Analysis Scope</div>
-                <div class="metric-value">Quarterly Distributions</div>
-            </div>
-            <div class="metric-card">
-                <div class="metric-label">Pattern Recognition</div>
-                <div class="metric-value">Seasonal Trends</div>
-            </div>
+    <div class="terminal-card">
+        <div class="data-label">DIVIDEND ANALYSIS</div>
+        <div style="color: var(--text-secondary); font-size: 0.85rem; margin-top: 0.5rem;">
+            QUARTERLY DIVIDEND DISTRIBUTION PATTERNS. ANALYZE INCOME POTENTIAL AND SEASONAL TRENDS.
         </div>
     </div>
     """
 
-# Explanation for Margin Calculator tab
 def margin_calculator_explanation():
     return """
-    <div class="professional-card">
-        <div class="card-header">
-            <div class="card-title">Leverage & Margin Analytics</div>
-            <div class="card-subtitle">Risk Assessment & Position Sizing</div>
-        </div>
-        <p class="typography-body">
-            Advanced margin trading calculator with real-time risk assessment. Calculate optimal 
-            leverage ratios, margin requirements, and liquidation thresholds for sophisticated 
-            portfolio management strategies.
-        </p>
-        <div class="risk-indicator risk-medium">
-            <strong>Risk Advisory:</strong> Margin trading amplifies both potential returns and losses. 
-            Positions may be subject to forced liquidation if maintenance margins are breached.
+    <div class="terminal-card" style="border-color: var(--warning-yellow);">
+        <div class="data-label" style="color: var(--warning-yellow);">MARGIN CALCULATOR</div>
+        <div style="color: var(--text-secondary); font-size: 0.85rem; margin-top: 0.5rem;">
+            CALCULATE LEVERAGE POSITIONS AND MARGIN REQUIREMENTS. WARNING: MARGIN TRADING INVOLVES SIGNIFICANT RISK.
         </div>
     </div>
     """
 
-# Professional footer
+def kelly_criterion_explanation():
+    return """
+    <div class="terminal-card" style="border-color: var(--info-blue);">
+        <div class="data-label" style="color: var(--info-blue);">KELLY CRITERION</div>
+        <div style="color: var(--text-secondary); font-size: 0.85rem; margin-top: 0.5rem;">
+            OPTIMAL POSITION SIZING CALCULATOR. KELLY CRITERION DETERMINES THE IDEAL PERCENTAGE OF CAPITAL TO ALLOCATE TO MAXIMIZE LONG-TERM GROWTH WHILE MINIMIZING RISK OF RUIN.
+        </div>
+    </div>
+    """
+
 def app_footer():
     import datetime
     return f"""
-    <div class="terminal-header" style="margin-top: 3rem;">
-        <div class="terminal-title">SYSTEM STATUS</div>
-        <div class="terminal-subtitle">Platform Information & Disclaimers</div>
-        <div class="command-bar">
-            <span class="command-prompt">$</span>
-            <span class="command-text">system.status --updated={datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S UTC")}</span>
+    <div style="border-top: 1px solid var(--border-color); margin-top: 2rem; padding-top: 1rem; text-align: center;">
+        <div style="color: var(--text-muted); font-size: 0.8rem; text-transform: uppercase;">
+            MARGIN ANALYTICS TERMINAL | DATA: YAHOO FINANCE | {datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")}
         </div>
-        <p class="typography-caption" style="margin-top: 1rem; text-align: center;">
-            Market data sourced from Yahoo Finance API. This platform is for educational and analytical 
-            purposes only. Not intended as investment advice. Past performance does not guarantee future results.
-        </p>
     </div>
-    """
+    """ 
+    
+def pearson_creek_header():
+    """Not used in professional theme"""
+    return ""
     
     
     

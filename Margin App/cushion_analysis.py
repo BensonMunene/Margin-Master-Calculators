@@ -379,36 +379,44 @@ def render_cushion_analytics_section(results_df: pd.DataFrame, metrics: Dict[str
         cushion_col1, cushion_col2, cushion_col3, cushion_col4 = st.columns(4)
         
         with cushion_col1:
-            st.metric(
-                "Current Cushion",
-                f"{current_cushion_pct:.1f}%",
-                delta=risk_level
-            )
+            st.markdown(f"""
+            <div style="background-color: #1a1a1a; border: 1px solid #333333; padding: 1rem; text-align: center;">
+                <div style="color: #ff8c00; font-size: 0.8rem; font-weight: 600; text-transform: uppercase; margin-bottom: 0.5rem;">Current Cushion</div>
+                <div style="color: #ffffff; font-size: 1.5rem; font-weight: 700; margin-bottom: 0.5rem;">{current_cushion_pct:.1f}%</div>
+                <div style="color: #a0a0a0; font-size: 0.9rem;">{risk_level}</div>
+            </div>
+            """, unsafe_allow_html=True)
         
         with cushion_col2:
-            st.metric(
-                "Cushion Buffer",
-                f"${current_cushion_dollars:,.0f}",
-                delta="Safety margin above requirement"
-            )
+            st.markdown(f"""
+            <div style="background-color: #1a1a1a; border: 1px solid #333333; padding: 1rem; text-align: center;">
+                <div style="color: #ff8c00; font-size: 0.8rem; font-weight: 600; text-transform: uppercase; margin-bottom: 0.5rem;">Cushion Buffer</div>
+                <div style="color: #ffffff; font-size: 1.5rem; font-weight: 700; margin-bottom: 0.5rem;">${current_cushion_dollars:,.0f}</div>
+                <div style="color: #a0a0a0; font-size: 0.9rem;">Safety margin above requirement</div>
+            </div>
+            """, unsafe_allow_html=True)
         
         with cushion_col3:
             days_display = f"{days_to_margin_call:.0f}" if days_to_margin_call != float('inf') else "∞"
-            st.metric(
-                "Days to Margin Call",
-                days_display,
-                delta="At current interest rate"
-            )
+            st.markdown(f"""
+            <div style="background-color: #1a1a1a; border: 1px solid #333333; padding: 1rem; text-align: center;">
+                <div style="color: #ff8c00; font-size: 0.8rem; font-weight: 600; text-transform: uppercase; margin-bottom: 0.5rem;">Days to Margin Call</div>
+                <div style="color: #ffffff; font-size: 1.5rem; font-weight: 700; margin-bottom: 0.5rem;">{days_display}</div>
+                <div style="color: #a0a0a0; font-size: 0.9rem;">At current interest rate</div>
+            </div>
+            """, unsafe_allow_html=True)
         
         with cushion_col4:
             break_even_price = active_positions['Margin_Loan'].iloc[-1] / (active_positions['Shares_Held'].iloc[-1] * 0.75) if active_positions['Shares_Held'].iloc[-1] > 0 else 0
             current_price = active_positions['ETF_Price'].iloc[-1]
             price_buffer = ((current_price - break_even_price) / current_price) * 100 if current_price > 0 else 0
-            st.metric(
-                "Price Drop Buffer",
-                f"{price_buffer:.1f}%",
-                delta=f"Break-even: ${break_even_price:.2f}"
-            )
+            st.markdown(f"""
+            <div style="background-color: #1a1a1a; border: 1px solid #333333; padding: 1rem; text-align: center;">
+                <div style="color: #ff8c00; font-size: 0.8rem; font-weight: 600; text-transform: uppercase; margin-bottom: 0.5rem;">Price Drop Buffer</div>
+                <div style="color: #ffffff; font-size: 1.5rem; font-weight: 700; margin-bottom: 0.5rem;">{price_buffer:.1f}%</div>
+                <div style="color: #a0a0a0; font-size: 0.9rem;">Break-even: ${break_even_price:.2f}</div>
+            </div>
+            """, unsafe_allow_html=True)
         
         # Mode-specific risk assessment messages
         if mode == "fresh_capital":

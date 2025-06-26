@@ -28,11 +28,11 @@ def plot_candlestick(df, title, symbol='Stock'):
         'Close': 'last'
     })
     
-    # Define colors for a premium look
-    up_color = '#2ecc71'  # Vibrant green
-    down_color = '#e74c3c'  # Rich red
-    wick_color = '#2c3e50'  # Dark slate
-    shadow_color = '#95a5a6'  # Subtle gray for shadows
+    # Bloomberg Terminal colors
+    up_color = '#00ff00'  # Bloomberg green
+    down_color = '#ff0000'  # Bloomberg red
+    wick_color = '#e0e0e0'  # Light gray
+    shadow_color = '#666666'  # Subtle gray for shadows
     
     # Create figure with candlestick
     fig = go.Figure()
@@ -51,14 +51,14 @@ def plot_candlestick(df, title, symbol='Stock'):
         name='Price'
     ))
     
-    # Configure layout for a premium look
+    # Configure layout for Bloomberg Terminal look
     fig.update_layout(
         title={
-            'text': f'{title} ({symbol})',
+            'text': f'{title.upper()} ({symbol.upper()})',
             'font': {
-                'size': 18,
-                'color': '#2c3e50',
-                'family': 'Arial'
+                'size': 16,
+                'color': '#ff8c00',
+                'family': 'IBM Plex Mono, monospace'
             },
             'y': 0.95,
             'x': 0.5,
@@ -67,49 +67,51 @@ def plot_candlestick(df, title, symbol='Stock'):
         },
         xaxis={
             'title': {
-                'text': 'Date',
+                'text': 'DATE',
                 'font': {
-                    'size': 14,
-                    'color': '#34495e',
-                    'family': 'Arial'
+                    'size': 12,
+                    'color': '#e0e0e0',
+                    'family': 'IBM Plex Mono, monospace'
                 }
             },
             'rangeslider': {
-                'visible': False  # Hide rangeslider for a cleaner look
+                'visible': False
             },
-            'gridcolor': '#ecf0f1',
+            'gridcolor': '#333333',
             'gridwidth': 1,
-            'griddash': 'dash',
+            'griddash': 'solid',
             'tickfont': {
-                'size': 12,
-                'color': '#34495e'
+                'size': 11,
+                'color': '#e0e0e0',
+                'family': 'IBM Plex Mono, monospace'
             },
-            'tickformat': '%Y',  # Show only years by default
+            'tickformat': '%Y',
             'tickangle': 0,
             'type': 'date'
         },
         yaxis={
             'title': {
-                'text': 'Price (USD)',
+                'text': 'PRICE (USD)',
                 'font': {
-                    'size': 14,
-                    'color': '#34495e',
-                    'family': 'Arial'
+                    'size': 12,
+                    'color': '#e0e0e0',
+                    'family': 'IBM Plex Mono, monospace'
                 }
             },
             'tickformat': '$,.2f',
-            'gridcolor': '#ecf0f1',
+            'gridcolor': '#333333',
             'gridwidth': 1,
-            'griddash': 'dash',
+            'griddash': 'solid',
             'tickfont': {
-                'size': 12,
-                'color': '#34495e'
+                'size': 11,
+                'color': '#e0e0e0',
+                'family': 'IBM Plex Mono, monospace'
             },
             'autorange': True,
             'fixedrange': False
         },
-        plot_bgcolor='#f8f9fa',
-        paper_bgcolor='#ffffff',
+        plot_bgcolor='#0a0a0a',
+        paper_bgcolor='#000000',
         margin=dict(t=80, b=40, l=60, r=40),
         legend={
             'orientation': 'h',
@@ -118,69 +120,19 @@ def plot_candlestick(df, title, symbol='Stock'):
             'xanchor': 'right',
             'x': 1,
             'traceorder': 'normal',
-            'font': {'size': 12},
-            'bgcolor': 'rgba(255, 255, 255, 0.9)',
-            'bordercolor': '#ecf0f1',
+            'font': {'size': 11, 'color': '#e0e0e0', 'family': 'IBM Plex Mono, monospace'},
+            'bgcolor': 'rgba(26, 26, 26, 0.9)',
+            'bordercolor': '#333333',
             'borderwidth': 1
         },
         hoverlabel=dict(
-            bgcolor='white',
-            font_size=12,
-            font_family='Arial'
+            bgcolor='#1a1a1a',
+            font_size=11,
+            font_family='IBM Plex Mono, monospace',
+            font_color='#e0e0e0',
+            bordercolor='#ff8c00'
         ),
-        # Add shapes to highlight bullish and bearish markers for legend
-        shapes=[
-            # Shape to represent bullish in legend
-            dict(
-                type="rect",
-                x0=0.8, x1=0.85,
-                y0=1.05, y1=1.10,
-                xref="paper", yref="paper",
-                fillcolor=up_color,
-                line=dict(width=0),
-                opacity=0.8
-            ),
-            # Shape to represent bearish in legend
-            dict(
-                type="rect",
-                x0=0.9, x1=0.95,
-                y0=1.05, y1=1.10,
-                xref="paper", yref="paper",
-                fillcolor=down_color,
-                line=dict(width=0),
-                opacity=0.8
-            )
-        ],
-        annotations=[
-            # Bullish annotation
-            dict(
-                x=0.82,
-                y=1.075,
-                xref="paper",
-                yref="paper",
-                text="Bullish",
-                showarrow=False,
-                font=dict(
-                    size=12,
-                    color="#2c3e50"
-                )
-            ),
-            # Bearish annotation
-            dict(
-                x=0.92,
-                y=1.075,
-                xref="paper",
-                yref="paper",
-                text="Bearish",
-                showarrow=False,
-                font=dict(
-                    size=12,
-                    color="#2c3e50"
-                )
-            )
-        ],
-        # Add custom hover template through layout instead of trace update
-        hovermode='closest'
+        hovermode='x unified'
     )
     
     return fig
