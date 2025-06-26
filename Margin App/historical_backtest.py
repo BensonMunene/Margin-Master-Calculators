@@ -22,7 +22,7 @@ def load_comprehensive_data():
         github_dir = "Data"
         
         # Choose which directory to use (True for local, False for GitHub)
-        use_local = True
+        use_local = False
         data_dir = local_dir if use_local else github_dir
         
         # Load ONLY the Excel file - it contains everything we need

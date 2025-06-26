@@ -33,7 +33,7 @@ if 'active_tab' not in st.session_state:
 # Define directory paths
 local_dir = r"D:\Benson\aUpWork\Ben Ruff\Implementation\Data"
 github_dir = ("Data")
-use_local = True
+use_local = False
 data_dir = local_dir if use_local else github_dir
 
 # Define default date rangehh
