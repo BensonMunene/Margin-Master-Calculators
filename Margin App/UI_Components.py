@@ -776,6 +776,7 @@ def load_css():
 def app_header():
     return """
     <div class="terminal-header">
+        <div class="terminal-title">PEARSON CREEK CAPITAL MANAGEMENT LLC</div>
         <div class="terminal-title">MARGIN ANALYTICS TERMINAL</div>
         <div class="terminal-subtitle">PROFESSIONAL TRADING ANALYSIS PLATFORM</div>
     </div>
