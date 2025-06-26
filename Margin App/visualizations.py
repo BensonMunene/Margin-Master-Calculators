@@ -70,41 +70,44 @@ def plot_candlestick(df, title, symbol='Stock'):
                 'text': 'DATE',
                 'font': {
                     'size': 12,
-                    'color': '#e0e0e0',
+                    'color': '#000000',
                     'family': 'IBM Plex Mono, monospace'
                 }
             },
             'rangeslider': {
                 'visible': False
             },
-            'gridcolor': '#333333',
+            'showgrid': True,
+            'gridcolor': '#E8E8E8',
             'gridwidth': 1,
             'griddash': 'solid',
             'tickfont': {
                 'size': 11,
-                'color': '#e0e0e0',
+                'color': '#000000',
                 'family': 'IBM Plex Mono, monospace'
             },
             'tickformat': '%Y',
             'tickangle': 0,
-            'type': 'date'
+            'type': 'date',
+            'dtick': 'M12'
         },
         yaxis={
             'title': {
                 'text': 'PRICE (USD)',
                 'font': {
                     'size': 12,
-                    'color': '#e0e0e0',
+                    'color': '#000000',
                     'family': 'IBM Plex Mono, monospace'
                 }
             },
             'tickformat': '$,.2f',
-            'gridcolor': '#333333',
+            'showgrid': True,
+            'gridcolor': '#E8E8E8',
             'gridwidth': 1,
             'griddash': 'solid',
             'tickfont': {
                 'size': 11,
-                'color': '#e0e0e0',
+                'color': '#000000',
                 'family': 'IBM Plex Mono, monospace'
             },
             'autorange': True,

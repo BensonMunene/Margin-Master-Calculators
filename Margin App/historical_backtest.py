@@ -1487,7 +1487,7 @@ def create_enhanced_portfolio_chart(df_results: pd.DataFrame, metrics: Dict[str,
             y=df_results['Portfolio_Value'],
             name='Portfolio Value',
             line=dict(color='#1f77b4', width=3),
-            hovertemplate='Date: %{x}<br>Portfolio Value: $%{y:,.0f}<br><extra></extra>'
+            hovertemplate='Date: %{x|%d-%b-%Y}<br>Portfolio Value: $%{y:,.0f}<br><extra></extra>'
         ),
         row=1, col=1
     )
@@ -1499,7 +1499,7 @@ def create_enhanced_portfolio_chart(df_results: pd.DataFrame, metrics: Dict[str,
             y=df_results['Equity'],
             name='Equity',
             line=dict(color='#2E86C1', width=3),
-            hovertemplate='Date: %{x}<br>Equity: $%{y:,.0f}<br><extra></extra>'
+            hovertemplate='Date: %{x|%d-%b-%Y}<br>Equity: $%{y:,.0f}<br><extra></extra>'
         ),
         row=1, col=1
     )
@@ -1511,7 +1511,7 @@ def create_enhanced_portfolio_chart(df_results: pd.DataFrame, metrics: Dict[str,
             y=df_results['Maintenance_Margin_Required'],
             name='Maintenance Margin Required',
             line=dict(color='#d62728', width=2, dash='dash'),
-            hovertemplate='Date: %{x}<br>Maintenance Margin Required: $%{y:,.0f}<br><extra></extra>'
+            hovertemplate='Date: %{x|%d-%b-%Y}<br>Maintenance Margin Required: $%{y:,.0f}<br><extra></extra>'
         ),
         row=1, col=1
     )
@@ -1533,7 +1533,7 @@ def create_enhanced_portfolio_chart(df_results: pd.DataFrame, metrics: Dict[str,
                     symbol='triangle-down',
                     line=dict(color='darkred', width=2)
                 ),
-                hovertemplate='LIQUIDATION<br>Date: %{x}<br>Remaining Equity: $%{y:,.0f}<extra></extra>'
+                hovertemplate='LIQUIDATION<br>Date: %{x|%d-%b-%Y}<br>Remaining Equity: $%{y:,.0f}<extra></extra>'
             ),
             row=1, col=1
         )
@@ -1553,7 +1553,7 @@ def create_enhanced_portfolio_chart(df_results: pd.DataFrame, metrics: Dict[str,
                     symbol='triangle-up',
                     line=dict(color='darkgreen', width=2)
                 ),
-                hovertemplate='NEW POSITION<br>Date: %{x}<br>Entry Equity: $%{y:,.0f}<extra></extra>'
+                hovertemplate='NEW POSITION<br>Date: %{x|%d-%b-%Y}<br>Entry Equity: $%{y:,.0f}<extra></extra>'
             ),
             row=1, col=1
         )
@@ -1575,7 +1575,7 @@ def create_enhanced_portfolio_chart(df_results: pd.DataFrame, metrics: Dict[str,
             line=dict(color='#E74C3C', width=3),
             fill='tozeroy',  # Fill from line to zero (and beyond to bottom)
             fillcolor='rgba(231, 76, 60, 0.25)',  # Semi-transparent red
-            hovertemplate='Date: %{x}<br>Interest Cost: -$%{y:,.0f}<extra></extra>'
+            hovertemplate='Date: %{x|%d-%b-%Y}<br>Interest Cost: -$%{y:,.0f}<extra></extra>'
         ),
         row=2, col=1
     )
@@ -1589,7 +1589,7 @@ def create_enhanced_portfolio_chart(df_results: pd.DataFrame, metrics: Dict[str,
             line=dict(color='#28B463', width=3),
             fill='tonexty',  # Fill from this line to the previous trace (creating layered effect)
             fillcolor='rgba(40, 180, 99, 0.25)',  # Semi-transparent green
-            hovertemplate='Date: %{x}<br>Dividends: +$%{y:,.0f}<extra></extra>'
+            hovertemplate='Date: %{x|%d-%b-%Y}<br>Dividends: +$%{y:,.0f}<extra></extra>'
         ),
         row=2, col=1
     )
@@ -1624,7 +1624,7 @@ def create_enhanced_portfolio_chart(df_results: pd.DataFrame, metrics: Dict[str,
             fill='tozeroy',
             fillcolor='rgba(231, 76, 60, 0.3)',
             line=dict(color='#E74C3C', width=2),
-            hovertemplate='Date: %{x}<br>Drawdown: %{y:.1f}%<extra></extra>'
+            hovertemplate='Date: %{x|%d-%b-%Y}<br>Drawdown: %{y:.1f}%<extra></extra>'
         ),
         row=2, col=2
     )
@@ -1664,7 +1664,7 @@ def create_enhanced_portfolio_chart(df_results: pd.DataFrame, metrics: Dict[str,
                 y=sharpe_values,
                 name='30-Day Rolling Sharpe',
                 line=dict(color='#8E44AD', width=2),
-                hovertemplate='Date: %{x}<br>Rolling Sharpe: %{y:.2f}<extra></extra>'
+                hovertemplate='Date: %{x|%d-%b-%Y}<br>Rolling Sharpe: %{y:.2f}<extra></extra>'
             ),
             row=3, col=1
         )
@@ -1676,7 +1676,7 @@ def create_enhanced_portfolio_chart(df_results: pd.DataFrame, metrics: Dict[str,
             y=df_results['Fed_Funds_Rate'],
             name='Fed Funds Rate',
             line=dict(color='#17A2B8', width=2),
-            hovertemplate='Date: %{x}<br>Fed Funds: %{y:.2f}%<extra></extra>'
+            hovertemplate='Date: %{x|%d-%b-%Y}<br>Fed Funds: %{y:.2f}%<extra></extra>'
         ),
         row=4, col=1
     )
@@ -1687,7 +1687,7 @@ def create_enhanced_portfolio_chart(df_results: pd.DataFrame, metrics: Dict[str,
             y=df_results['Margin_Rate'],
             name='Margin Rate',
             line=dict(color='#DC3545', width=2, dash='dash'),
-            hovertemplate='Date: %{x}<br>Margin Rate: %{y:.2f}%<extra></extra>'
+            hovertemplate='Date: %{x|%d-%b-%Y}<br>Margin Rate: %{y:.2f}%<extra></extra>'
         ),
         row=4, col=1
     )
@@ -1705,7 +1705,7 @@ def create_enhanced_portfolio_chart(df_results: pd.DataFrame, metrics: Dict[str,
         status_data = df_results[df_results['Position_Status'] == status]
         if not status_data.empty:
             display_name = status.replace('_', ' ')
-            hover_template = display_name + '<br>Date: %{x}<extra></extra>'
+            hover_template = display_name + '<br>Date: %{x|%d-%b-%Y}<extra></extra>'
             
             fig.add_trace(
                 go.Scatter(
@@ -1724,7 +1724,7 @@ def create_enhanced_portfolio_chart(df_results: pd.DataFrame, metrics: Dict[str,
     fig.update_layout(
         title={
             'text': f"Comprehensive Portfolio Analysis: {metrics.get('Leverage Used', 0):.1f}x Leverage | {metrics.get('Total Liquidations', 0)} Liquidations | {metrics.get('CAGR (%)', 0):.1f}% CAGR",
-            'x': 0.5,
+            'x': 0.4,
             'font': {'size': 16, 'color': '#2C3E50'}
         },
         height=1200,
@@ -1734,8 +1734,14 @@ def create_enhanced_portfolio_chart(df_results: pd.DataFrame, metrics: Dict[str,
         paper_bgcolor='#FAFAFA'
     )
     
-    # Update axes styling
-    fig.update_xaxes(showgrid=True, gridwidth=1, gridcolor='#E8E8E8')
+    # Update axes styling with yearly grid lines
+    fig.update_xaxes(
+        showgrid=True, 
+        gridwidth=1, 
+        gridcolor='#E8E8E8',
+        dtick='M12',  # One year intervals for vertical grid lines
+        tickformat='%Y'  # Show only year labels
+    )
     fig.update_yaxes(showgrid=True, gridwidth=1, gridcolor='#E8E8E8')
     
     # Format specific axes
@@ -1806,7 +1812,7 @@ def create_liquidation_analysis_chart(df_results: pd.DataFrame, metrics: Dict[st
             mode='lines',
             name='Equity',
             line=dict(color='#2E86C1', width=2),
-            hovertemplate='Date: %{x}<br>Equity: $%{y:,.0f}<extra></extra>'
+            hovertemplate='Date: %{x|%d-%b-%Y}<br>Equity: $%{y:,.0f}<extra></extra>'
         ),
         row=1, col=3
     )
@@ -1827,7 +1833,7 @@ def create_liquidation_analysis_chart(df_results: pd.DataFrame, metrics: Dict[st
                     mode='lines',
                     name='Decay Trend',
                     line=dict(color='#E74C3C', width=2, dash='dash'),
-                    hovertemplate='Trend: $%{y:,.0f}<extra></extra>'
+                    hovertemplate='Date: %{x|%d-%b-%Y}<br>Trend: $%{y:,.0f}<extra></extra>'
                 ),
                 row=1, col=3
             )
@@ -1849,7 +1855,7 @@ def create_liquidation_analysis_chart(df_results: pd.DataFrame, metrics: Dict[st
                     y=rolling_corr.iloc[rolling_window:],
                     name='Returns-Rate Correlation',
                     line=dict(color='#9B59B6', width=2),
-                    hovertemplate='Date: %{x}<br>Correlation: %{y:.3f}<extra></extra>'
+                    hovertemplate='Date: %{x|%d-%b-%Y}<br>Correlation: %{y:.3f}<extra></extra>'
                 ),
                 row=2, col=1
             )
@@ -1867,7 +1873,7 @@ def create_liquidation_analysis_chart(df_results: pd.DataFrame, metrics: Dict[st
             line=dict(color='#E74C3C', width=2),
             fill='tozeroy',  # Fill from line to zero
             fillcolor='rgba(231, 76, 60, 0.25)',  # Semi-transparent red
-            hovertemplate='Date: %{x}<br>Interest: -$%{y:,.0f}<extra></extra>'
+            hovertemplate='Date: %{x|%d-%b-%Y}<br>Interest: -$%{y:,.0f}<extra></extra>'
         ),
         row=2, col=2
     )
@@ -1881,7 +1887,7 @@ def create_liquidation_analysis_chart(df_results: pd.DataFrame, metrics: Dict[st
             line=dict(color='#27AE60', width=2),
             fill='tonexty',  # Fill from this line to previous trace
             fillcolor='rgba(39, 174, 96, 0.25)',  # Semi-transparent green
-            hovertemplate='Date: %{x}<br>Dividends: +$%{y:,.0f}<extra></extra>'
+            hovertemplate='Date: %{x|%d-%b-%Y}<br>Dividends: +$%{y:,.0f}<extra></extra>'
         ),
         row=2, col=2
     )
@@ -1959,7 +1965,7 @@ def create_margin_analysis_chart(df_results: pd.DataFrame) -> go.Figure:
             y=df_results['Equity'],
             name='Equity',
             line=dict(color='green', width=2),
-            hovertemplate='Date: %{x}<br>Equity: $%{y:,.2f}<extra></extra>'
+            hovertemplate='Date: %{x|%d-%b-%Y}<br>Equity: $%{y:,.2f}<extra></extra>'
         ),
         row=1, col=1
     )
@@ -1970,7 +1976,7 @@ def create_margin_analysis_chart(df_results: pd.DataFrame) -> go.Figure:
             y=df_results['Maintenance_Margin_Required'],
             name='Maintenance Margin Required',
             line=dict(color='red', width=2, dash='dash'),
-            hovertemplate='Date: %{x}<br>Required: $%{y:,.2f}<extra></extra>'
+            hovertemplate='Date: %{x|%d-%b-%Y}<br>Required: $%{y:,.2f}<extra></extra>'
         ),
         row=1, col=1
     )
@@ -1986,7 +1992,7 @@ def create_margin_analysis_chart(df_results: pd.DataFrame) -> go.Figure:
                 mode='markers',
                 name='Margin Call Zone',
                 marker=dict(color='red', size=4),
-                hovertemplate='Margin Call<br>Date: %{x}<br>Equity: $%{y:,.2f}<extra></extra>'
+                hovertemplate='Margin Call<br>Date: %{x|%d-%b-%Y}<br>Equity: $%{y:,.2f}<extra></extra>'
             ),
             row=1, col=1
         )
@@ -1998,7 +2004,7 @@ def create_margin_analysis_chart(df_results: pd.DataFrame) -> go.Figure:
             y=df_results['Fed_Funds_Rate'],
             name='Fed Funds Rate',
             line=dict(color='blue', width=2),
-            hovertemplate='Date: %{x}<br>Fed Funds: %{y:.2f}%<extra></extra>'
+            hovertemplate='Date: %{x|%d-%b-%Y}<br>Fed Funds: %{y:.2f}%<extra></extra>'
         ),
         row=2, col=1
     )
@@ -2009,7 +2015,7 @@ def create_margin_analysis_chart(df_results: pd.DataFrame) -> go.Figure:
             y=df_results['Margin_Rate'],
             name='Margin Interest Rate',
             line=dict(color='purple', width=2),
-            hovertemplate='Date: %{x}<br>Margin Rate: %{y:.2f}%<extra></extra>'
+            hovertemplate='Date: %{x|%d-%b-%Y}<br>Margin Rate: %{y:.2f}%<extra></extra>'
         ),
         row=2, col=1
     )
