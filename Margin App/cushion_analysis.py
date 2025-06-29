@@ -418,6 +418,9 @@ def render_cushion_analytics_section(results_df: pd.DataFrame, metrics: Dict[str
             </div>
             """, unsafe_allow_html=True)
         
+        # Add spacing before risk assessment messages
+        st.markdown("<div style='margin-top: 1.5rem;'></div>", unsafe_allow_html=True)
+        
         # Mode-specific risk assessment messages
         if mode == "fresh_capital":
             if current_cushion_pct < 20:
@@ -462,6 +465,86 @@ def render_cushion_analytics_section(results_df: pd.DataFrame, metrics: Dict[str
     
     # Educational expander
     if not active_positions.empty:
+        # Add custom CSS for gray background in expander content AND header
+        st.markdown("""
+        <style>
+        /* Style the expander header/box itself with gray background */
+        div[data-testid="stExpander"] {
+            background-color: #404040 !important;
+            border: 1px solid #606060 !important;
+            border-radius: 8px !important;
+            margin: 0.5rem 0 !important;
+            padding: 0 !important;
+        }
+        
+        /* Style the expander header (clickable part) */
+        div[data-testid="stExpander"] > details > summary {
+            background-color: #404040 !important;
+            color: #ffffff !important;
+            padding: 0.75rem 1rem !important;
+            border-radius: 8px 8px 0 0 !important;
+            cursor: pointer !important;
+            font-weight: 600 !important;
+        }
+        
+        /* Style the expander header when closed (full rounded corners) */
+        div[data-testid="stExpander"]:not([open]) > details > summary {
+            border-radius: 8px !important;
+        }
+        
+        /* Style the expander arrow icon */
+        div[data-testid="stExpander"] details summary::-webkit-details-marker {
+            color: #ff8c00 !important;
+        }
+        
+        /* Target the specific expander content area and apply gray background */
+        div[data-testid="stExpander"] div[data-testid="stExpanderDetails"] {
+            background-color: #404040 !important;
+            color: #ffffff !important;
+            padding: 1rem !important;
+            border-radius: 0 0 8px 8px !important;
+            margin-top: 0 !important;
+            border-top: 1px solid #606060 !important;
+        }
+        
+        /* Ensure all text inside expander is white for contrast */
+        div[data-testid="stExpander"] div[data-testid="stExpanderDetails"] * {
+            color: #ffffff !important;
+        }
+        
+        /* Style headers inside expander */
+        div[data-testid="stExpander"] div[data-testid="stExpanderDetails"] h1,
+        div[data-testid="stExpander"] div[data-testid="stExpanderDetails"] h2,
+        div[data-testid="stExpander"] div[data-testid="stExpanderDetails"] h3 {
+            color: #ff8c00 !important;
+        }
+        
+        /* Style bullet points and list items */
+        div[data-testid="stExpander"] div[data-testid="stExpanderDetails"] ul,
+        div[data-testid="stExpander"] div[data-testid="stExpanderDetails"] li {
+            color: #ffffff !important;
+        }
+        
+        /* Style code blocks for better contrast */
+        div[data-testid="stExpander"] div[data-testid="stExpanderDetails"] code {
+            background-color: #606060 !important;
+            color: #ffff00 !important;
+            padding: 2px 4px !important;
+            border-radius: 3px !important;
+        }
+        
+        /* Style strong/bold text */
+        div[data-testid="stExpander"] div[data-testid="stExpanderDetails"] strong {
+            color: #ffa500 !important;
+        }
+        
+        /* Hover effect for expander header */
+        div[data-testid="stExpander"] > details > summary:hover {
+            background-color: #505050 !important;
+        }
+        </style>
+        """, unsafe_allow_html=True)
+        
         with st.expander("💡 Cushion Strategy Insights & Risk Management", expanded=False):
             if mode == "fresh_capital":
                 st.markdown(f"""
@@ -519,7 +602,9 @@ def render_cushion_analytics_section(results_df: pd.DataFrame, metrics: Dict[str
                 
                 **🔶 Plot 1: Margin Cushion Over Time**
                 
-                This plot shows your margin cushion percentage evolution throughout the backtest period. The cushion percentage is calculated as: `(Current Equity - Maintenance Margin Required) / Maintenance Margin Required × 100`.
+                This plot shows your margin cushion percentage evolution throughout the backtest period. The cushion percentage is calculated as:
+                
+                `(Current Equity - Maintenance Margin Required) / Maintenance Margin Required × 100`
                 
                 **Data Sources:**
                 - **Equity**: Daily portfolio equity from backtest calculations (Portfolio Value - Margin Loan)

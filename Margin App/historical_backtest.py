@@ -1721,9 +1721,12 @@ def create_enhanced_portfolio_chart(df_results: pd.DataFrame, metrics: Dict[str,
             )
     
     # Update layout
+    # Handle different leverage key names across backtest modes
+    leverage_value = metrics.get('Leverage Used', metrics.get('Target Leverage', 0))
+    
     fig.update_layout(
         title={
-            'text': f"Comprehensive Portfolio Analysis: {metrics.get('Leverage Used', 0):.1f}x Leverage | {metrics.get('Total Liquidations', 0)} Liquidations | {metrics.get('CAGR (%)', 0):.1f}% CAGR",
+            'text': f"Comprehensive Portfolio Analysis: {leverage_value:.1f}x Leverage | {metrics.get('Total Liquidations', 0)} Liquidations | {metrics.get('CAGR (%)', 0):.1f}% CAGR",
             'x': 0.4,
             'font': {'size': 16, 'color': '#2C3E50'}
         },
@@ -2466,34 +2469,125 @@ def render_historical_backtest_tab():
     </style>
     """, unsafe_allow_html=True)
     
+    # Add selected state styling based on current backtest mode
+    selected_css = ""
+    current_mode = st.session_state.get('backtest_mode', 'standard')
+    
+    if current_mode == 'standard':
+        selected_css = """
+        <style>
+        /* Highlight LIQUIDATION-REENTRY button */
+        div[data-testid="column"]:nth-child(1) button {
+            background-color: #ff8c00 !important;
+            color: #000000 !important;
+            border-color: #ffa500 !important;
+            box-shadow: 0 0 15px rgba(255, 140, 0, 0.6) !important;
+        }
+        div[data-testid="column"]:nth-child(1) button span {
+            color: #000000 !important;
+            font-weight: 700 !important;
+        }
+        </style>
+        """
+    elif current_mode == 'restart':
+        selected_css = """
+        <style>
+        /* Highlight FRESH CAPITAL RESTART button with orange */
+        div[data-testid="column"]:nth-child(2) button {
+            background-color: #ff8c00 !important;
+            color: #000000 !important;
+            border-color: #ffa500 !important;
+            box-shadow: 0 0 15px rgba(255, 140, 0, 0.6) !important;
+        }
+        div[data-testid="column"]:nth-child(2) button span {
+            color: #000000 !important;
+            font-weight: 700 !important;
+        }
+        </style>
+        """
+    elif current_mode == 'profit_threshold':
+        selected_css = """
+        <style>
+        /* Highlight PROFIT THRESHOLD button */
+        div[data-testid="column"]:nth-child(3) button {
+            background-color: #ff8c00 !important;
+            color: #000000 !important;
+            border-color: #ffa500 !important;
+            box-shadow: 0 0 15px rgba(255, 140, 0, 0.6) !important;
+        }
+        div[data-testid="column"]:nth-child(3) button span {
+            color: #000000 !important;
+            font-weight: 700 !important;
+        }
+        </style>
+        """
+    
+    st.markdown(selected_css, unsafe_allow_html=True)
+    
     backtest_col1, backtest_col2, backtest_col3 = st.columns(3)
     
+    # Create buttons with custom HTML/CSS based on selected mode
+    current_mode = st.session_state.get('backtest_mode', 'standard')
+    
     with backtest_col1:
-        if st.button(
-            "LIQUIDATION-REENTRY",
-            use_container_width=True,
-            help="Realistic simulation: liquidate on margin call, wait 2 days, re-enter with remaining equity",
-            key="liquidation_backtest_btn"
-        ):
-            st.session_state.backtest_mode = 'standard'
+        if current_mode == 'standard':
+            st.markdown("""
+            <div style="background-color: #ff8c00; padding: 0.5rem 1rem; text-align: center; 
+                        border-radius: 0.25rem; color: #000000; font-weight: 700; 
+                        text-transform: uppercase; letter-spacing: 1px; cursor: default;
+                        box-shadow: 0 0 15px rgba(255, 140, 0, 0.6);">
+                LIQUIDATION-REENTRY
+            </div>
+            """, unsafe_allow_html=True)
+        else:
+            if st.button(
+                "LIQUIDATION-REENTRY",
+                use_container_width=True,
+                help="Realistic simulation: liquidate on margin call, wait 2 days, re-enter with remaining equity",
+                key="liquidation_backtest_btn"
+            ):
+                st.session_state.backtest_mode = 'standard'
+                st.rerun()
     
     with backtest_col2:
-        if st.button(
-            "FRESH CAPITAL RESTART", 
-            use_container_width=True,
-            help="Comparison mode: unlimited fresh capital after each margin call",
-            key="restart_backtest_btn"
-        ):
-            st.session_state.backtest_mode = 'restart'
+        if current_mode == 'restart':
+            st.markdown("""
+            <div style="background-color: #ff8c00; padding: 0.5rem 1rem; text-align: center; 
+                        border-radius: 0.25rem; color: #000000; font-weight: 700; 
+                        text-transform: uppercase; letter-spacing: 1px; cursor: default;
+                        box-shadow: 0 0 15px rgba(255, 140, 0, 0.6);">
+                FRESH CAPITAL RESTART
+            </div>
+            """, unsafe_allow_html=True)
+        else:
+            if st.button(
+                "FRESH CAPITAL RESTART",
+                use_container_width=True,
+                help="Comparison mode: unlimited fresh capital after each margin call",
+                key="restart_backtest_btn"
+            ):
+                st.session_state.backtest_mode = 'restart'
+                st.rerun()
     
     with backtest_col3:
-        if st.button(
-            "PROFIT THRESHOLD", 
-            use_container_width=True,
-            help="Rebalance back to target leverage when portfolio grows by specified percentage",
-            key="profit_threshold_btn"
-        ):
-            st.session_state.backtest_mode = 'profit_threshold'
+        if current_mode == 'profit_threshold':
+            st.markdown("""
+            <div style="background-color: #ff8c00; padding: 0.5rem 1rem; text-align: center; 
+                        border-radius: 0.25rem; color: #000000; font-weight: 700; 
+                        text-transform: uppercase; letter-spacing: 1px; cursor: default;
+                        box-shadow: 0 0 15px rgba(255, 140, 0, 0.6);">
+                PROFIT THRESHOLD
+            </div>
+            """, unsafe_allow_html=True)
+        else:
+            if st.button(
+                "PROFIT THRESHOLD", 
+                use_container_width=True,
+                help="Rebalance back to target leverage when portfolio grows by specified percentage",
+                key="profit_threshold_btn"
+            ):
+                st.session_state.backtest_mode = 'profit_threshold'
+                st.rerun()
     
     # Initialize if not set
     if 'backtest_mode' not in st.session_state:
@@ -3687,10 +3781,10 @@ def render_historical_backtest_tab():
         - 📊 **Growth Analytics**: Tracks all rebalancing events and growth milestones
         
         **Example Walkthrough:**
-        1. **Start**: $1M equity @ 2x leverage = $2M position
+        1. **Start**: 1M equity @ 2x leverage = 2M position
         2. **Growth**: Portfolio grows to $4M (100% growth threshold hit!)
-        3. **Current State**: $3M equity, $1M loan, 1.33x leverage (below 2x target)
-        4. **Rebalance Action**: Borrow $2M more → $6M total position @ 2x leverage
+        3. **Current State**: 3M equity, 1M loan, 1.33x leverage (below 2x target)
+        4. **Rebalance Action**: Borrow 2M more → 6M total position @ 2x leverage
         5. **Result**: Locked in profits by scaling position size with target leverage
         
         **When to Use:**
@@ -3741,13 +3835,35 @@ def render_historical_backtest_tab():
         ### 🎯 Professional Strategy Comparison Guide
         
         **Which Strategy Should You Choose?**
+        """)
         
+        # Add CSS for table styling with bright gray borders
+        st.markdown("""
+        <style>
+        /* Style the strategy comparison table with bright gray borders */
+        .stMarkdown table {
+            border-collapse: collapse;
+            margin: 1rem 0;
+        }
+        .stMarkdown table th, .stMarkdown table td {
+            border: 1px solid #a0a0a0 !important;
+            padding: 8px 12px;
+        }
+        .stMarkdown table th {
+            background-color: rgba(160, 160, 160, 0.1);
+        }
+        </style>
+        """, unsafe_allow_html=True)
+        
+        st.markdown("""
         | Strategy | Best For | Risk Level | Capital Requirement |
         |----------|----------|------------|-------------------|
         | **Liquidation-Reentry** | Realistic testing | High | Limited (depletes over time) |
         | **Fresh Capital Restart** | Academic analysis | High | Unlimited (theoretical) |
         | **Profit Threshold** | Wealth building | Medium | Growing (compounds profits) |
+        """)
         
+        st.markdown("""
         **Key Metrics to Watch:**
         - **Liquidation Rate**: <30% good, 30-70% moderate risk, >70% high risk
         - **Average Survival Days**: >180 days stable, 30-180 moderate, <30 very risky

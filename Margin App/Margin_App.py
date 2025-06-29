@@ -15,7 +15,7 @@ from historical_backtest import show_historical_backtest
 # Set page configuration - professional dark theme
 st.set_page_config(
     page_title="Margin Analytics Terminal",
-    page_icon="⬛",  # Simple black square for professional look
+    page_icon="🅼",  # Blue M for Margin Analytics
     layout="wide",
     initial_sidebar_state="collapsed"
 )
@@ -349,7 +349,58 @@ if spy_df is not None and vti_df is not None:
                 </div>
                 """, unsafe_allow_html=True)
                 
-                # Advanced settings
+                # Advanced settings with gray background styling
+                st.markdown("""
+                <style>
+                /* Target the Advanced Settings expander specifically */
+                div[data-testid="stExpander"] div[data-testid="stExpanderDetails"] {
+                    background-color: #404040 !important;
+                    color: #ffffff !important;
+                    padding: 1rem !important;
+                    border-radius: 8px !important;
+                    margin-top: 0.5rem !important;
+                }
+                
+                /* Style the expander header */
+                div[data-testid="stExpander"] summary {
+                    background-color: #404040 !important;
+                    color: #ffffff !important;
+                    border: 1px solid #606060 !important;
+                    border-radius: 8px !important;
+                    padding: 0.75rem 1rem !important;
+                    margin-bottom: 0.5rem !important;
+                }
+                
+                /* Style the expansion arrow */
+                div[data-testid="stExpander"] summary svg {
+                    color: #ff8c00 !important;
+                }
+                
+                /* Hover effect for expander header */
+                div[data-testid="stExpander"] summary:hover {
+                    background-color: #505050 !important;
+                }
+                
+                /* Ensure all text inside expander is white */
+                div[data-testid="stExpander"] div[data-testid="stExpanderDetails"] * {
+                    color: #ffffff !important;
+                }
+                
+                /* Make slider labels orange */
+                div[data-testid="stExpander"] div[data-testid="stExpanderDetails"] label {
+                    color: #ff8c00 !important;
+                    font-weight: 600 !important;
+                }
+                
+                /* Style the terminal-card within the gray expander */
+                div[data-testid="stExpander"] div[data-testid="stExpanderDetails"] .terminal-card {
+                    background-color: #2a2a2a !important;
+                    border: 1px solid #555555 !important;
+                    margin-top: 1rem !important;
+                }
+                </style>
+                """, unsafe_allow_html=True)
+                
                 with st.expander("ADVANCED SETTINGS", expanded=False):
                     col_a, col_b = st.columns(2)
                     with col_a:
@@ -653,8 +704,12 @@ if spy_df is not None and vti_df is not None:
             else:
                 vti_price_filtered = vti_df
             
-            # SPY chart
-            st.markdown("<h2>S&P 500 ETF (SPY) PRICE CHART</h2>", unsafe_allow_html=True)
+            # SPY chart with dark gray background
+            st.markdown("""
+            <div style="background-color: #404040; color: #ffffff; padding: 1rem; border-radius: 8px; margin: 1rem 0;">
+                <h2 style="margin: 0; color: #ffffff; font-weight: 600;">S&P 500 ETF (SPY) PRICE CHART</h2>
+            </div>
+            """, unsafe_allow_html=True)
             if not spy_price_filtered.empty:
                 fig = plot_candlestick(spy_price_filtered, 'S&P 500 ETF', 'SPY')
                 fig.update_layout(
@@ -669,8 +724,12 @@ if spy_df is not None and vti_df is not None:
             
             st.markdown("<div style='border-bottom: 1px solid var(--border-color); margin: 1rem 0;'></div>", unsafe_allow_html=True)
             
-            # VTI chart
-            st.markdown("<h2>TOTAL MARKET ETF (VTI) PRICE CHART</h2>", unsafe_allow_html=True)
+            # VTI chart with dark gray background
+            st.markdown("""
+            <div style="background-color: #404040; color: #ffffff; padding: 1rem; border-radius: 8px; margin: 1rem 0;">
+                <h2 style="margin: 0; color: #ffffff; font-weight: 600;">TOTAL MARKET ETF (VTI) PRICE CHART</h2>
+            </div>
+            """, unsafe_allow_html=True)
             if not vti_price_filtered.empty:
                 fig = plot_candlestick(vti_price_filtered, 'Total Market ETF', 'VTI')
                 fig.update_layout(
@@ -713,8 +772,12 @@ if spy_df is not None and vti_df is not None:
             else:
                 vti_div_filtered = vti_dividends_df
             
-            # SPY dividends
-            st.markdown("<h2>S&P 500 ETF DIVIDENDS (SPY)</h2>", unsafe_allow_html=True)
+            # SPY dividends with dark gray background
+            st.markdown("""
+            <div style="background-color: #404040; color: #ffffff; padding: 1rem; border-radius: 8px; margin: 1rem 0;">
+                <h2 style="margin: 0; color: #ffffff; font-weight: 600;">S&P 500 ETF DIVIDENDS (SPY)</h2>
+            </div>
+            """, unsafe_allow_html=True)
             if not spy_div_filtered.empty:
                 fig = plot_dividend_bars_mpl(spy_div_filtered, 'S&P 500 ETF Dividends', 'SPY')
                 if fig is not None:
@@ -724,8 +787,12 @@ if spy_df is not None and vti_df is not None:
             
             st.markdown("<div style='border-bottom: 1px solid var(--border-color); margin: 1rem 0;'></div>", unsafe_allow_html=True)
             
-            # VTI dividends
-            st.markdown("<h2>TOTAL MARKET ETF DIVIDENDS (VTI)</h2>", unsafe_allow_html=True)
+            # VTI dividends with dark gray background
+            st.markdown("""
+            <div style="background-color: #404040; color: #ffffff; padding: 1rem; border-radius: 8px; margin: 1rem 0;">
+                <h2 style="margin: 0; color: #ffffff; font-weight: 600;">TOTAL MARKET ETF DIVIDENDS (VTI)</h2>
+            </div>
+            """, unsafe_allow_html=True)
             if not vti_div_filtered.empty:
                 fig = plot_dividend_bars_mpl(vti_div_filtered, 'Total Market ETF Dividends', 'VTI')
                 if fig is not None:
