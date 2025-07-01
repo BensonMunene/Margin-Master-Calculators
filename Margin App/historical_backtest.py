@@ -22,7 +22,7 @@ def load_comprehensive_data():
         github_dir = "Data"
         
         # Choose which directory to use (True for local, False for GitHub)
-        use_local = False
+        use_local = True
         data_dir = local_dir if use_local else github_dir
         
         # Load ONLY the Excel file - it contains everything we need
@@ -1456,7 +1456,7 @@ def run_margin_restart_backtest(
 
 # Cushion analytics moved to cushion_analysis.py module
 
-def create_enhanced_portfolio_chart(df_results: pd.DataFrame, metrics: Dict[str, float]) -> go.Figure:
+def create_enhanced_portfolio_chart(df_results: pd.DataFrame, metrics: Dict[str, float], rebalancing_events: List[Dict] = None) -> go.Figure:
     """Create sophisticated institutional-grade portfolio performance chart"""
     
     fig = make_subplots(
@@ -1516,6 +1516,48 @@ def create_enhanced_portfolio_chart(df_results: pd.DataFrame, metrics: Dict[str,
         row=1, col=1
     )
     
+    # Add profit threshold rebalancing markers (diamond-shaped gold markers)
+    if rebalancing_events:
+        rebalance_dates = [pd.to_datetime(event['date']) for event in rebalancing_events]
+        rebalance_portfolio_values = []
+        
+        # Get portfolio values at rebalancing dates
+        for date in rebalance_dates:
+            # Find the closest date in df_results
+            closest_date = df_results.index[df_results.index.get_indexer([date], method='nearest')[0]]
+            rebalance_portfolio_values.append(df_results.loc[closest_date, 'Portfolio_Value'])
+        
+        # Create growth percentage labels for hover
+        growth_labels = [f"{event['growth_trigger_pct']:.1f}%" for event in rebalancing_events]
+        shares_added = [f"{event['shares_change']:+,.0f}" for event in rebalancing_events]
+        transaction_costs = [f"${event['transaction_cost']:,.0f}" for event in rebalancing_events]
+        
+        fig.add_trace(
+            go.Scatter(
+                x=rebalance_dates,
+                y=rebalance_portfolio_values,
+                mode='markers',
+                name='💎 Profit Threshold Rebalancing',
+                marker=dict(
+                    symbol='diamond',
+                    size=14,
+                    color='#FFD700',  # Gold color
+                    line=dict(color='#FF8C00', width=2),  # Orange border
+                    opacity=0.9
+                ),
+                customdata=list(zip(growth_labels, shares_added, transaction_costs)),
+                hovertemplate=(
+                    '<b>💎 PROFIT THRESHOLD REBALANCING</b><br>' +
+                    'Date: %{x|%d-%b-%Y}<br>' +
+                    'Portfolio Value: $%{y:,.0f}<br>' +
+                    'Growth Achieved: %{customdata[0]}<br>' +
+                    'Shares Added: %{customdata[1]}<br>' +
+                    'Transaction Cost: %{customdata[2]}<br>' +
+                    '<extra></extra>'
+                )
+            ),
+            row=1, col=1
+        )
 
     
     # Add liquidation events as red markers
@@ -1724,9 +1766,14 @@ def create_enhanced_portfolio_chart(df_results: pd.DataFrame, metrics: Dict[str,
     # Handle different leverage key names across backtest modes
     leverage_value = metrics.get('Leverage Used', metrics.get('Target Leverage', 0))
     
+    # Add rebalancing count to title if available
+    rebalance_info = ""
+    if rebalancing_events:
+        rebalance_info = f" | {len(rebalancing_events)} Rebalancing Events"
+    
     fig.update_layout(
         title={
-            'text': f"Comprehensive Portfolio Analysis: {leverage_value:.1f}x Leverage | {metrics.get('Total Liquidations', 0)} Liquidations | {metrics.get('CAGR (%)', 0):.1f}% CAGR",
+            'text': f"Comprehensive Portfolio Analysis: {leverage_value:.1f}x Leverage | {metrics.get('Total Liquidations', 0)} Liquidations | {metrics.get('CAGR (%)', 0):.1f}% CAGR{rebalance_info}",
             'x': 0.4,
             'font': {'size': 16, 'color': '#2C3E50'}
         },
@@ -3043,7 +3090,7 @@ def render_historical_backtest_tab():
                 
                 # Enhanced portfolio performance chart
                 st.markdown("### 📈 Portfolio Performance Analytics")
-                portfolio_fig = create_enhanced_portfolio_chart(results_df, metrics)
+                portfolio_fig = create_enhanced_portfolio_chart(results_df, metrics, rebalancing_events)
                 st.plotly_chart(portfolio_fig, use_container_width=True)
                 
 
