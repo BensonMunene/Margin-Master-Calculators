@@ -94,38 +94,105 @@ def create_cushion_analytics_dashboard(df_results: pd.DataFrame, metrics: Dict[s
         # For constant leverage mode, consider positions active when shares are held
         active_positions = df_cushion[df_cushion['Shares_Held'] > 0]
     if not active_positions.empty:
-        # Create separate traces for different risk levels for better visualization
-        for risk_level, color in [('Safe (>50%)', '#27AE60'), ('Caution (20-50%)', '#F39C12'), 
-                                 ('Warning (5-20%)', '#E67E22'), ('Critical (<5%)', '#E74C3C')]:
-            if risk_level == 'Safe (>50%)':
-                mask = active_positions['Cushion_Percentage'] >= 50
-            elif risk_level == 'Caution (20-50%)':
-                mask = (active_positions['Cushion_Percentage'] >= 20) & (active_positions['Cushion_Percentage'] < 50)
-            elif risk_level == 'Warning (5-20%)':
-                mask = (active_positions['Cushion_Percentage'] >= 5) & (active_positions['Cushion_Percentage'] < 20)
-            else:  # Critical
-                mask = active_positions['Cushion_Percentage'] < 5
-            
-            if mask.any():
-                filtered_data = active_positions[mask]
-                fig.add_trace(
-                    go.Scatter(
-                        x=filtered_data.index,
-                        y=filtered_data['Cushion_Percentage'],
-                        mode='markers+lines',
-                        name=risk_level,
-                        line=dict(color=color, width=2),
-                        marker=dict(color=color, size=4),
-                        hovertemplate=f'{risk_level}<br>Date: %{{x}}<br>Cushion: %{{y:.1f}}%<extra></extra>'
-                    ),
-                    row=1, col=1
-                )
+        x_range = [active_positions.index[0], active_positions.index[-1]]
         
-        # Add horizontal risk zone lines as scatter traces
-        if not active_positions.empty:
-            x_range = [active_positions.index[0], active_positions.index[-1]]
+        # Add shaded regions first (so they appear behind other elements)
+        # Light green shading below 50% line
+        fig.add_trace(
+            go.Scatter(
+                x=x_range,
+                y=[50, 50],
+                mode='lines',
+                line=dict(color='rgba(255,255,255,0)'),  # Invisible line
+                name='Safe Zone Background',
+                showlegend=False,
+                hoverinfo='skip',
+                fill='tozeroy',
+                fillcolor='rgba(39, 174, 96, 0.1)'  # Light green
+            ),
+            row=1, col=1
+        )
+        
+        # Light yellow shading below 20% line
+        fig.add_trace(
+            go.Scatter(
+                x=x_range,
+                y=[20, 20],
+                mode='lines',
+                line=dict(color='rgba(255,255,255,0)'),  # Invisible line
+                name='Caution Zone Background',
+                showlegend=False,
+                hoverinfo='skip',
+                fill='tozeroy',
+                fillcolor='rgba(243, 156, 18, 0.15)'  # Light yellow
+            ),
+            row=1, col=1
+        )
+        
+        # Light red shading below 5% line
+        fig.add_trace(
+            go.Scatter(
+                x=x_range,
+                y=[5, 5],
+                mode='lines',
+                line=dict(color='rgba(255,255,255,0)'),  # Invisible line
+                name='Critical Zone Background',
+                showlegend=False,
+                hoverinfo='skip',
+                fill='tozeroy',
+                fillcolor='rgba(231, 76, 60, 0.15)'  # Light red
+            ),
+            row=1, col=1
+        )
+        
+        # Create colored segments for different risk zones
+        cushion_data = active_positions['Cushion_Percentage']
+        dates = active_positions.index
+        
+        # Create continuous colored segments
+        for i in range(len(cushion_data)):
+            if i == 0:
+                continue  # Skip first point as we need pairs for segments
             
-            # Safe zone line (50%)
+            # Get current and previous values
+            prev_cushion = cushion_data.iloc[i-1]
+            curr_cushion = cushion_data.iloc[i]
+            prev_date = dates[i-1]
+            curr_date = dates[i]
+            
+            # Determine color based on the current cushion level
+            if curr_cushion >= 50:
+                color = '#27AE60'  # Green - Safe zone
+                zone_name = 'Safe Zone'
+            elif curr_cushion >= 20:
+                color = '#F39C12'  # Yellow - Caution zone
+                zone_name = 'Caution Zone'
+            elif curr_cushion >= 5:
+                color = '#E67E22'  # Orange - Warning zone
+                zone_name = 'Warning Zone'
+            else:
+                color = '#E74C3C'  # Red - Critical zone
+                zone_name = 'Critical Zone'
+            
+            # Add line segment
+            fig.add_trace(
+                go.Scatter(
+                    x=[prev_date, curr_date],
+                    y=[prev_cushion, curr_cushion],
+                    mode='lines',
+                    name='Margin Cushion %' if i == 1 else None,  # Only show name for first segment
+                    showlegend=True if i == 1 else False,  # Only show in legend once
+                    line=dict(color=color, width=3),
+                    fill='tozeroy',  # Fill area below the line
+                    fillcolor=f'rgba({int(color[1:3], 16)}, {int(color[3:5], 16)}, {int(color[5:7], 16)}, 0.05)',  # Very light transparent fill
+                    hovertemplate=f'{zone_name}<br>Date: %{{x}}<br>Cushion: %{{y:.1f}}%<extra></extra>'
+                ),
+                row=1, col=1
+            )
+        
+        # Add horizontal threshold lines
+        if not active_positions.empty:
+            # Safe zone threshold (50%)
             fig.add_trace(
                 go.Scatter(
                     x=x_range,
@@ -133,13 +200,13 @@ def create_cushion_analytics_dashboard(df_results: pd.DataFrame, metrics: Dict[s
                     mode='lines',
                     line=dict(color='#27AE60', width=2, dash='dash'),
                     name='Safe Zone (50%)',
-                    showlegend=False,
+                    showlegend=True,
                     hovertemplate='Safe Zone: 50%<extra></extra>'
                 ),
                 row=1, col=1
             )
             
-            # Caution zone line (20%)
+            # Caution zone threshold (20%)
             fig.add_trace(
                 go.Scatter(
                     x=x_range,
@@ -147,13 +214,13 @@ def create_cushion_analytics_dashboard(df_results: pd.DataFrame, metrics: Dict[s
                     mode='lines',
                     line=dict(color='#F39C12', width=2, dash='dash'),
                     name='Caution Zone (20%)',
-                    showlegend=False,
+                    showlegend=True,
                     hovertemplate='Caution Zone: 20%<extra></extra>'
                 ),
                 row=1, col=1
             )
             
-            # Critical zone line (5%)
+            # Critical zone threshold (5%)
             fig.add_trace(
                 go.Scatter(
                     x=x_range,
@@ -161,7 +228,7 @@ def create_cushion_analytics_dashboard(df_results: pd.DataFrame, metrics: Dict[s
                     mode='lines',
                     line=dict(color='#E74C3C', width=2, dash='dash'),
                     name='Critical Zone (5%)',
-                    showlegend=False,
+                    showlegend=True,
                     hovertemplate='Critical Zone: 5%<extra></extra>'
                 ),
                 row=1, col=1
