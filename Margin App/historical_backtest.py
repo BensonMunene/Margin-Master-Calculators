@@ -12,6 +12,12 @@ warnings.filterwarnings('ignore')
 # Cushion analytics import
 import cushion_analysis
 
+# Parameter sweep import (optional)
+try:
+    import parameter_sweep
+except ImportError:
+    parameter_sweep = None
+
 # Cache data loading for performance
 @st.cache_data(ttl=3600)
 def load_comprehensive_data():
@@ -3801,6 +3807,16 @@ def render_historical_backtest_tab():
                             "Is_Margin_Call": st.column_config.TextColumn("Margin Call", width="small"),
                         }
                     )
+    
+    # Parameter sweep section
+    if parameter_sweep is not None:
+        try:
+            parameter_sweep.render_parameter_sweep_section(etf_choice, start_date, end_date, equity, leverage, account_type, excel_data)
+        except Exception as e:
+            st.error(f"Parameter sweep error: {str(e)}")
+            st.info("📊 Parameter sweep functionality temporarily unavailable. Please use individual backtests above.")
+    else:
+        st.info("📊 Parameter sweep module not found. Individual backtests are available above.")
     
     # Educational section
     with st.expander("📚 Understanding the Enhanced Backtest Modes", expanded=False):

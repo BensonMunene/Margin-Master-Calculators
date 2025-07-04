@@ -3,9 +3,6 @@ import pandas as pd
 import numpy as np
 import os
 import warnings
-import plotly.express as px
-import plotly.graph_objects as go
-from plotly.subplots import make_subplots
 
 warnings.filterwarnings('ignore')
 
@@ -359,184 +356,54 @@ def format_value_with_color(value):
     except:
         return f'<span class="neutral">{value}</span>'
 
-def create_cagr_heatmap(matrix_data, etf_name, start_year, end_year):
-    """Create professional Plotly heatmap with excellent visibility and contrast"""
+def create_professional_matrix_html(matrix_data, etf_name, start_year, end_year):
+    """Create professional HTML table matching the screenshot style"""
     
-    # Reverse the matrix to show recent years at top (like in screenshot)
-    display_matrix = matrix_data.iloc[::-1].copy()
+    # Reverse the matrix to show recent years at top
+    display_matrix = matrix_data.iloc[::-1]
     
-    # Replace NaN values with None for better display
-    display_matrix_clean = display_matrix.where(pd.notna(display_matrix), None)
+    years = display_matrix.columns.tolist()
     
-    # Create a balanced colorscale with better contrast
-    colorscale = [
-        [0.0, '#800000'],    # Dark red for very negative (-40% and below)
-        [0.15, '#CC0000'],   # Red for negative (-20% to -40%)
-        [0.35, '#FF6666'],   # Light red for slightly negative (-5% to -20%)
-        [0.45, '#FFE6E6'],   # Very light red for small negative (0% to -5%)
-        [0.5, '#F8F8F8'],    # Light gray for near zero
-        [0.55, '#E6F3E6'],   # Very light green for small positive (0% to 5%)
-        [0.65, '#66CC66'],   # Light green for positive (5% to 15%)
-        [0.8, '#339933'],    # Green for good positive (15% to 25%)
-        [1.0, '#006600']     # Dark green for excellent positive (25%+)
-    ]
+    html = f"""
+    <div class="matrix-container">
+        <div class="matrix-header">
+            <h2 class="matrix-title">{etf_name} - Compound Annual Growth Rate Matrix</h2>
+            <p class="matrix-subtitle">From the start of ({start_year} - {end_year})</p>
+        </div>
+        <table class="professional-table">
+            <thead>
+                <tr>
+                    <th style="background-color: var(--primary-blue);">To Year / End of</th>
+    """
     
-    # Get the data range for better color scaling
-    flat_values = display_matrix_clean.values.flatten()
-    valid_values = [v for v in flat_values if v is not None and not pd.isna(v)]
+    # Add year headers
+    for year in years:
+        html += f'<th>{year}</th>'
     
-    if valid_values:
-        min_val = min(valid_values)
-        max_val = max(valid_values)
-        # Set reasonable bounds for color scaling
-        zmin = max(min_val, -50)  # Don't go below -50%
-        zmax = min(max_val, 50)   # Don't go above 50%
-    else:
-        zmin, zmax = -30, 30
+    html += """
+                </tr>
+            </thead>
+            <tbody>
+    """
     
-    # Create text annotations with dynamic color for visibility
-    text_matrix = display_matrix_clean.copy()
-    text_colors = []
+    # Add data rows
+    for row_year in display_matrix.index:
+        html += f'<tr><td class="year-label">{row_year}</td>'
+        
+        for col_year in years:
+            value = display_matrix.loc[row_year, col_year]
+            formatted_value = format_value_with_color(value)
+            html += f'<td>{formatted_value}</td>'
+        
+        html += '</tr>'
     
-    for i in range(len(display_matrix_clean.index)):
-        text_row = []
-        for j in range(len(display_matrix_clean.columns)):
-            value = display_matrix_clean.iloc[i, j]
-            if pd.isna(value) or value is None:
-                text_row.append('')
-            else:
-                # Use black text for light backgrounds, white for dark
-                if value < -10 or value > 20:
-                    text_row.append('white')
-                else:
-                    text_row.append('black')
-        text_colors.append(text_row)
+    html += """
+            </tbody>
+        </table>
+    </div>
+    """
     
-    # Create the heatmap
-    fig = go.Figure(data=go.Heatmap(
-        z=display_matrix_clean.values,
-        x=display_matrix_clean.columns,
-        y=display_matrix_clean.index,
-        colorscale=colorscale,
-        zmin=zmin,
-        zmax=zmax,
-        showscale=True,
-        colorbar=dict(
-            title=dict(
-                text="CAGR (%)",
-                side="right",
-                font=dict(size=14, color='#1f4e79')
-            ),
-            tickmode="linear",
-            tick0=-40,
-            dtick=10,
-            len=0.8,
-            thickness=20,
-            x=1.02,
-            tickfont=dict(size=12, color='#1f4e79')
-        ),
-        hoverongaps=False,
-        hovertemplate='<b>From %{x} to %{y}</b><br>CAGR: %{z:.1f}%<extra></extra>',
-        text=display_matrix_clean.round(1),
-        texttemplate='%{text}%',
-        textfont=dict(size=11, color='black')  # Default to black, we'll customize below
-    ))
-    
-    # Manually set text colors for better contrast
-    # This is a workaround since Plotly doesn't support per-cell text colors easily
-    annotations = []
-    
-    # Add custom positioning for "From the start of" - positioned on the left with proper spacing
-    annotations.append(
-        dict(
-            x=0.02,   # Position slightly inside the left edge of the plot area
-            y=1.12,   # Position higher above the plot to avoid covering years
-            text='From the start of',
-            showarrow=False,
-            font=dict(color='#1f4e79', size=16, family='Arial'),
-            xref='paper',  # Use paper coordinates for positioning
-            yref='paper',
-            xanchor='left',  # Anchor to the left
-            yanchor='bottom'
-        )
-    )
-    
-    # Add cell value annotations
-    for i, row_year in enumerate(display_matrix_clean.index):
-        for j, col_year in enumerate(display_matrix_clean.columns):
-            value = display_matrix_clean.iloc[i, j]
-            if pd.notna(value) and value is not None:
-                # Determine text color based on background
-                if value < -15:
-                    text_color = 'white'
-                elif value > 25:
-                    text_color = 'white'
-                else:
-                    text_color = 'black'
-                
-                annotations.append(
-                    dict(
-                        x=col_year,
-                        y=row_year,
-                        text=f'{value:.1f}%',
-                        showarrow=False,
-                        font=dict(color=text_color, size=12, family='Arial'),
-                        xref='x',
-                        yref='y'
-                    )
-                )
-    
-    # Update layout to match professional style with reasonable spacing
-    fig.update_layout(
-        title=dict(
-            text=f'{etf_name} - Compound Annual Growth Rate Matrix Period {start_year}-{end_year}',
-            x=0.5,
-            xanchor='center',
-            font=dict(size=20, color='#1f4e79', family='Arial'),
-            pad=dict(t=20, b=15)  # Reasonable padding around title
-        ),
-        xaxis=dict(
-            title=None,  # Remove the centered title
-            side='top',
-            tickfont=dict(size=12, color='#1f4e79'),
-            dtick=1,  # Force show every year
-            tick0=start_year,  # Start from the first year
-            showgrid=False,
-            zeroline=False,
-            showline=True,
-            linewidth=2,
-            linecolor='#1f4e79'
-        ),
-        yaxis=dict(
-            title=dict(
-                text='To the end of',
-                font=dict(size=16, color='#1f4e79', family='Arial'),
-                standoff=20  # Reasonable space between title and axis
-            ),
-            tickfont=dict(size=12, color='#1f4e79'),
-            dtick=1,  # Force show every year
-            tick0=start_year,  # Start from the first year
-            showgrid=False,
-            zeroline=False,
-            autorange='reversed',  # Keep recent years at top
-            showline=True,
-            linewidth=2,
-            linecolor='#1f4e79'
-        ),
-        plot_bgcolor='white',
-        paper_bgcolor='white',
-        width=None,  # Let Streamlit control width
-        height=650,  # Back to reasonable height
-        margin=dict(l=120, r=180, t=140, b=80),  # Reasonable margins
-        font=dict(family='Arial'),
-        annotations=annotations  # Add our custom text annotations
-    )
-    
-    # Remove the default text to avoid overlap
-    fig.data[0].text = None
-    fig.data[0].texttemplate = None
-    
-    return fig
+    return html
 
 def main():
     # Company Header
@@ -628,21 +495,19 @@ def main():
     with st.spinner("🔄 Calculating CAGR matrix..."):
         cagr_matrix = create_cagr_matrix(annual_returns[selected_etf], start_year, end_year)
     
-    # Display professional matrix as interactive heatmap
-    heatmap_fig = create_cagr_heatmap(cagr_matrix, selected_etf, start_year, end_year)
-    st.plotly_chart(heatmap_fig, use_container_width=True)
+    # Display professional matrix
+    matrix_html = create_professional_matrix_html(cagr_matrix, selected_etf, start_year, end_year)
+    st.markdown(matrix_html, unsafe_allow_html=True)
     
     # Instructions
     st.markdown("""
     <div class="instructions">
-        <h4>📖 How to Read This Interactive Heatmap</h4>
+        <h4>📖 How to Read This Matrix</h4>
         <ul>
-            <li><strong>X-axis (From the start of):</strong> Starting year of investment period</li>
-            <li><strong>Y-axis (To the end of):</strong> Ending year of investment period</li>
-            <li><strong>Cell Values:</strong> Compound Annual Growth Rate (CAGR) for that specific time period</li>
-            <li><strong>Color Coding:</strong> Red shades for negative returns, green shades for positive returns</li>
-            <li><strong>Text Color:</strong> Dynamically adjusted (black/white) for optimal readability</li>
-            <li><strong>Interactive:</strong> Hover over cells to see detailed CAGR information</li>
+            <li><strong>Columns:</strong> Starting year of investment period</li>
+            <li><strong>Rows:</strong> Ending year of investment period</li>
+            <li><strong>Values:</strong> Compound Annual Growth Rate (CAGR) for that specific time period</li>
+            <li><strong>Color Coding:</strong> Green shades indicate positive returns, red indicates losses</li>
         </ul>
     </div>
     """, unsafe_allow_html=True)
@@ -653,32 +518,30 @@ def main():
     col1, col2, col3, col4 = st.columns(4)
     
     with col1:
-        # Best single year - find the specific year
-        single_year_data = {year: cagr_matrix.loc[year, year] for year in cagr_matrix.index 
-                           if not pd.isna(cagr_matrix.loc[year, year])}
-        if single_year_data:
-            best_year_value = max(single_year_data.values())
-            best_year_actual = [year for year, value in single_year_data.items() if value == best_year_value][0]
+        # Best single year
+        single_year_returns = [cagr_matrix.loc[year, year] for year in cagr_matrix.index 
+                              if not pd.isna(cagr_matrix.loc[year, year])]
+        if single_year_returns:
+            best_year = max(single_year_returns)
             st.markdown(f"""
             <div class="stat-card">
-                <div class="stat-value">{best_year_value:.1f}%</div>
-                <div class="stat-label">Best Single Year ({best_year_actual})</div>
+                <div class="stat-value">{best_year:.1f}%</div>
+                <div class="stat-label">Best Single Year</div>
             </div>
             """, unsafe_allow_html=True)
     
     with col2:
-        if single_year_data:
-            worst_year_value = min(single_year_data.values())
-            worst_year_actual = [year for year, value in single_year_data.items() if value == worst_year_value][0]
+        if single_year_returns:
+            worst_year = min(single_year_returns)
             st.markdown(f"""
             <div class="stat-card">
-                <div class="stat-value">{worst_year_value:.1f}%</div>
-                <div class="stat-label">Worst Single Year ({worst_year_actual})</div>
+                <div class="stat-value">{worst_year:.1f}%</div>
+                <div class="stat-label">Worst Single Year</div>
             </div>
             """, unsafe_allow_html=True)
     
     with col3:
-        # 10-year CAGR (if available) - show specific period
+        # 10-year CAGR (if available)
         if end_year - 9 >= start_year:
             ten_year_start = end_year - 9
             if ten_year_start in cagr_matrix.index:
@@ -686,19 +549,19 @@ def main():
                 st.markdown(f"""
                 <div class="stat-card">
                     <div class="stat-value">{ten_year_cagr:.1f}%</div>
-                    <div class="stat-label">10-Year CAGR ({ten_year_start}-{end_year})</div>
+                    <div class="stat-label">10-Year CAGR</div>
                 </div>
                 """, unsafe_allow_html=True)
     
     with col4:
-        # Full period CAGR - show exact period
+        # Full period CAGR
         if start_year in cagr_matrix.index and end_year in cagr_matrix.index:
             full_period_cagr = cagr_matrix.loc[end_year, start_year]
             period_years = end_year - start_year + 1
             st.markdown(f"""
             <div class="stat-card">
                 <div class="stat-value">{full_period_cagr:.1f}%</div>
-                <div class="stat-label">{period_years}-Year CAGR ({start_year}-{end_year})</div>
+                <div class="stat-label">{period_years}-Year CAGR</div>
             </div>
             """, unsafe_allow_html=True)
     
