@@ -284,11 +284,19 @@ def load_etf_data():
     """Load and process ETF data to calculate annual returns"""
     
     try:
-        # Import the CSV files
-        dia_data = pd.read_csv("../Historical Data/DIA.csv")
-        spy_data = pd.read_csv("../Historical Data/SPY.csv")
-        qqq_data = pd.read_csv("../Historical Data/QQQ.csv")
-        vti_data = pd.read_csv("../Historical Data/VTI.csv")
+        # Get the directory containing this script
+        script_dir = os.path.dirname(os.path.abspath(__file__))
+        data_dir = os.path.join(script_dir, "..", "Historical Data")
+        
+        # Check if data directory exists
+        if not os.path.exists(data_dir):
+            raise FileNotFoundError(f"Data directory not found: {data_dir}")
+        
+        # Import the CSV files with absolute paths
+        dia_data = pd.read_csv(os.path.join(data_dir, "DIA.csv"))
+        spy_data = pd.read_csv(os.path.join(data_dir, "SPY.csv"))
+        qqq_data = pd.read_csv(os.path.join(data_dir, "QQQ.csv"))
+        vti_data = pd.read_csv(os.path.join(data_dir, "VTI.csv"))
         
         # Convert Date columns to datetime and clean up dataframes
         dia_data['Date'] = pd.to_datetime(dia_data['Date'])
@@ -338,7 +346,18 @@ def load_etf_data():
         
     except Exception as e:
         st.error(f"Error loading data: {e}")
-        st.error("Please make sure the CSV files are in the '../Historical Data/' directory")
+        st.error("Please make sure the CSV files are in the '../Historical Data/' directory relative to this script")
+        st.error("Expected file structure:")
+        st.code("""
+Returns Viz App/
+├── Visualization app/
+│   └── Returns Viz App.py  (this file)
+└── Historical Data/
+    ├── DIA.csv
+    ├── SPY.csv
+    ├── QQQ.csv
+    └── VTI.csv
+        """)
         return None, None
 
 def format_value_with_color(value):
