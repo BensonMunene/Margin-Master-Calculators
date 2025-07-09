@@ -28,7 +28,7 @@ def load_comprehensive_data():
         github_dir = "Data"
         
         # Choose which directory to use (True for local, False for GitHub)
-        use_local = False
+        use_local = True
         data_dir = local_dir if use_local else github_dir
         
         # Load ONLY the Excel file - it contains everything we need
@@ -2583,6 +2583,11 @@ def render_historical_backtest_tab():
     current_mode = st.session_state.get('backtest_mode', 'standard')
     
     with backtest_col1:
+        st.markdown("""
+        <div style="text-align: center; margin-bottom: 0.5rem;">
+            <span style="color: #ffffff; font-size: 0.8rem; font-weight: bold; text-transform: uppercase;">LIQUIDATION-REENTRY</span>
+        </div>
+        """, unsafe_allow_html=True)
         if current_mode == 'standard':
             st.markdown("""
             <div style="background-color: #ff8c00; padding: 0.5rem 1rem; text-align: center; 
@@ -2603,6 +2608,11 @@ def render_historical_backtest_tab():
                 st.rerun()
     
     with backtest_col2:
+        st.markdown("""
+        <div style="text-align: center; margin-bottom: 0.5rem;">
+            <span style="color: #ffffff; font-size: 0.8rem; font-weight: bold; text-transform: uppercase;">FRESH CAPITAL RESTART</span>
+        </div>
+        """, unsafe_allow_html=True)
         if current_mode == 'restart':
             st.markdown("""
             <div style="background-color: #ff8c00; padding: 0.5rem 1rem; text-align: center; 
@@ -2623,6 +2633,11 @@ def render_historical_backtest_tab():
                 st.rerun()
     
     with backtest_col3:
+        st.markdown("""
+        <div style="text-align: center; margin-bottom: 0.5rem;">
+            <span style="color: #ffffff; font-size: 0.8rem; font-weight: bold; text-transform: uppercase;">PROFIT THRESHOLD</span>
+        </div>
+        """, unsafe_allow_html=True)
         if current_mode == 'profit_threshold':
             st.markdown("""
             <div style="background-color: #ff8c00; padding: 0.5rem 1rem; text-align: center; 
