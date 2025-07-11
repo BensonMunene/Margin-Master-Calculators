@@ -505,7 +505,7 @@ def create_cagr_heatmap(matrix_data, etf_name, start_year, end_year):
                     )
                 )
     
-    # Update layout to match professional style with reasonable spacing
+    # Update layout to match professional style
     fig.update_layout(
         title=dict(
             text=f'{etf_name} - Compound Annual Growth Rate Matrix Period {start_year}-{end_year}',
@@ -572,6 +572,8 @@ def main():
     
     if annual_returns is None:
         st.stop()
+    
+
     
     # Control Panel
     st.markdown('<div class="control-panel">', unsafe_allow_html=True)

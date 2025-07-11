@@ -24,8 +24,61 @@ __version__ = "1.0.0"
 __author__ = "MarginMaster Analytics"
 __description__ = "Advanced Margin Cushion Risk Management Analytics"
 
-def create_cushion_analytics_dashboard(df_results: pd.DataFrame, metrics: Dict[str, float]) -> go.Figure:
+def create_cushion_analytics_dashboard(df_results: pd.DataFrame, metrics: Dict[str, float], use_dark_theme: bool = True) -> go.Figure:
     """Create comprehensive margin cushion analytics dashboard"""
+    
+    # Define color schemes based on theme
+    if use_dark_theme:
+        # Dark theme colors (Bloomberg Terminal style)
+        bg_color = '#0a0a0a'
+        plot_bg_color = '#1a1a1a'
+        grid_color = '#333333'
+        text_color = '#ffffff'
+        title_color = '#00ff88'
+        
+        # Risk zone colors for dark theme
+        safe_color = '#00ff88'  # Bright green
+        caution_color = '#ffbb00'  # Bright yellow
+        warning_color = '#ff6600'  # Bright orange
+        critical_color = '#ff3366'  # Bright red
+        
+        # Line colors for dark theme
+        primary_line_color = '#00d4ff'  # Bright cyan
+        secondary_line_color = '#ff3366'  # Bright red
+        tertiary_line_color = '#00ff88'  # Bright green
+        quaternary_line_color = '#ff00ff'  # Bright magenta
+        
+        # Fill colors with transparency
+        safe_fill = 'rgba(0, 255, 136, 0.15)'
+        caution_fill = 'rgba(255, 187, 0, 0.15)'
+        warning_fill = 'rgba(255, 102, 0, 0.15)'
+        critical_fill = 'rgba(255, 51, 102, 0.15)'
+        
+    else:
+        # Light theme colors (Professional Report style)
+        bg_color = '#ffffff'
+        plot_bg_color = '#ffffff'
+        grid_color = '#E8E8E8'
+        text_color = '#2C3E50'
+        title_color = '#2C3E50'
+        
+        # Risk zone colors for light theme
+        safe_color = '#27AE60'  # Green
+        caution_color = '#F39C12'  # Yellow
+        warning_color = '#E67E22'  # Orange
+        critical_color = '#E74C3C'  # Red
+        
+        # Line colors for light theme
+        primary_line_color = '#1f77b4'  # Blue
+        secondary_line_color = '#DC3545'  # Red
+        tertiary_line_color = '#27AE60'  # Green
+        quaternary_line_color = '#8E44AD'  # Purple
+        
+        # Fill colors with transparency
+        safe_fill = 'rgba(39, 174, 96, 0.1)'
+        caution_fill = 'rgba(243, 156, 18, 0.15)'
+        warning_fill = 'rgba(230, 126, 34, 0.15)'
+        critical_fill = 'rgba(231, 76, 60, 0.15)'
     
     # Calculate cushion metrics
     df_cushion = df_results.copy()
@@ -41,14 +94,6 @@ def create_cushion_analytics_dashboard(df_results: pd.DataFrame, metrics: Dict[s
     # Calculate cushion dollar amount
     df_cushion['Cushion_Dollars'] = df_cushion['Equity'] - df_cushion['Maintenance_Margin_Required']
     
-    # Calculate days to margin call at current interest rate (assuming no price movement)
-    df_cushion['Daily_Interest_Rate'] = df_cushion['Margin_Rate'] / 100 / 365
-    df_cushion['Days_To_Margin_Call'] = np.where(
-        (df_cushion['Daily_Interest_Cost'] > 0) & (df_cushion['Cushion_Dollars'] > 0),
-        df_cushion['Cushion_Dollars'] / df_cushion['Daily_Interest_Cost'],
-        np.inf
-    )
-    
     # Calculate break-even price (price at which margin call would trigger)
     df_cushion['Break_Even_Price'] = np.where(
         df_cushion['Shares_Held'] > 0,
@@ -56,43 +101,67 @@ def create_cushion_analytics_dashboard(df_results: pd.DataFrame, metrics: Dict[s
         0
     )
     
+    # Calculate portfolio value drop requirements
+    df_cushion['Current_Portfolio_Value'] = df_cushion['ETF_Price'] * df_cushion['Shares_Held']
+    df_cushion['Portfolio_Drop_Required_Dollars'] = np.where(
+        df_cushion['Shares_Held'] > 0,
+        (df_cushion['ETF_Price'] - df_cushion['Break_Even_Price']) * df_cushion['Shares_Held'],
+        0
+    )
+    df_cushion['Portfolio_Drop_Required_Percentage'] = np.where(
+        df_cushion['Current_Portfolio_Value'] > 0,
+        (df_cushion['Portfolio_Drop_Required_Dollars'] / df_cushion['Current_Portfolio_Value']) * 100,
+        0
+    )
+    
+    # Calculate distance from margin call
+    df_cushion['Price_Distance_Dollars'] = df_cushion['ETF_Price'] - df_cushion['Break_Even_Price']
+    df_cushion['Price_Distance_Percentage'] = np.where(
+        df_cushion['ETF_Price'] > 0,
+        (df_cushion['Price_Distance_Dollars'] / df_cushion['ETF_Price']) * 100,
+        0
+    )
+    
     # Create color mapping for risk zones
     def get_cushion_color(cushion_pct):
         if cushion_pct >= 50:
-            return '#27AE60'  # Green - Safe
+            return safe_color
         elif cushion_pct >= 20:
-            return '#F39C12'  # Yellow - Caution
+            return caution_color
         elif cushion_pct >= 5:
-            return '#E67E22'  # Orange - Warning
+            return warning_color
         else:
-            return '#E74C3C'  # Red - Critical
+            return critical_color
     
     # Apply color mapping
     df_cushion['Risk_Color'] = df_cushion['Cushion_Percentage'].apply(get_cushion_color)
     
     fig = make_subplots(
-        rows=3, cols=2,
+        rows=4, cols=2,
         subplot_titles=(
             'Margin Cushion Over Time', 'Real-Time Cushion Gauge',
-            'Days to Margin Call Timeline', 'Break-Even Price Analysis',
-            'Cushion Dollar Buffer', 'Interest Rate Impact on Cushion'
+            'ETF Price vs Margin Call Price', 'Portfolio Value Drop Required (%)',
+            'Cushion Dollar Buffer', 'Portfolio Value Drop Required ($)',
+            'Break-Even Price Analysis', 'Portfolio Value vs Loan Balance'
         ),
         specs=[
             [{"type": "scatter"}, {"type": "indicator"}],
             [{"type": "scatter"}, {"type": "scatter"}],
+            [{"type": "scatter"}, {"type": "scatter"}],
             [{"type": "scatter"}, {"type": "scatter"}]
         ],
-        vertical_spacing=0.12,
+        vertical_spacing=0.08,
         horizontal_spacing=0.08
     )
     
-    # 1. Cushion percentage over time with risk zones
     # Handle different backtest modes - some don't have 'In_Position' column
     if 'In_Position' in df_cushion.columns:
         active_positions = df_cushion[df_cushion['In_Position'] == True]
     else:
         # For constant leverage mode, consider positions active when shares are held
         active_positions = df_cushion[df_cushion['Shares_Held'] > 0]
+    
+    # 1. Cushion percentage over time with risk zones
     if not active_positions.empty:
         x_range = [active_positions.index[0], active_positions.index[-1]]
         
@@ -108,7 +177,7 @@ def create_cushion_analytics_dashboard(df_results: pd.DataFrame, metrics: Dict[s
                 showlegend=False,
                 hoverinfo='skip',
                 fill='tozeroy',
-                fillcolor='rgba(39, 174, 96, 0.1)'  # Light green
+                fillcolor=safe_fill
             ),
             row=1, col=1
         )
@@ -124,7 +193,7 @@ def create_cushion_analytics_dashboard(df_results: pd.DataFrame, metrics: Dict[s
                 showlegend=False,
                 hoverinfo='skip',
                 fill='tozeroy',
-                fillcolor='rgba(243, 156, 18, 0.15)'  # Light yellow
+                fillcolor=caution_fill
             ),
             row=1, col=1
         )
@@ -140,7 +209,7 @@ def create_cushion_analytics_dashboard(df_results: pd.DataFrame, metrics: Dict[s
                 showlegend=False,
                 hoverinfo='skip',
                 fill='tozeroy',
-                fillcolor='rgba(231, 76, 60, 0.15)'  # Light red
+                fillcolor=critical_fill
             ),
             row=1, col=1
         )
@@ -162,16 +231,16 @@ def create_cushion_analytics_dashboard(df_results: pd.DataFrame, metrics: Dict[s
             
             # Determine color based on the current cushion level
             if curr_cushion >= 50:
-                color = '#27AE60'  # Green - Safe zone
+                color = safe_color
                 zone_name = 'Safe Zone'
             elif curr_cushion >= 20:
-                color = '#F39C12'  # Yellow - Caution zone
+                color = caution_color
                 zone_name = 'Caution Zone'
             elif curr_cushion >= 5:
-                color = '#E67E22'  # Orange - Warning zone
+                color = warning_color
                 zone_name = 'Warning Zone'
             else:
-                color = '#E74C3C'  # Red - Critical zone
+                color = critical_color
                 zone_name = 'Critical Zone'
             
             # Add line segment
@@ -198,7 +267,7 @@ def create_cushion_analytics_dashboard(df_results: pd.DataFrame, metrics: Dict[s
                     x=x_range,
                     y=[50, 50],
                     mode='lines',
-                    line=dict(color='#27AE60', width=2, dash='dash'),
+                    line=dict(color=safe_color, width=2, dash='dash'),
                     name='Safe Zone (50%)',
                     showlegend=True,
                     hovertemplate='Safe Zone: 50%<extra></extra>'
@@ -212,7 +281,7 @@ def create_cushion_analytics_dashboard(df_results: pd.DataFrame, metrics: Dict[s
                     x=x_range,
                     y=[20, 20],
                     mode='lines',
-                    line=dict(color='#F39C12', width=2, dash='dash'),
+                    line=dict(color=caution_color, width=2, dash='dash'),
                     name='Caution Zone (20%)',
                     showlegend=True,
                     hovertemplate='Caution Zone: 20%<extra></extra>'
@@ -226,7 +295,7 @@ def create_cushion_analytics_dashboard(df_results: pd.DataFrame, metrics: Dict[s
                     x=x_range,
                     y=[5, 5],
                     mode='lines',
-                    line=dict(color='#E74C3C', width=2, dash='dash'),
+                    line=dict(color=critical_color, width=2, dash='dash'),
                     name='Critical Zone (5%)',
                     showlegend=True,
                     hovertemplate='Critical Zone: 5%<extra></extra>'
@@ -238,100 +307,173 @@ def create_cushion_analytics_dashboard(df_results: pd.DataFrame, metrics: Dict[s
     current_cushion = active_positions['Cushion_Percentage'].iloc[-1] if not active_positions.empty else 0
     gauge_color = get_cushion_color(current_cushion)
     
+    # Define gauge background colors based on theme
+    if use_dark_theme:
+        gauge_bg_colors = [
+            {'range': [0, 5], 'color': "rgba(255, 51, 102, 0.3)"},      # Critical zone
+            {'range': [5, 20], 'color': "rgba(255, 102, 0, 0.3)"},      # Warning zone  
+            {'range': [20, 50], 'color': "rgba(255, 187, 0, 0.3)"},     # Caution zone
+            {'range': [50, 100], 'color': "rgba(0, 255, 136, 0.3)"}     # Safe zone
+        ]
+        threshold_color = "#ffffff"
+    else:
+        gauge_bg_colors = [
+            {'range': [0, 5], 'color': "#FADBD8"},      # Critical zone
+            {'range': [5, 20], 'color': "#FCF3CF"},     # Warning zone  
+            {'range': [20, 50], 'color': "#FEF9E7"},    # Caution zone
+            {'range': [50, 100], 'color': "#EAFAF1"}    # Safe zone
+        ]
+        threshold_color = "black"
+    
     fig.add_trace(
         go.Indicator(
             mode="gauge+number+delta",
             value=current_cushion,
             delta={'reference': 50, 'valueformat': '.1f'},
-            title={'text': "Current Margin Cushion", 'font': {'size': 16}},
+            title={'text': "Current Margin Cushion", 'font': {'size': 16, 'color': text_color}},
             domain={'x': [0, 1], 'y': [0, 1]},
             gauge={
-                'axis': {'range': [0, 100], 'tickformat': '.0f'},
+                'axis': {'range': [0, 100], 'tickformat': '.0f', 'tickfont': {'color': text_color}},
                 'bar': {'color': gauge_color, 'thickness': 0.8},
-                'steps': [
-                    {'range': [0, 5], 'color': "#FADBD8"},      # Critical zone
-                    {'range': [5, 20], 'color': "#FCF3CF"},     # Warning zone  
-                    {'range': [20, 50], 'color': "#FEF9E7"},    # Caution zone
-                    {'range': [50, 100], 'color': "#EAFAF1"}    # Safe zone
-                ],
+                'steps': gauge_bg_colors,
                 'threshold': {
-                    'line': {'color': "black", 'width': 4},
+                    'line': {'color': threshold_color, 'width': 4},
                     'thickness': 0.75,
                     'value': 25  # Maintenance margin typical level
                 }
             },
-            number={'suffix': "%", 'valueformat': '.1f', 'font': {'size': 20}}
+            number={'suffix': "%", 'valueformat': '.1f', 'font': {'size': 20, 'color': text_color}}
         ),
         row=1, col=2
     )
     
-    # 3. Days to margin call timeline
+    # 3. ETF Price vs Margin Call Price with filled areas
     if not active_positions.empty:
-        # Cap extremely high values for better visualization
-        capped_days = np.minimum(active_positions['Days_To_Margin_Call'], 1000)
+        # Add filled area between ETF Price and Margin Call Price
+        for i in range(len(active_positions)):
+            if i == 0:
+                continue
+            
+            prev_date = active_positions.index[i-1]
+            curr_date = active_positions.index[i]
+            prev_etf = active_positions['ETF_Price'].iloc[i-1]
+            curr_etf = active_positions['ETF_Price'].iloc[i]
+            prev_margin = active_positions['Break_Even_Price'].iloc[i-1]
+            curr_margin = active_positions['Break_Even_Price'].iloc[i]
+            
+            # Determine fill color based on whether ETF price is above or below margin call price
+            if curr_etf > curr_margin:
+                fill_color = safe_fill if use_dark_theme else 'rgba(39, 174, 96, 0.2)'  # Light green
+                safety_status = 'Safe'
+            else:
+                fill_color = critical_fill if use_dark_theme else 'rgba(231, 76, 60, 0.2)'  # Light red
+                safety_status = 'Margin Call Risk'
+            
+            # Add filled area
+            fig.add_trace(
+                go.Scatter(
+                    x=[prev_date, curr_date, curr_date, prev_date],
+                    y=[prev_etf, curr_etf, curr_margin, prev_margin],
+                    fill='toself',
+                    fillcolor=fill_color,
+                    line=dict(color='rgba(255,255,255,0)'),
+                    showlegend=False,
+                    hoverinfo='skip'
+                ),
+                row=2, col=1
+            )
         
+        # Add ETF Price line
         fig.add_trace(
             go.Scatter(
                 x=active_positions.index,
-                y=capped_days,
-                mode='lines+markers',
-                name='Days to Margin Call',
-                line=dict(color='#8E44AD', width=2),
-                marker=dict(size=3),
-                hovertemplate='Date: %{x}<br>Days to Margin Call: %{y:.0f}<extra></extra>'
+                y=active_positions['ETF_Price'],
+                mode='lines',
+                name='ETF Price',
+                line=dict(color=primary_line_color, width=3),
+                hovertemplate='Date: %{x}<br>ETF Price: $%{y:.2f}<extra></extra>'
             ),
             row=2, col=1
         )
         
-        # Add warning zones as scatter traces (since add_hline doesn't work with indicator subplots nearby)
-        fig.add_trace(
-            go.Scatter(
-                x=[active_positions.index[0], active_positions.index[-1]],
-                y=[30, 30],
-                mode='lines',
-                line=dict(color='#E74C3C', width=2, dash='dash'),
-                name='30-Day Warning',
-                showlegend=False,
-                hovertemplate='30-Day Warning Line<extra></extra>'
-            ),
-            row=2, col=1
-        )
-        
-        fig.add_trace(
-            go.Scatter(
-                x=[active_positions.index[0], active_positions.index[-1]],
-                y=[90, 90],
-                mode='lines',
-                line=dict(color='#F39C12', width=2, dash='dash'),
-                name='90-Day Caution',
-                showlegend=False,
-                hovertemplate='90-Day Caution Line<extra></extra>'
-            ),
-            row=2, col=1
-        )
-    
-    # 4. Break-even price analysis
-    if not active_positions.empty:
+        # Add Margin Call Price line
         fig.add_trace(
             go.Scatter(
                 x=active_positions.index,
                 y=active_positions['Break_Even_Price'],
                 mode='lines',
-                name='Break-Even Price',
-                line=dict(color='#DC3545', width=2, dash='dash'),
-                hovertemplate='Date: %{x}<br>Break-Even Price: $%{y:.2f}<extra></extra>'
+                name='Margin Call Price',
+                line=dict(color=secondary_line_color, width=3),
+                hovertemplate='Date: %{x}<br>Margin Call Price: $%{y:.2f}<extra></extra>'
+            ),
+            row=2, col=1
+        )
+    
+    # 4. Portfolio Value Drop Required (Percentage)
+    if not active_positions.empty:
+        # Create risk-based coloring for portfolio drop percentages
+        portfolio_drop_colors = []
+        for drop_pct in active_positions['Portfolio_Drop_Required_Percentage']:
+            if drop_pct >= 30:
+                portfolio_drop_colors.append(safe_color)  # Green - Safe
+            elif drop_pct >= 15:
+                portfolio_drop_colors.append(caution_color)  # Yellow - Caution
+            elif drop_pct >= 5:
+                portfolio_drop_colors.append(warning_color)  # Orange - Warning
+            else:
+                portfolio_drop_colors.append(critical_color)  # Red - Critical
+        
+        fig.add_trace(
+            go.Scatter(
+                x=active_positions.index,
+                y=active_positions['Portfolio_Drop_Required_Percentage'],
+                mode='lines+markers',
+                name='Portfolio Drop Required (%)',
+                line=dict(color=tertiary_line_color, width=2),
+                marker=dict(size=4, color=portfolio_drop_colors),
+                fill='tozeroy',
+                fillcolor=f'rgba({int(quaternary_line_color[1:3], 16)}, {int(quaternary_line_color[3:5], 16)}, {int(quaternary_line_color[5:7], 16)}, 0.2)',
+                hovertemplate='Date: %{x}<br>Drop Required: %{y:.1f}%<extra></extra>'
+            ),
+            row=2, col=2
+        )
+        
+        # Add threshold lines
+        fig.add_trace(
+            go.Scatter(
+                x=[active_positions.index[0], active_positions.index[-1]],
+                y=[30, 30],
+                mode='lines',
+                line=dict(color=safe_color, width=2, dash='dash'),
+                name='Safe Threshold (30%)',
+                showlegend=False,
+                hovertemplate='Safe Threshold: 30%<extra></extra>'
             ),
             row=2, col=2
         )
         
         fig.add_trace(
             go.Scatter(
-                x=active_positions.index,
-                y=active_positions['ETF_Price'],
+                x=[active_positions.index[0], active_positions.index[-1]],
+                y=[15, 15],
                 mode='lines',
-                name='Current ETF Price',
-                line=dict(color='#1f77b4', width=2),
-                hovertemplate='Date: %{x}<br>ETF Price: $%{y:.2f}<extra></extra>'
+                line=dict(color=caution_color, width=2, dash='dash'),
+                name='Caution Threshold (15%)',
+                showlegend=False,
+                hovertemplate='Caution Threshold: 15%<extra></extra>'
+            ),
+            row=2, col=2
+        )
+        
+        fig.add_trace(
+            go.Scatter(
+                x=[active_positions.index[0], active_positions.index[-1]],
+                y=[5, 5],
+                mode='lines',
+                line=dict(color=critical_color, width=2, dash='dash'),
+                name='Critical Threshold (5%)',
+                showlegend=False,
+                hovertemplate='Critical Threshold: 5%<extra></extra>'
             ),
             row=2, col=2
         )
@@ -344,7 +486,7 @@ def create_cushion_analytics_dashboard(df_results: pd.DataFrame, metrics: Dict[s
                 y=active_positions['Cushion_Dollars'],
                 mode='lines+markers',
                 name='Cushion Buffer',
-                line=dict(color='#16A085', width=2),
+                line=dict(color=tertiary_line_color, width=2),
                 marker=dict(size=3),
                 fill='tozeroy',
                 fillcolor='rgba(22, 160, 133, 0.2)',
@@ -353,39 +495,96 @@ def create_cushion_analytics_dashboard(df_results: pd.DataFrame, metrics: Dict[s
             row=3, col=1
         )
     
-    # 6. Interest rate impact on cushion erosion
+    # 6. Portfolio Value Drop Required (Dollars)
     if not active_positions.empty:
-        # Calculate cushion erosion rate (daily interest as % of cushion)
-        cushion_erosion_rate = np.where(
-            active_positions['Cushion_Dollars'] > 0,
-            (active_positions['Daily_Interest_Cost'] / active_positions['Cushion_Dollars']) * 100,
-            0
-        )
-        
         fig.add_trace(
             go.Scatter(
                 x=active_positions.index,
-                y=cushion_erosion_rate,
+                y=active_positions['Portfolio_Drop_Required_Dollars'],
                 mode='lines+markers',
-                name='Daily Cushion Erosion Rate',
-                line=dict(color='#E74C3C', width=2),
-                marker=dict(size=3),
-                hovertemplate='Date: %{x}<br>Daily Erosion: %{y:.3f}%<extra></extra>'
+                name='Portfolio Drop Required ($)',
+                line=dict(color=critical_color, width=2),
+                marker=dict(size=4),
+                fill='tozeroy',
+                fillcolor='rgba(231, 76, 60, 0.2)',
+                hovertemplate='Date: %{x}<br>Drop Required: $%{y:,.0f}<extra></extra>'
             ),
             row=3, col=2
         )
-        
-        # Add margin rate for comparison (on same axis, different scale handled in layout)
+    
+    # 7. Break-even price analysis (enhanced)
+    if not active_positions.empty:
         fig.add_trace(
             go.Scatter(
                 x=active_positions.index,
-                y=active_positions['Margin_Rate'],
+                y=active_positions['Break_Even_Price'],
                 mode='lines',
-                name='Annual Margin Rate',
-                line=dict(color='#8E44AD', width=2, dash='dot'),
-                hovertemplate='Date: %{x}<br>Margin Rate: %{y:.2f}%<extra></extra>'
+                name='Break-Even Price',
+                line=dict(color=secondary_line_color, width=2),
+                hovertemplate='Date: %{x}<br>Break-Even Price: $%{y:.2f}<extra></extra>'
             ),
-            row=3, col=2
+            row=4, col=1
+        )
+        
+        fig.add_trace(
+            go.Scatter(
+                x=active_positions.index,
+                y=active_positions['ETF_Price'],
+                mode='lines',
+                name='Current ETF Price',
+                line=dict(color=primary_line_color, width=2),
+                hovertemplate='Date: %{x}<br>ETF Price: $%{y:.2f}<extra></extra>'
+            ),
+            row=4, col=1
+        )
+    
+    # 8. Portfolio Value vs Loan Balance
+    if not active_positions.empty:
+        # Calculate portfolio value
+        portfolio_value = active_positions['ETF_Price'] * active_positions['Shares_Held']
+        
+        # Add filled area between portfolio value and loan balance (equity)
+        fig.add_trace(
+            go.Scatter(
+                x=active_positions.index,
+                y=portfolio_value,
+                mode='lines',
+                name='Portfolio Value',
+                line=dict(color=primary_line_color, width=3),
+                fill='tonexty',
+                fillcolor='rgba(31, 119, 180, 0.2)',
+                hovertemplate='Date: %{x}<br>Portfolio Value: $%{y:,.0f}<extra></extra>'
+            ),
+            row=4, col=2
+        )
+        
+        # Add loan balance line
+        fig.add_trace(
+            go.Scatter(
+                x=active_positions.index,
+                y=active_positions['Margin_Loan'],
+                mode='lines',
+                name='Loan Balance',
+                line=dict(color=secondary_line_color, width=3),
+                hovertemplate='Date: %{x}<br>Loan Balance: $%{y:,.0f}<extra></extra>'
+            ),
+            row=4, col=2
+        )
+        
+        # Add fill area to show equity (space between portfolio value and loan)
+        fig.add_trace(
+            go.Scatter(
+                x=active_positions.index,
+                y=portfolio_value,
+                mode='lines',
+                line=dict(color='rgba(255,255,255,0)'),
+                showlegend=False,
+                hoverinfo='skip',
+                fill='tonexty',
+                fillcolor='rgba(39, 174, 96, 0.15)',
+                name='Equity Buffer'
+            ),
+            row=4, col=2
         )
     
     # Update layout
@@ -393,28 +592,73 @@ def create_cushion_analytics_dashboard(df_results: pd.DataFrame, metrics: Dict[s
         title={
             'text': f"🛡️ Margin Cushion Risk Management Dashboard | Current Cushion: {current_cushion:.1f}%",
             'x': 0.5,
-            'font': {'size': 18, 'color': '#2C3E50'}
+            'font': {'size': 18, 'color': title_color}
         },
-        height=900,
+        height=1200,
         showlegend=True,
-        plot_bgcolor='white',
-        paper_bgcolor='#FAFAFA'
+        legend=dict(
+            bgcolor='rgba(0,0,0,0.5)' if use_dark_theme else 'rgba(255,255,255,0.8)',
+            bordercolor=grid_color,
+            borderwidth=1,
+            font=dict(color=text_color, size=11),
+            x=1.02,
+            y=1
+        ),
+        plot_bgcolor=plot_bg_color,
+        paper_bgcolor=bg_color,
+        font=dict(color=text_color, family='Arial, sans-serif'),
+        hovermode='x unified',
+        hoverlabel=dict(
+            bgcolor=plot_bg_color,
+            font_size=12,
+            font_family='Arial, sans-serif',
+            font_color=text_color,
+            bordercolor=grid_color
+        ),
+        margin=dict(l=80, r=150, t=100, b=80)
     )
     
     # Update axes styling
-    fig.update_xaxes(showgrid=True, gridwidth=1, gridcolor='#E8E8E8')
-    fig.update_yaxes(showgrid=True, gridwidth=1, gridcolor='#E8E8E8')
+    fig.update_xaxes(
+        showgrid=True, 
+        gridwidth=1, 
+        gridcolor=grid_color,
+        tickfont=dict(color=text_color if use_dark_theme else '#666666', size=11),
+        linecolor=grid_color,
+        mirror=True
+    )
+    fig.update_yaxes(
+        showgrid=True, 
+        gridwidth=1, 
+        gridcolor=grid_color,
+        tickfont=dict(color=text_color if use_dark_theme else '#666666', size=11),
+        linecolor=grid_color,
+        mirror=True
+    )
     
     # Format specific axes
-    fig.update_yaxes(tickformat='.1f', row=1, col=1, title_text="Cushion (%)")
-    fig.update_yaxes(tickformat='.0f', row=2, col=1, title_text="Days")
-    fig.update_yaxes(tickformat='$,.2f', row=2, col=2, title_text="Price ($)")
-    fig.update_yaxes(tickformat='$,.0f', row=3, col=1, title_text="Cushion Buffer ($)")
-    fig.update_yaxes(tickformat='.3f', row=3, col=2, title_text="Erosion Rate (%/day)")
+    fig.update_yaxes(tickformat='.1f', row=1, col=1, title_text="Cushion (%)", title_font_color=text_color)
+    fig.update_yaxes(tickformat='$,.2f', row=2, col=1, title_text="Price ($)", title_font_color=text_color)
+    fig.update_yaxes(tickformat='.1f', row=2, col=2, title_text="Drop Required (%)", title_font_color=text_color)
+    fig.update_yaxes(tickformat='$,.0f', row=3, col=1, title_text="Cushion Buffer ($)", title_font_color=text_color)
+    fig.update_yaxes(tickformat='$,.0f', row=3, col=2, title_text="Drop Required ($)", title_font_color=text_color)
+    fig.update_yaxes(tickformat='$,.2f', row=4, col=1, title_text="Price ($)", title_font_color=text_color)
+    fig.update_yaxes(tickformat='$,.0f', row=4, col=2, title_text="Value ($)", title_font_color=text_color)
+    
+    # Update subplot titles with theme colors
+    for annotation in fig['layout']['annotations']:
+        if annotation['text'] in [
+            'Margin Cushion Over Time', 'Real-Time Cushion Gauge',
+            'ETF Price vs Margin Call Price', 'Portfolio Value Drop Required (%)',
+            'Cushion Dollar Buffer', 'Portfolio Value Drop Required ($)',
+            'Break-Even Price Analysis', 'Portfolio Value vs Loan Balance'
+        ]:
+            annotation['font']['color'] = text_color
+            annotation['font']['size'] = 14 if use_dark_theme else 13
     
     return fig
 
-def render_cushion_analytics_section(results_df: pd.DataFrame, metrics: Dict[str, float], mode: str = "liquidation_reentry"):
+def render_cushion_analytics_section(results_df: pd.DataFrame, metrics: Dict[str, float], mode: str = "liquidation_reentry", use_dark_theme: bool = True):
     """Render the complete cushion analytics section for Streamlit"""
     
     st.markdown("### 🛡️ Margin Cushion Risk Management Dashboard")
@@ -431,6 +675,12 @@ def render_cushion_analytics_section(results_df: pd.DataFrame, metrics: Dict[str
         current_cushion_pct = ((active_positions['Equity'].iloc[-1] - active_positions['Maintenance_Margin_Required'].iloc[-1]) / active_positions['Maintenance_Margin_Required'].iloc[-1]) * 100 if active_positions['Maintenance_Margin_Required'].iloc[-1] > 0 else 0
         current_cushion_dollars = active_positions['Equity'].iloc[-1] - active_positions['Maintenance_Margin_Required'].iloc[-1]
         days_to_margin_call = current_cushion_dollars / active_positions['Daily_Interest_Cost'].iloc[-1] if active_positions['Daily_Interest_Cost'].iloc[-1] > 0 else float('inf')
+        
+        # Calculate portfolio drop requirements
+        current_portfolio_value = active_positions['ETF_Price'].iloc[-1] * active_positions['Shares_Held'].iloc[-1]
+        break_even_price = active_positions['Margin_Loan'].iloc[-1] / (active_positions['Shares_Held'].iloc[-1] * 0.75) if active_positions['Shares_Held'].iloc[-1] > 0 else 0
+        portfolio_drop_dollars = (active_positions['ETF_Price'].iloc[-1] - break_even_price) * active_positions['Shares_Held'].iloc[-1] if active_positions['Shares_Held'].iloc[-1] > 0 else 0
+        portfolio_drop_percentage = (portfolio_drop_dollars / current_portfolio_value) * 100 if current_portfolio_value > 0 else 0
         
         # Risk zone classification
         if current_cushion_pct >= 50:
@@ -464,24 +714,20 @@ def render_cushion_analytics_section(results_df: pd.DataFrame, metrics: Dict[str
             """, unsafe_allow_html=True)
         
         with cushion_col3:
-            days_display = f"{days_to_margin_call:.0f}" if days_to_margin_call != float('inf') else "∞"
             st.markdown(f"""
             <div style="background-color: #1a1a1a; border: 1px solid #333333; padding: 1rem; text-align: center;">
-                <div style="color: #ff8c00; font-size: 0.8rem; font-weight: 600; text-transform: uppercase; margin-bottom: 0.5rem;">Days to Margin Call</div>
-                <div style="color: #ffffff; font-size: 1.5rem; font-weight: 700; margin-bottom: 0.5rem;">{days_display}</div>
-                <div style="color: #a0a0a0; font-size: 0.9rem;">At current interest rate</div>
+                <div style="color: #ff8c00; font-size: 0.8rem; font-weight: 600; text-transform: uppercase; margin-bottom: 0.5rem;">Portfolio Drop Tolerance</div>
+                <div style="color: #ffffff; font-size: 1.5rem; font-weight: 700; margin-bottom: 0.5rem;">{portfolio_drop_percentage:.1f}%</div>
+                <div style="color: #a0a0a0; font-size: 0.9rem;">Market decline tolerance</div>
             </div>
             """, unsafe_allow_html=True)
         
         with cushion_col4:
-            break_even_price = active_positions['Margin_Loan'].iloc[-1] / (active_positions['Shares_Held'].iloc[-1] * 0.75) if active_positions['Shares_Held'].iloc[-1] > 0 else 0
-            current_price = active_positions['ETF_Price'].iloc[-1]
-            price_buffer = ((current_price - break_even_price) / current_price) * 100 if current_price > 0 else 0
             st.markdown(f"""
             <div style="background-color: #1a1a1a; border: 1px solid #333333; padding: 1rem; text-align: center;">
-                <div style="color: #ff8c00; font-size: 0.8rem; font-weight: 600; text-transform: uppercase; margin-bottom: 0.5rem;">Price Drop Buffer</div>
-                <div style="color: #ffffff; font-size: 1.5rem; font-weight: 700; margin-bottom: 0.5rem;">{price_buffer:.1f}%</div>
-                <div style="color: #a0a0a0; font-size: 0.9rem;">Break-even: ${break_even_price:.2f}</div>
+                <div style="color: #ff8c00; font-size: 0.8rem; font-weight: 600; text-transform: uppercase; margin-bottom: 0.5rem;">Portfolio Drop Buffer</div>
+                <div style="color: #ffffff; font-size: 1.5rem; font-weight: 700; margin-bottom: 0.5rem;">${portfolio_drop_dollars:,.0f}</div>
+                <div style="color: #a0a0a0; font-size: 0.9rem;">Dollar decline tolerance</div>
             </div>
             """, unsafe_allow_html=True)
         
@@ -494,40 +740,40 @@ def render_cushion_analytics_section(results_df: pd.DataFrame, metrics: Dict[str
                 st.error(f"""
                 🚨 **{risk_level} - Fresh Capital Mode**: Current position cushion at {current_cushion_pct:.1f}%. 
                 With fresh capital strategy, this position will liquidate and restart with ${metrics.get('Fresh Capital Per Round ($)', 0):,.0f} in fresh capital.
-                Current buffer: ${current_cushion_dollars:,.0f}
+                Portfolio can tolerate {portfolio_drop_percentage:.1f}% decline (${portfolio_drop_dollars:,.0f})
                 """)
             elif current_cushion_pct < 50:
                 st.warning(f"""
                 ⚠️ **{risk_level} - Fresh Capital Mode**: Monitor position closely. Cushion: {current_cushion_pct:.1f}% 
-                Buffer: ${current_cushion_dollars:,.0f} • Est. days to fresh capital restart: {days_display}
+                Portfolio drop tolerance: {portfolio_drop_percentage:.1f}% (${portfolio_drop_dollars:,.0f}) before fresh capital restart
                 """)
             else:
                 st.success(f"""
                 ✅ **{risk_level} - Fresh Capital Mode**: Healthy margin cushion at {current_cushion_pct:.1f}%. 
-                Strong buffer: ${current_cushion_dollars:,.0f} provides good protection before fresh capital restart.
+                Strong drop tolerance: {portfolio_drop_percentage:.1f}% (${portfolio_drop_dollars:,.0f}) provides good protection before fresh capital restart.
                 """)
         else:
             if current_cushion_pct < 20:
                 st.error(f"""
                 🚨 **{risk_level}**: Your margin cushion is at {current_cushion_pct:.1f}%. 
-                Consider reducing position size or adding capital. Current buffer: ${current_cushion_dollars:,.0f}
+                Portfolio can only tolerate {portfolio_drop_percentage:.1f}% decline (${portfolio_drop_dollars:,.0f}) before margin call.
                 """)
             elif current_cushion_pct < 50:
                 st.warning(f"""
                 ⚠️ **{risk_level}**: Monitor position closely. Cushion: {current_cushion_pct:.1f}% 
-                Buffer: ${current_cushion_dollars:,.0f} • Est. days to margin call: {days_display}
+                Portfolio drop tolerance: {portfolio_drop_percentage:.1f}% (${portfolio_drop_dollars:,.0f}) before margin call
                 """)
             else:
                 st.success(f"""
                 ✅ **{risk_level}**: Healthy margin cushion at {current_cushion_pct:.1f}%. 
-                Strong buffer: ${current_cushion_dollars:,.0f} provides good protection.
+                Strong drop tolerance: {portfolio_drop_percentage:.1f}% (${portfolio_drop_dollars:,.0f}) provides good protection.
                 """)
     else:
         mode_text = "Fresh Capital Mode" if mode == "fresh_capital" else ""
         st.info(f"📊 **Cushion Analysis {mode_text}**: No active positions to analyze. Cushion metrics available when in leveraged positions.")
     
     # Display the comprehensive cushion dashboard
-    cushion_fig = create_cushion_analytics_dashboard(results_df, metrics)
+    cushion_fig = create_cushion_analytics_dashboard(results_df, metrics, use_dark_theme)
     st.plotly_chart(cushion_fig, use_container_width=True)
     
     # Educational expander
@@ -699,36 +945,35 @@ def render_cushion_analytics_section(results_df: pd.DataFrame, metrics: Dict[str
                 - **Delta Indicator**: Shows difference from 50% safe threshold
                 - **Action Trigger**: Red zone (<5%) indicates immediate liquidation risk
                 
-                **🔶 Plot 3: Days to Margin Call Timeline**
+                **🔶 Plot 3: ETF Price vs Margin Call Price**
                 
-                This plot calculates how many days until a margin call would occur based solely on interest cost erosion (assuming no price movement).
-                
-                **Data Sources:**
-                - **Daily Interest Cost**: Actual daily interest charges on margin loan
-                - **Cushion Dollars**: Dollar buffer above maintenance margin requirement
-                - **Calculation**: `Days = Cushion Buffer ($) / Daily Interest Cost ($)`
-                - **Warning Lines**: 30-day (red) and 90-day (yellow) critical thresholds
-                
-                **Key Insights:**
-                - **Time Buffer**: Shows breathing room before interest alone triggers margin call
-                - **Interest Rate Sensitivity**: Higher rates reduce days-to-call dramatically
-                - **Position Sizing**: Larger positions have higher daily interest costs
-                - **Strategic Planning**: Use for position sizing and risk management timing
-                
-                **🔶 Plot 4: Break-Even Price Analysis**
-                
-                This dual-line plot compares the current ETF price with the calculated break-even price that would trigger a margin call.
+                This innovative plot shows the relationship between current ETF price and the critical margin call price, with dynamic color-filled areas indicating safety zones.
                 
                 **Data Sources:**
-                - **Current ETF Price**: Daily closing prices from market data
-                - **Break-Even Price**: `Margin Loan / (Shares Held × (1 - Maintenance Margin %))`
-                - **Price Gap**: Distance between current and break-even prices
+                - **ETF Price**: Current market price of the leveraged ETF
+                - **Margin Call Price**: `Margin Loan / (Shares Held × (1 - Maintenance Margin %))`
+                - **Fill Areas**: Light green when ETF > Margin Call Price (Safe), Light red when below (Danger)
                 
                 **Key Insights:**
-                - **Price Risk**: Shows exact price level that triggers liquidation
-                - **Safety Margin**: Gap between lines indicates price drop protection
-                - **Trend Analysis**: Converging lines indicate increasing vulnerability
-                - **Volatility Assessment**: Compare gap to typical daily price ranges
+                - **Visual Safety Assessment**: Instantly see if you're in safe territory or approaching danger
+                - **Price Relationship**: Track how the gap between prices changes over time
+                - **Risk Visualization**: Color zones make it immediately clear when positions are at risk
+                - **Trend Monitoring**: Watch for converging lines indicating increasing vulnerability
+                
+                **🔶 Plot 4: Portfolio Value Drop Required (%)**
+                
+                This plot shows what percentage your portfolio value needs to drop to trigger a margin call, with color-coded risk thresholds.
+                
+                **Data Sources:**
+                - **Calculation**: `(ETF Price - Margin Call Price) / ETF Price × 100`
+                - **Risk Thresholds**: 30% (Safe), 15% (Caution), 5% (Critical)
+                - **Color Coding**: Green markers for safe positions, red for critical
+                
+                **Key Insights:**
+                - **Drop Tolerance**: Shows how much market decline you can absorb
+                - **Risk Assessment**: Higher percentages indicate more resilient positions
+                - **Threshold Alerts**: Visual warnings when drop tolerance becomes dangerous
+                - **Position Sizing**: Use to determine appropriate leverage levels
                 
                 **🔶 Plot 5: Cushion Dollar Buffer**
                 
@@ -745,29 +990,71 @@ def render_cushion_analytics_section(results_df: pd.DataFrame, metrics: Dict[str
                 - **Position Scale**: Larger positions require proportionally larger buffers
                 - **Capital Efficiency**: Evaluate if buffer size justifies position risk
                 
-                **🔶 Plot 6: Interest Rate Impact on Cushion Erosion**
+                **🔶 Plot 6: Portfolio Value Drop Required ($)**
                 
-                This plot shows the daily cushion erosion rate as a percentage, overlaid with the annual margin interest rate for context.
+                This plot shows the absolute dollar amount your portfolio can drop before hitting a margin call.
                 
                 **Data Sources:**
-                - **Daily Erosion Rate**: `(Daily Interest Cost / Cushion Buffer) × 100`
-                - **Annual Margin Rate**: Fed Funds Rate + 1.5% spread (IBKR standard)
-                - **Rate Environment**: Historical interest rate context from Fed data
+                - **Calculation**: `(ETF Price - Margin Call Price) × Shares Held`
+                - **Dollar Protection**: Actual dollar buffer available for market declines
+                - **Position Scaling**: Larger positions show proportionally larger dollar buffers
                 
                 **Key Insights:**
-                - **Erosion Speed**: Daily percentage of cushion consumed by interest
-                - **Rate Sensitivity**: How changes in Fed rates affect your position survival
-                - **Compounding Effect**: Higher erosion rates accelerate margin call timing
-                - **Strategic Timing**: Use rate environment for entry/exit decisions
+                - **Dollar Risk Tolerance**: Exact amount you can lose before margin call
+                - **Position Sizing**: Compare to typical daily dollar volatility
+                - **Capital Planning**: Use for risk budgeting and position management
+                - **Loss Capacity**: Understand maximum sustainable drawdown
                 
-                **📈 Data Integration Notes:**
+                **🔶 Plot 7: Break-Even Price Analysis**
                 
-                All plots are derived from the comprehensive backtest dataset containing:
-                - **Real Market Data**: Historical ETF prices from ETFs and Fed Funds Data.xlsx
-                - **Actual Interest Rates**: Fed Funds rates + IBKR spreads for realistic borrowing costs
-                - **Precise Calculations**: Maintenance margin requirements based on account type
-                - **Daily Tracking**: Every trading day captured for complete risk timeline
-                - **Live Calculations**: Cushion metrics updated with each price movement and interest accrual
+                This dual-line plot compares the current ETF price with the calculated break-even price that would trigger a margin call.
+                
+                **Data Sources:**
+                - **Current ETF Price**: Daily closing prices from market data
+                - **Break-Even Price**: `Margin Loan / (Shares Held × (1 - Maintenance Margin %))`
+                - **Price Gap**: Distance between current and break-even prices
+                
+                **Key Insights:**
+                - **Price Risk**: Shows exact price level that triggers liquidation
+                - **Safety Margin**: Gap between lines indicates price drop protection
+                - **Trend Analysis**: Converging lines indicate increasing vulnerability
+                - **Volatility Assessment**: Compare gap to typical daily price ranges
+                
+                **🔶 Plot 8: Portfolio Value vs Loan Balance**
+                
+                This fundamental plot shows the relationship between your total portfolio value and outstanding loan balance, with the gap representing your equity.
+                
+                **Data Sources:**
+                - **Portfolio Value**: `ETF Price × Shares Held`
+                - **Loan Balance**: Outstanding margin debt from leveraged positions
+                - **Equity Gap**: Visual area between lines showing actual equity
+                - **Fill Colors**: Light blue for portfolio value, light green for equity buffer
+                
+                **Key Insights:**
+                - **Equity Visualization**: Green area shows your actual equity buffer
+                - **Leverage Assessment**: Closer lines indicate higher leverage ratios
+                - **Risk Monitoring**: Converging lines show increasing leverage risk
+                - **Fundamental Analysis**: Core relationship driving all margin calculations
+                
+                **📈 Advanced Portfolio Risk Metrics:**
+                
+                **Portfolio Drop Requirements:**
+                - **Percentage Drop**: Shows market decline tolerance as a percentage
+                - **Dollar Drop**: Shows absolute dollar amount of decline tolerance
+                - **Combined Analysis**: Use both metrics for comprehensive risk assessment
+                - **Position Sizing**: Larger positions amplify both percentage and dollar impacts
+                
+                **Portfolio Value Analysis:**
+                - **ETF vs Margin Call Price**: Direct comparison of current vs critical prices
+                - **Dynamic Visualization**: Color-filled areas show safety zones in real-time
+                - **Portfolio vs Loan Balance**: Fundamental relationship showing equity evolution
+                - **Equity Buffer Tracking**: Visual representation of actual equity protection
+                
+                **Risk Integration:**
+                - **Multi-Perspective Analysis**: Each plot shows different aspects of the same risk
+                - **Cross-Validation**: Use multiple plots to confirm risk assessments
+                - **Action Triggers**: Multiple visualizations make it clear when action is needed
+                - **Comprehensive Coverage**: From high-level percentages to detailed dollar amounts
                 """)
 
 def is_cushion_analytics_available() -> bool:

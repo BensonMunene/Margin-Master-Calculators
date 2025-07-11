@@ -18,8 +18,8 @@ from matplotlib.patches import Patch
 plt.style.use('seaborn-v0_8-whitegrid')
 sns.set_palette("husl")
 
-# Function to create enhanced candlestick plot using Plotly
-def plot_candlestick(df, title, symbol='Stock'):
+# Function to create enhanced candlestick plot using Plotly with theme support
+def plot_candlestick(df, title, symbol='Stock', use_dark_theme=True):
     # Resample data to monthly for better visualization
     df_resampled = df.resample('M').agg({
         'Open': 'first',
@@ -28,11 +28,31 @@ def plot_candlestick(df, title, symbol='Stock'):
         'Close': 'last'
     })
     
-    # Bloomberg Terminal colors
-    up_color = '#00ff00'  # Bloomberg green
-    down_color = '#ff0000'  # Bloomberg red
-    wick_color = '#e0e0e0'  # Light gray
-    shadow_color = '#666666'  # Subtle gray for shadows
+    # Define theme colors
+    if use_dark_theme:
+        # Bloomberg Terminal inspired dark theme
+        bg_color = '#0a0a0a'
+        plot_bg_color = '#1a1a1a'
+        grid_color = '#2a2a2a'
+        text_color = '#e0e0e0'
+        title_color = '#00ff00'  # Bloomberg green
+        axis_color = '#808080'
+        up_color = '#00ff00'  # Bloomberg green
+        down_color = '#ff0000'  # Bloomberg red
+        wick_color = '#e0e0e0'  # Light gray
+        shadow_color = '#666666'  # Subtle gray for shadows
+    else:
+        # Professional light theme
+        bg_color = '#ffffff'
+        plot_bg_color = '#fafafa'
+        grid_color = '#e0e0e0'
+        text_color = '#2c3e50'
+        title_color = '#1a5490'  # Professional blue
+        axis_color = '#666666'
+        up_color = '#2ca02c'  # Professional green
+        down_color = '#d62728'  # Professional red
+        wick_color = '#666666'  # Gray
+        shadow_color = '#cccccc'  # Light gray
     
     # Create figure with candlestick
     fig = go.Figure()
@@ -51,14 +71,14 @@ def plot_candlestick(df, title, symbol='Stock'):
         name='Price'
     ))
     
-    # Configure layout for Bloomberg Terminal look
+    # Configure layout with theme support
     fig.update_layout(
         title={
             'text': f'{title.upper()} ({symbol.upper()})',
             'font': {
-                'size': 16,
-                'color': '#ff8c00',
-                'family': 'IBM Plex Mono, monospace'
+                'size': 18,
+                'color': title_color,
+                'family': 'Arial, sans-serif'
             },
             'y': 0.95,
             'x': 0.5,
@@ -69,22 +89,22 @@ def plot_candlestick(df, title, symbol='Stock'):
             'title': {
                 'text': 'DATE',
                 'font': {
-                    'size': 12,
-                    'color': '#000000',
-                    'family': 'IBM Plex Mono, monospace'
+                    'size': 13,
+                    'color': text_color,
+                    'family': 'Arial, sans-serif'
                 }
             },
             'rangeslider': {
                 'visible': False
             },
             'showgrid': True,
-            'gridcolor': '#E8E8E8',
+            'gridcolor': grid_color,
             'gridwidth': 1,
             'griddash': 'solid',
             'tickfont': {
                 'size': 11,
-                'color': '#000000',
-                'family': 'IBM Plex Mono, monospace'
+                'color': axis_color,
+                'family': 'Arial, sans-serif'
             },
             'tickformat': '%Y',
             'tickangle': 0,
@@ -95,26 +115,26 @@ def plot_candlestick(df, title, symbol='Stock'):
             'title': {
                 'text': 'PRICE (USD)',
                 'font': {
-                    'size': 12,
-                    'color': '#000000',
-                    'family': 'IBM Plex Mono, monospace'
+                    'size': 13,
+                    'color': text_color,
+                    'family': 'Arial, sans-serif'
                 }
             },
             'tickformat': '$,.2f',
             'showgrid': True,
-            'gridcolor': '#E8E8E8',
+            'gridcolor': grid_color,
             'gridwidth': 1,
             'griddash': 'solid',
             'tickfont': {
                 'size': 11,
-                'color': '#000000',
-                'family': 'IBM Plex Mono, monospace'
+                'color': axis_color,
+                'family': 'Arial, sans-serif'
             },
             'autorange': True,
             'fixedrange': False
         },
-        plot_bgcolor='#0a0a0a',
-        paper_bgcolor='#000000',
+        plot_bgcolor=plot_bg_color,
+        paper_bgcolor=bg_color,
         margin=dict(t=80, b=40, l=60, r=40),
         legend={
             'orientation': 'h',
@@ -123,17 +143,17 @@ def plot_candlestick(df, title, symbol='Stock'):
             'xanchor': 'right',
             'x': 1,
             'traceorder': 'normal',
-            'font': {'size': 11, 'color': '#e0e0e0', 'family': 'IBM Plex Mono, monospace'},
-            'bgcolor': 'rgba(26, 26, 26, 0.9)',
-            'bordercolor': '#333333',
+            'font': {'size': 11, 'color': text_color, 'family': 'Arial, sans-serif'},
+            'bgcolor': 'rgba(0,0,0,0.5)' if use_dark_theme else 'rgba(255,255,255,0.8)',
+            'bordercolor': grid_color,
             'borderwidth': 1
         },
         hoverlabel=dict(
-            bgcolor='#1a1a1a',
-            font_size=11,
-            font_family='IBM Plex Mono, monospace',
-            font_color='#e0e0e0',
-            bordercolor='#ff8c00'
+            bgcolor=plot_bg_color,
+            font_size=12,
+            font_family='Arial, sans-serif',
+            font_color=text_color,
+            bordercolor=grid_color
         ),
         hovermode='x unified'
     )

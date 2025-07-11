@@ -33,7 +33,7 @@ if 'active_tab' not in st.session_state:
 # Define directory paths
 local_dir = r"D:\Benson\aUpWork\Ben Ruff\Implementation\Data"
 github_dir = ("Data")
-use_local = True
+use_local = False
 data_dir = local_dir if use_local else github_dir
 
 # Define default date rangehh
@@ -149,6 +149,122 @@ if spy_df is not None and vti_df is not None:
             
             st.markdown(margin_calculator_explanation(), unsafe_allow_html=True)
             
+            # Margin Call Rules Information
+            st.markdown(f"""
+            <div class="terminal-card" style="border-color: #ff8c00;">
+                <h4 style="color: #ff8c00; margin-bottom: 1rem;">MARGIN CALL RULES</h4>
+                <div style="color: #e0e0e0; font-size: 0.9rem;">
+                    <strong>REG-T ACCOUNTS:</strong> Margin call occurs when equity falls below 25% of position value (30% for short positions)<br/>
+                    <strong>PORTFOLIO MARGIN:</strong> Margin call occurs when equity falls below 15% of position value (20% for short positions)
+                </div>
+            </div>
+            """, unsafe_allow_html=True)
+            
+            # Understanding Margin Call Mechanics - Simple Text
+            st.markdown("### 📘 UNDERSTANDING MARGIN CALL MECHANICS")
+            
+            st.markdown("""
+            **Understanding Margin Call Thresholds:**
+            
+            A margin call occurs when your account equity (the value of your securities minus what you owe) falls below the required maintenance margin percentage. This is a critical risk management mechanism that protects both you and your broker from excessive losses.
+            
+            **Mathematical Foundation:**
+            
+            **1. Account Equity Calculation:**
+            """)
+            
+            st.latex(r"""
+            \text{Account Equity} = \text{Market Value of Securities} - \text{Margin Loan}
+            """)
+            
+            st.markdown("""
+            **2. Equity Percentage:**
+            """)
+            
+            st.latex(r"""
+            \text{Equity \%} = \frac{\text{Account Equity}}{\text{Market Value of Securities}} \times 100
+            """)
+            
+            st.markdown("""
+            **3. Margin Call Trigger Condition:**
+            """)
+            
+            st.latex(r"""
+            \text{Margin Call occurs when: } \text{Equity \%} < \text{Maintenance Margin \%}
+            """)
+            
+            st.markdown("""
+            **4. Margin Call Price Formula:**
+            
+            For a long position, the margin call price is calculated as:
+            """)
+            
+            st.latex(r"""
+            P_{call} = \frac{\text{Margin Loan}}{\text{Number of Shares} \times (1 - \text{Maintenance Margin \%})}
+            """)
+            
+            st.markdown("""
+            **5. Alternative Margin Call Price Formula:**
+            """)
+            
+            st.latex(r"""
+            P_{call} = P_{purchase} \times \frac{1 - \text{Initial Margin \%}}{1 - \text{Maintenance Margin \%}}
+            """)
+            
+            st.markdown("""
+            **6. Maximum Tolerable Price Drop:**
+            """)
+            
+            st.latex(r"""
+            \text{Max Drop \%} = \left(1 - \frac{P_{call}}{P_{purchase}}\right) \times 100
+            """)
+            
+            st.markdown("""
+            **How It Works:**
+            
+            When you buy securities on margin, you're essentially borrowing money from your broker using your securities as collateral. If the value of your securities drops significantly, your equity percentage decreases. Once it hits the maintenance threshold, your broker will issue a margin call requiring you to either deposit more funds or sell securities to restore the required equity level.
+            
+            **Reg-T vs Portfolio Margin Differences:**
+            
+            Reg-T accounts have higher maintenance requirements (25%/30%) but simpler calculations and are suitable for most retail investors. Portfolio Margin accounts offer lower requirements (15%/20%) but use complex risk-based calculations and require larger account minimums, typically $125,000 or more.
+            
+            **Practical Example:**
+            
+            With a $100,000 SPY position using 2:1 leverage in a Reg-T account ($50,000 your cash, $50,000 borrowed), a margin call triggers when your equity falls to $25,000 (25% of $100,000). This happens when SPY drops about 33.3% from your purchase price, as calculated using the formulas above.
+            
+            **Step-by-Step Calculation:**
+            """)
+            
+            st.latex(r"""
+            \begin{align}
+            \text{Purchase Price} &= \$400 \\
+            \text{Shares Purchased} &= \frac{\$100,000}{\$400} = 250 \text{ shares} \\
+            \text{Margin Loan} &= \$50,000 \\
+            \text{Maintenance Margin} &= 25\% \\
+            \\
+            P_{call} &= \frac{\$50,000}{250 \times (1 - 0.25)} \\
+            &= \frac{\$50,000}{250 \times 0.75} \\
+            &= \frac{\$50,000}{187.5} \\
+            &= \$266.67 \\
+            \\
+            \text{Max Drop \%} &= \left(1 - \frac{\$266.67}{\$400}\right) \times 100 \\
+            &= (1 - 0.667) \times 100 \\
+            &= 33.3\%
+            \end{align}
+            """)
+            
+            st.markdown("""
+            **Key Variables:**
+            - **P_call**: Price at which margin call occurs
+            - **P_purchase**: Original purchase price
+            - **Initial Margin %**: Percentage of position funded with cash (50% for Reg-T, 25% for Portfolio Margin)
+            - **Maintenance Margin %**: Minimum equity percentage required (25% for Reg-T long, 15% for Portfolio Margin long)
+            """)
+            
+            st.warning("⚠️ **Important:** Margin calls can result in forced liquidation of your positions at unfavorable prices. Always maintain adequate cash reserves and monitor your positions closely.")
+            
+            st.markdown("<div style='border-bottom: 1px solid var(--border-color); margin: 1rem 0;'></div>", unsafe_allow_html=True)
+            
             # Create professional layout
             input_col, results_col = st.columns([1, 1], gap="large")
             
@@ -188,8 +304,6 @@ if spy_df is not None and vti_df is not None:
                     max_leverage = 7.0
                     default_leverage = 4.0
                     default_initial_margin = 25.0
-                
-                st.markdown("<div style='border-bottom: 1px solid var(--border-color); margin: 1rem 0;'></div>", unsafe_allow_html=True)
                 
                 # ETF and Position selection
                 etf_col1, etf_col2, etf_col3 = st.columns(3)
@@ -571,6 +685,13 @@ if spy_df is not None and vti_df is not None:
                             <div style="color: var(--text-secondary);">NO MARGIN CALL RISK - NOT USING LEVERAGE</div>
                         </div>
                         """, unsafe_allow_html=True)
+                    
+                    # Detailed Analysis Expander
+                    with st.expander("📊 COMPREHENSIVE POSITION ANALYSIS", expanded=False):
+                        st.markdown("<h3 style='color: var(--accent-orange); margin-bottom: 1.5rem;'>DETAILED INVESTMENT ANALYSIS & STRATEGIC INSIGHTS</h3>", unsafe_allow_html=True)
+                        
+                        st.markdown("## COMING SOON")
+
             
             st.markdown("<div style='border-bottom: 1px solid var(--border-color); margin: 2rem 0;'></div>", unsafe_allow_html=True)
             
@@ -679,6 +800,30 @@ if spy_df is not None and vti_df is not None:
             st.markdown("<h1>PRICE ANALYSIS</h1>", unsafe_allow_html=True)
             st.markdown(price_analysis_explanation(), unsafe_allow_html=True)
             
+            # Theme toggle for charts
+            st.markdown("<h2>CHART THEME</h2>", unsafe_allow_html=True)
+            theme_col1, theme_col2, theme_col3 = st.columns([1, 2, 1])
+            with theme_col2:
+                use_dark_theme = st.toggle(
+                    "Dark Theme Charts",
+                    value=True,
+                    help="Toggle between dark (Bloomberg-style) and light theme for charts",
+                    key="price_chart_theme_toggle"
+                )
+                
+                if use_dark_theme:
+                    st.markdown("""
+                    <div style="background-color: #0a0a0a; border: 1px solid #00ff00; padding: 0.5rem; color: #00ff00; text-align: center; margin-bottom: 1rem;">
+                        <strong>DARK THEME ACTIVE</strong> - Bloomberg Terminal Style
+                    </div>
+                    """, unsafe_allow_html=True)
+                else:
+                    st.markdown("""
+                    <div style="background-color: #f8f8f8; border: 1px solid #0066cc; padding: 0.5rem; color: #0066cc; text-align: center; margin-bottom: 1rem;">
+                        <strong>LIGHT THEME ACTIVE</strong> - Professional Report Style
+                    </div>
+                    """, unsafe_allow_html=True)
+            
             st.markdown("<h2>DATE RANGE</h2>", unsafe_allow_html=True)
             st.markdown(date_range_explanation(), unsafe_allow_html=True)
             
@@ -711,13 +856,7 @@ if spy_df is not None and vti_df is not None:
             </div>
             """, unsafe_allow_html=True)
             if not spy_price_filtered.empty:
-                fig = plot_candlestick(spy_price_filtered, 'S&P 500 ETF', 'SPY')
-                fig.update_layout(
-                    plot_bgcolor='var(--bg-secondary)',
-                    paper_bgcolor='var(--bg-secondary)',
-                    font_color='var(--text-primary)',
-                    font_family='IBM Plex Mono'
-                )
+                fig = plot_candlestick(spy_price_filtered, 'S&P 500 ETF', 'SPY', use_dark_theme)
                 st.plotly_chart(fig, use_container_width=True)
             else:
                 st.info("NO SPY DATA FOR SELECTED RANGE")
@@ -731,13 +870,7 @@ if spy_df is not None and vti_df is not None:
             </div>
             """, unsafe_allow_html=True)
             if not vti_price_filtered.empty:
-                fig = plot_candlestick(vti_price_filtered, 'Total Market ETF', 'VTI')
-                fig.update_layout(
-                    plot_bgcolor='var(--bg-secondary)',
-                    paper_bgcolor='var(--bg-secondary)',
-                    font_color='var(--text-primary)',
-                    font_family='IBM Plex Mono'
-                )
+                fig = plot_candlestick(vti_price_filtered, 'Total Market ETF', 'VTI', use_dark_theme)
                 st.plotly_chart(fig, use_container_width=True)
             else:
                 st.info("NO VTI DATA FOR SELECTED RANGE")

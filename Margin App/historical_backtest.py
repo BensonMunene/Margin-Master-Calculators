@@ -28,7 +28,7 @@ def load_comprehensive_data():
         github_dir = "Data"
         
         # Choose which directory to use (True for local, False for GitHub)
-        use_local = True
+        use_local = False
         data_dir = local_dir if use_local else github_dir
         
         # Load ONLY the Excel file - it contains everything we need
@@ -1462,8 +1462,57 @@ def run_margin_restart_backtest(
 
 # Cushion analytics moved to cushion_analysis.py module
 
-def create_enhanced_portfolio_chart(df_results: pd.DataFrame, metrics: Dict[str, float], rebalancing_events: List[Dict] = None) -> go.Figure:
-    """Create sophisticated institutional-grade portfolio performance chart"""
+def create_enhanced_portfolio_chart(df_results: pd.DataFrame, metrics: Dict[str, float], rebalancing_events: List[Dict] = None, use_dark_theme: bool = True) -> go.Figure:
+    """Create sophisticated institutional-grade portfolio performance chart with Bloomberg-style themes"""
+    
+    # Define theme colors
+    if use_dark_theme:
+        # Bloomberg Terminal inspired dark theme
+        bg_color = '#0a0a0a'
+        plot_bg_color = '#1a1a1a'
+        grid_color = '#2a2a2a'
+        text_color = '#e0e0e0'
+        title_color = '#00ff00'  # Bloomberg green
+        axis_color = '#808080'
+        
+        # Line colors for dark theme
+        portfolio_color = '#00d4ff'  # Bright cyan
+        equity_color = '#00ff88'  # Bright green
+        margin_color = '#ff3366'  # Bright red
+        dividend_color = '#00ff00'  # Pure green
+        interest_color = '#ff0055'  # Pure red
+        drawdown_color = '#ff6666'  # Light red
+        sharpe_color = '#ff00ff'  # Magenta
+        fed_color = '#00ffff'  # Cyan
+        margin_rate_color = '#ff8800'  # Orange
+        
+        # Rebalancing marker colors
+        rebalance_marker_color = '#ffff00'  # Yellow
+        rebalance_border_color = '#ff8800'  # Orange
+        
+    else:
+        # Professional light theme
+        bg_color = '#ffffff'
+        plot_bg_color = '#fafafa'
+        grid_color = '#e0e0e0'
+        text_color = '#2c3e50'
+        title_color = '#1a5490'  # Professional blue
+        axis_color = '#666666'
+        
+        # Line colors for light theme
+        portfolio_color = '#1f77b4'  # Professional blue
+        equity_color = '#2ca02c'  # Professional green
+        margin_color = '#d62728'  # Professional red
+        dividend_color = '#28B463'  # Forest green
+        interest_color = '#E74C3C'  # Crimson
+        drawdown_color = '#e74c3c'  # Red
+        sharpe_color = '#9467bd'  # Purple
+        fed_color = '#17a2b8'  # Teal
+        margin_rate_color = '#ff7f0e'  # Orange
+        
+        # Rebalancing marker colors
+        rebalance_marker_color = '#FFD700'  # Gold
+        rebalance_border_color = '#FF8C00'  # Dark orange
     
     fig = make_subplots(
         rows=4, cols=2,
@@ -1492,7 +1541,7 @@ def create_enhanced_portfolio_chart(df_results: pd.DataFrame, metrics: Dict[str,
             x=df_results.index,
             y=df_results['Portfolio_Value'],
             name='Portfolio Value',
-            line=dict(color='#1f77b4', width=3),
+            line=dict(color=portfolio_color, width=3),
             hovertemplate='Date: %{x|%d-%b-%Y}<br>Portfolio Value: $%{y:,.0f}<br><extra></extra>'
         ),
         row=1, col=1
@@ -1504,7 +1553,7 @@ def create_enhanced_portfolio_chart(df_results: pd.DataFrame, metrics: Dict[str,
             x=df_results.index,
             y=df_results['Equity'],
             name='Equity',
-            line=dict(color='#2E86C1', width=3),
+            line=dict(color=equity_color, width=3),
             hovertemplate='Date: %{x|%d-%b-%Y}<br>Equity: $%{y:,.0f}<br><extra></extra>'
         ),
         row=1, col=1
@@ -1516,7 +1565,7 @@ def create_enhanced_portfolio_chart(df_results: pd.DataFrame, metrics: Dict[str,
             x=df_results.index,
             y=df_results['Maintenance_Margin_Required'],
             name='Maintenance Margin Required',
-            line=dict(color='#d62728', width=2, dash='dash'),
+            line=dict(color=margin_color, width=2, dash='dash'),
             hovertemplate='Date: %{x|%d-%b-%Y}<br>Maintenance Margin Required: $%{y:,.0f}<br><extra></extra>'
         ),
         row=1, col=1
@@ -1547,8 +1596,8 @@ def create_enhanced_portfolio_chart(df_results: pd.DataFrame, metrics: Dict[str,
                 marker=dict(
                     symbol='diamond',
                     size=14,
-                    color='#FFD700',  # Gold color
-                    line=dict(color='#FF8C00', width=2),  # Orange border
+                    color=rebalance_marker_color,
+                    line=dict(color=rebalance_border_color, width=2),
                     opacity=0.9
                 ),
                 customdata=list(zip(growth_labels, shares_added, transaction_costs)),
@@ -1614,29 +1663,29 @@ def create_enhanced_portfolio_chart(df_results: pd.DataFrame, metrics: Dict[str,
     min_interest = -cumulative_interest.max() if len(cumulative_interest) > 0 else 0
     max_dividends = cumulative_dividends.max() if len(cumulative_dividends) > 0 else 0
     
-    # Add Interest Cost trace with red shaded area below the line
+    # Add Interest Cost trace with theme-colored shaded area
     fig.add_trace(
         go.Scatter(
             x=df_results.index,
             y=-cumulative_interest,  # Negative because it's a cost
             name='Cumulative Interest Cost',
-            line=dict(color='#E74C3C', width=3),
+            line=dict(color=interest_color, width=3),
             fill='tozeroy',  # Fill from line to zero (and beyond to bottom)
-            fillcolor='rgba(231, 76, 60, 0.25)',  # Semi-transparent red
+            fillcolor=f'rgba{tuple(int(interest_color.lstrip("#")[i:i+2], 16) for i in (0, 2, 4)) + (0.25,)}' if interest_color.startswith('#') else 'rgba(231, 76, 60, 0.25)',
             hovertemplate='Date: %{x|%d-%b-%Y}<br>Interest Cost: -$%{y:,.0f}<extra></extra>'
         ),
         row=2, col=1
     )
     
-    # Add Dividends trace with green shaded area above the line  
+    # Add Dividends trace with theme-colored shaded area
     fig.add_trace(
         go.Scatter(
             x=df_results.index,
             y=cumulative_dividends,
             name='Cumulative Dividends',
-            line=dict(color='#28B463', width=3),
+            line=dict(color=dividend_color, width=3),
             fill='tonexty',  # Fill from this line to the previous trace (creating layered effect)
-            fillcolor='rgba(40, 180, 99, 0.25)',  # Semi-transparent green
+            fillcolor=f'rgba{tuple(int(dividend_color.lstrip("#")[i:i+2], 16) for i in (0, 2, 4)) + (0.25,)}' if dividend_color.startswith('#') else 'rgba(40, 180, 99, 0.25)',
             hovertemplate='Date: %{x|%d-%b-%Y}<br>Dividends: +$%{y:,.0f}<extra></extra>'
         ),
         row=2, col=1
@@ -1670,8 +1719,8 @@ def create_enhanced_portfolio_chart(df_results: pd.DataFrame, metrics: Dict[str,
             y=drawdown,
             name='Drawdown',
             fill='tozeroy',
-            fillcolor='rgba(231, 76, 60, 0.3)',
-            line=dict(color='#E74C3C', width=2),
+            fillcolor=f'rgba{tuple(int(drawdown_color.lstrip("#")[i:i+2], 16) for i in (0, 2, 4)) + (0.3,)}' if drawdown_color.startswith('#') else 'rgba(231, 76, 60, 0.3)',
+            line=dict(color=drawdown_color, width=2),
             hovertemplate='Date: %{x|%d-%b-%Y}<br>Drawdown: %{y:.1f}%<extra></extra>'
         ),
         row=2, col=2
@@ -1685,9 +1734,10 @@ def create_enhanced_portfolio_chart(df_results: pd.DataFrame, metrics: Dict[str,
                 x=daily_returns,
                 nbinsx=50,
                 name='Daily Returns',
-                marker_color='#5DADE2',
-                marker_line=dict(color='#2E86C1', width=1),
-                hovertemplate='Return: %{x:.2f}%<br>Frequency: %{y}<extra></extra>'
+                marker_color=equity_color if use_dark_theme else '#5DADE2',
+                marker_line=dict(color=portfolio_color if use_dark_theme else '#2E86C1', width=1),
+                hovertemplate='Return: %{x:.2f}%<br>Frequency: %{y}<extra></extra>',
+                opacity=0.8
             ),
             row=3, col=2
         )
@@ -1711,7 +1761,7 @@ def create_enhanced_portfolio_chart(df_results: pd.DataFrame, metrics: Dict[str,
                 x=sharpe_dates,
                 y=sharpe_values,
                 name='30-Day Rolling Sharpe',
-                line=dict(color='#8E44AD', width=2),
+                line=dict(color=sharpe_color, width=2),
                 hovertemplate='Date: %{x|%d-%b-%Y}<br>Rolling Sharpe: %{y:.2f}<extra></extra>'
             ),
             row=3, col=1
@@ -1723,7 +1773,7 @@ def create_enhanced_portfolio_chart(df_results: pd.DataFrame, metrics: Dict[str,
             x=df_results.index,
             y=df_results['Fed_Funds_Rate'],
             name='Fed Funds Rate',
-            line=dict(color='#17A2B8', width=2),
+            line=dict(color=fed_color, width=2),
             hovertemplate='Date: %{x|%d-%b-%Y}<br>Fed Funds: %{y:.2f}%<extra></extra>'
         ),
         row=4, col=1
@@ -1734,7 +1784,7 @@ def create_enhanced_portfolio_chart(df_results: pd.DataFrame, metrics: Dict[str,
             x=df_results.index,
             y=df_results['Margin_Rate'],
             name='Margin Rate',
-            line=dict(color='#DC3545', width=2, dash='dash'),
+            line=dict(color=margin_rate_color, width=2, dash='dash'),
             hovertemplate='Date: %{x|%d-%b-%Y}<br>Margin Rate: %{y:.2f}%<extra></extra>'
         ),
         row=4, col=1
@@ -1777,28 +1827,67 @@ def create_enhanced_portfolio_chart(df_results: pd.DataFrame, metrics: Dict[str,
     if rebalancing_events:
         rebalance_info = f" | {len(rebalancing_events)} Rebalancing Events"
     
+    # Apply theme-specific layout
     fig.update_layout(
         title={
-            'text': f"Comprehensive Portfolio Analysis: {leverage_value:.1f}x Leverage | {metrics.get('Total Liquidations', 0)} Liquidations | {metrics.get('CAGR (%)', 0):.1f}% CAGR{rebalance_info}",
-            'x': 0.4,
-            'font': {'size': 16, 'color': '#2C3E50'}
+            'text': f"PORTFOLIO PERFORMANCE ANALYTICS: {leverage_value:.1f}x Leverage | {metrics.get('Total Liquidations', 0)} Liquidations | {metrics.get('CAGR (%)', 0):.1f}% CAGR{rebalance_info}",
+            'x': 0.5,
+            'xanchor': 'center',
+            'font': {'size': 18, 'color': title_color, 'family': 'Arial, sans-serif'}
         },
         height=1200,
         showlegend=True,
-        legend=dict(x=1.02, y=1, bgcolor='rgba(255,255,255,0.8)'),
-        plot_bgcolor='white',
-        paper_bgcolor='#FAFAFA'
+        legend=dict(
+            x=1.02, 
+            y=1, 
+            bgcolor='rgba(0,0,0,0.5)' if use_dark_theme else 'rgba(255,255,255,0.8)',
+            bordercolor=grid_color,
+            borderwidth=1,
+            font=dict(color=text_color, size=11)
+        ),
+        plot_bgcolor=plot_bg_color,
+        paper_bgcolor=bg_color,
+        font=dict(color=text_color, family='Arial, sans-serif'),
+        hovermode='x unified',
+        hoverlabel=dict(
+            bgcolor=plot_bg_color,
+            font_size=12,
+            font_family='Arial, sans-serif',
+            font_color=text_color,
+            bordercolor=grid_color
+        ),
+        margin=dict(l=80, r=150, t=100, b=80)
     )
     
-    # Update axes styling with yearly grid lines
+    # Update axes styling with theme colors
     fig.update_xaxes(
         showgrid=True, 
         gridwidth=1, 
-        gridcolor='#E8E8E8',
+        gridcolor=grid_color,
+        zeroline=True,
+        zerolinewidth=1,
+        zerolinecolor=grid_color,
         dtick='M12',  # One year intervals for vertical grid lines
-        tickformat='%Y'  # Show only year labels
+        tickformat='%Y',  # Show only year labels
+        tickfont=dict(color=axis_color, size=11),
+        title_font=dict(color=text_color, size=13),
+        linecolor=grid_color,
+        linewidth=1,
+        mirror=True
     )
-    fig.update_yaxes(showgrid=True, gridwidth=1, gridcolor='#E8E8E8')
+    fig.update_yaxes(
+        showgrid=True, 
+        gridwidth=1, 
+        gridcolor=grid_color,
+        zeroline=True,
+        zerolinewidth=1,
+        zerolinecolor=grid_color,
+        tickfont=dict(color=axis_color, size=11),
+        title_font=dict(color=text_color, size=13),
+        linecolor=grid_color,
+        linewidth=1,
+        mirror=True
+    )
     
     # Format specific axes
     fig.update_yaxes(tickformat='$,.0f', row=1, col=1, title_text="Portfolio Components ($)")
@@ -1808,10 +1897,64 @@ def create_enhanced_portfolio_chart(df_results: pd.DataFrame, metrics: Dict[str,
     fig.update_yaxes(tickformat='.2f', row=4, col=1, title_text="Interest Rate (%)")
     fig.update_yaxes(tickformat='.0f', row=4, col=2, title_text="Position Status")
     
+    # Update subplot titles with theme colors
+    for annotation in fig['layout']['annotations']:
+        if annotation['text'] in [
+            'Portfolio Value, Equity & Margin Components',
+            'Cumulative P&L Attribution: Dividends and Loan Interests',
+            'Drawdown Analysis & Recovery',
+            'Rolling Performance Metrics',
+            'Daily Returns Distribution',
+            'Interest Rate Environment',
+            'Position Status Timeline',
+            'Risk-Adjusted Performance'
+        ]:
+            annotation['font']['color'] = text_color
+            annotation['font']['size'] = 14 if use_dark_theme else 13
+    
     return fig
 
-def create_liquidation_analysis_chart(df_results: pd.DataFrame, metrics: Dict[str, float]) -> go.Figure:
-    """Create comprehensive liquidation and risk analysis chart"""
+def create_liquidation_analysis_chart(df_results: pd.DataFrame, metrics: Dict[str, float], use_dark_theme: bool = True) -> go.Figure:
+    """Create comprehensive liquidation and risk analysis chart with theme support"""
+    
+    # Define theme colors
+    if use_dark_theme:
+        # Bloomberg Terminal inspired dark theme
+        bg_color = '#0a0a0a'
+        plot_bg_color = '#1a1a1a'
+        grid_color = '#2a2a2a'
+        text_color = '#e0e0e0'
+        title_color = '#00ff00'
+        axis_color = '#808080'
+        
+        # Chart colors for dark theme
+        liquidation_color = '#ff3366'
+        survival_color = '#00d4ff'
+        equity_color = '#00ff88'
+        decay_trend_color = '#ff6666'
+        correlation_color = '#ff00ff'
+        interest_color = '#ff0055'
+        dividend_color = '#00ff00'
+        gauge_color = '#00ff88'
+        
+    else:
+        # Professional light theme
+        bg_color = '#ffffff'
+        plot_bg_color = '#fafafa'
+        grid_color = '#e0e0e0'
+        text_color = '#2c3e50'
+        title_color = '#1a5490'
+        axis_color = '#666666'
+        
+        # Chart colors for light theme
+        liquidation_color = '#E74C3C'
+        survival_color = '#3498DB'
+        equity_color = '#2E86C1'
+        decay_trend_color = '#E74C3C'
+        correlation_color = '#9B59B6'
+        interest_color = '#E74C3C'
+        dividend_color = '#27AE60'
+        gauge_color = '#2ca02c'
     
     fig = make_subplots(
         rows=2, cols=3,
@@ -1837,7 +1980,7 @@ def create_liquidation_analysis_chart(df_results: pd.DataFrame, metrics: Dict[st
                 x=[str(period) for period in monthly_liquidations.index],
                 y=monthly_liquidations.values,
                 name='Monthly Liquidations',
-                marker_color='#E74C3C',
+                marker_color=liquidation_color,
                 hovertemplate='Month: %{x}<br>Liquidations: %{y}<extra></extra>'
             ),
             row=1, col=1
@@ -1852,9 +1995,10 @@ def create_liquidation_analysis_chart(df_results: pd.DataFrame, metrics: Dict[st
                     x=active_days,
                     nbinsx=30,
                     name='Survival Days',
-                    marker_color='#3498DB',
-                    marker_line=dict(color='#2980B9', width=1),
-                    hovertemplate='Days: %{x}<br>Frequency: %{y}<extra></extra>'
+                    marker_color=survival_color,
+                    marker_line=dict(color=survival_color, width=1),
+                    hovertemplate='Days: %{x}<br>Frequency: %{y}<extra></extra>',
+                    opacity=0.8
                 ),
                 row=1, col=2
             )
@@ -1867,7 +2011,7 @@ def create_liquidation_analysis_chart(df_results: pd.DataFrame, metrics: Dict[st
             y=equity_series,
             mode='lines',
             name='Equity',
-            line=dict(color='#2E86C1', width=2),
+            line=dict(color=equity_color, width=2),
             hovertemplate='Date: %{x|%d-%b-%Y}<br>Equity: $%{y:,.0f}<extra></extra>'
         ),
         row=1, col=3
@@ -1888,7 +2032,7 @@ def create_liquidation_analysis_chart(df_results: pd.DataFrame, metrics: Dict[st
                     y=trend_line,
                     mode='lines',
                     name='Decay Trend',
-                    line=dict(color='#E74C3C', width=2, dash='dash'),
+                    line=dict(color=decay_trend_color, width=2, dash='dash'),
                     hovertemplate='Date: %{x|%d-%b-%Y}<br>Trend: $%{y:,.0f}<extra></extra>'
                 ),
                 row=1, col=3
@@ -1910,7 +2054,7 @@ def create_liquidation_analysis_chart(df_results: pd.DataFrame, metrics: Dict[st
                     x=df_results.index[rolling_window:],
                     y=rolling_corr.iloc[rolling_window:],
                     name='Returns-Rate Correlation',
-                    line=dict(color='#9B59B6', width=2),
+                    line=dict(color=correlation_color, width=2),
                     hovertemplate='Date: %{x|%d-%b-%Y}<br>Correlation: %{y:.3f}<extra></extra>'
                 ),
                 row=2, col=1
@@ -1920,29 +2064,29 @@ def create_liquidation_analysis_chart(df_results: pd.DataFrame, metrics: Dict[st
     cumulative_interest = df_results['Daily_Interest_Cost'].cumsum()
     cumulative_dividends = df_results['Dividend_Payment'].cumsum()
     
-    # Add Interest Cost with red shaded area
+    # Add Interest Cost with theme-colored shaded area
     fig.add_trace(
         go.Scatter(
             x=df_results.index,
             y=-cumulative_interest,
             name='Interest Cost',
-            line=dict(color='#E74C3C', width=2),
+            line=dict(color=interest_color, width=2),
             fill='tozeroy',  # Fill from line to zero
-            fillcolor='rgba(231, 76, 60, 0.25)',  # Semi-transparent red
+            fillcolor=f'rgba{tuple(int(interest_color.lstrip("#")[i:i+2], 16) for i in (0, 2, 4)) + (0.25,)}' if interest_color.startswith('#') else 'rgba(231, 76, 60, 0.25)',
             hovertemplate='Date: %{x|%d-%b-%Y}<br>Interest: -$%{y:,.0f}<extra></extra>'
         ),
         row=2, col=2
     )
     
-    # Add Dividend Income with green shaded area  
+    # Add Dividend Income with theme-colored shaded area  
     fig.add_trace(
         go.Scatter(
             x=df_results.index,
             y=cumulative_dividends,
             name='Dividend Income',
-            line=dict(color='#27AE60', width=2),
+            line=dict(color=dividend_color, width=2),
             fill='tonexty',  # Fill from this line to previous trace
-            fillcolor='rgba(39, 174, 96, 0.25)',  # Semi-transparent green
+            fillcolor=f'rgba{tuple(int(dividend_color.lstrip("#")[i:i+2], 16) for i in (0, 2, 4)) + (0.25,)}' if dividend_color.startswith('#') else 'rgba(39, 174, 96, 0.25)',
             hovertemplate='Date: %{x|%d-%b-%Y}<br>Dividends: +$%{y:,.0f}<extra></extra>'
         ),
         row=2, col=2
@@ -1968,7 +2112,7 @@ def create_liquidation_analysis_chart(df_results: pd.DataFrame, metrics: Dict[st
             domain={'x': [0, 1], 'y': [0, 1]},
             gauge={
                 'axis': {'range': [-2, 3], 'tickformat': '.1f'},
-                'bar': {'color': '#3498DB'},
+                'bar': {'color': gauge_color},
                 'steps': [
                     {'range': [-2, 0], 'color': "#E74C3C"},
                     {'range': [0, 1], 'color': "#F39C12"},
@@ -1986,22 +2130,59 @@ def create_liquidation_analysis_chart(df_results: pd.DataFrame, metrics: Dict[st
         row=2, col=3
     )
     
-    # Update layout
+    # Update layout with theme
     fig.update_layout(
         title={
-            'text': f"Advanced Risk & Liquidation Analysis | {metrics.get('Total Liquidations', 0)} Total Liquidations",
+            'text': f"ADVANCED RISK & LIQUIDATION ANALYSIS | {metrics.get('Total Liquidations', 0)} Total Liquidations",
             'x': 0.5,
-            'font': {'size': 16, 'color': '#2C3E50'}
+            'xanchor': 'center',
+            'font': {'size': 18, 'color': title_color, 'family': 'Arial, sans-serif'}
         },
         height=600,
         showlegend=True,
-        plot_bgcolor='white',
-        paper_bgcolor='#FAFAFA'
+        legend=dict(
+            bgcolor='rgba(0,0,0,0.5)' if use_dark_theme else 'rgba(255,255,255,0.8)',
+            bordercolor=grid_color,
+            borderwidth=1,
+            font=dict(color=text_color, size=11)
+        ),
+        plot_bgcolor=plot_bg_color,
+        paper_bgcolor=bg_color,
+        font=dict(color=text_color, family='Arial, sans-serif'),
+        hovermode='x unified',
+        hoverlabel=dict(
+            bgcolor=plot_bg_color,
+            font_size=12,
+            font_family='Arial, sans-serif',
+            font_color=text_color,
+            bordercolor=grid_color
+        )
     )
     
-    # Update axes
-    fig.update_xaxes(showgrid=True, gridwidth=1, gridcolor='#E8E8E8')
-    fig.update_yaxes(showgrid=True, gridwidth=1, gridcolor='#E8E8E8')
+    # Update axes with theme colors
+    fig.update_xaxes(
+        showgrid=True, 
+        gridwidth=1, 
+        gridcolor=grid_color,
+        tickfont=dict(color=axis_color, size=11),
+        title_font=dict(color=text_color, size=13),
+        linecolor=grid_color,
+        mirror=True
+    )
+    fig.update_yaxes(
+        showgrid=True, 
+        gridwidth=1, 
+        gridcolor=grid_color,
+        tickfont=dict(color=axis_color, size=11),
+        title_font=dict(color=text_color, size=13),
+        linecolor=grid_color,
+        mirror=True
+    )
+    
+    # Update subplot titles with theme colors
+    for annotation in fig['layout']['annotations']:
+        annotation['font']['color'] = text_color
+        annotation['font']['size'] = 14 if use_dark_theme else 13
     
     return fig
 
@@ -2977,6 +3158,36 @@ def render_historical_backtest_tab():
         </div>
         """, unsafe_allow_html=True)
     
+    # Plot theme section within parameters area
+    st.markdown("") # Small spacing
+    
+    theme_col1, theme_col2, theme_col3 = st.columns([1, 1, 2])
+    
+    with theme_col1:
+        st.markdown("**PLOT THEME**")
+    
+    with theme_col2:
+        use_dark_theme = st.toggle(
+            "DARK THEME PLOTS",
+            value=True,
+            help="Toggle between dark (Bloomberg-style) and light theme for all plots",
+            key="plot_theme_toggle"
+        )
+    
+    with theme_col3:
+        if use_dark_theme:
+            st.markdown("""
+            <div style="background-color: #0a0a0a; border: 1px solid #00ff00; padding: 0.5rem; color: #00ff00; text-align: center; margin-bottom: 1rem;">
+                <strong>DARK THEME ACTIVE</strong> - Bloomberg Terminal Style
+            </div>
+            """, unsafe_allow_html=True)
+        else:
+            st.markdown("""
+            <div style="background-color: #f8f8f8; border: 1px solid #0066cc; padding: 0.5rem; color: #0066cc; text-align: center; margin-bottom: 1rem;">
+                <strong>LIGHT THEME ACTIVE</strong> - Professional Report Style
+            </div>
+            """, unsafe_allow_html=True)
+    
     # Run backtest button
     if st.button("RUN HISTORICAL BACKTEST", use_container_width=True, type="primary", key="run_backtest_button"):
         
@@ -3111,13 +3322,13 @@ def render_historical_backtest_tab():
                 
                 # Enhanced portfolio performance chart
                 st.markdown("### 📈 Portfolio Performance Analytics")
-                portfolio_fig = create_enhanced_portfolio_chart(results_df, metrics, rebalancing_events)
+                portfolio_fig = create_enhanced_portfolio_chart(results_df, metrics, rebalancing_events, use_dark_theme)
                 st.plotly_chart(portfolio_fig, use_container_width=True)
                 
 
                 
                 # Margin Cushion Analytics Dashboard
-                cushion_analysis.render_cushion_analytics_section(results_df, metrics, mode="profit_threshold")
+                cushion_analysis.render_cushion_analytics_section(results_df, metrics, mode="profit_threshold", use_dark_theme=use_dark_theme)
                 
                 # Detailed Profit Threshold Rebalancing Analysis
                 st.markdown("### 📋 Detailed Profit Threshold Analysis")
@@ -3342,16 +3553,16 @@ def render_historical_backtest_tab():
                 
                 # Enhanced portfolio performance chart
                 st.markdown("### 📈 Performance Analytics Advanced Visualizations")
-                portfolio_fig = create_enhanced_portfolio_chart(results_df, metrics)
+                portfolio_fig = create_enhanced_portfolio_chart(results_df, metrics, use_dark_theme=use_dark_theme)
                 st.plotly_chart(portfolio_fig, use_container_width=True)
                 
                 # Advanced liquidation and risk analysis
                 st.markdown("### 🎯 Advanced Risk & Liquidation Analysis")
-                liquidation_fig = create_liquidation_analysis_chart(results_df, metrics)
+                liquidation_fig = create_liquidation_analysis_chart(results_df, metrics, use_dark_theme)
                 st.plotly_chart(liquidation_fig, use_container_width=True)
                 
                 # Margin Cushion Analytics Dashboard
-                cushion_analysis.render_cushion_analytics_section(results_df, metrics, mode="liquidation_reentry")
+                cushion_analysis.render_cushion_analytics_section(results_df, metrics, mode="liquidation_reentry", use_dark_theme=use_dark_theme)
                 
                 # Detailed Round Analysis Section
                 st.markdown("### 📋 Detailed Round Analysis")
@@ -3646,16 +3857,16 @@ def render_historical_backtest_tab():
                 
                 # Enhanced portfolio performance chart (same as liquidation-reentry)
                 st.markdown("### 📈 Performance Analytics Advanced Visualizations")
-                portfolio_fig = create_enhanced_portfolio_chart(results_df, metrics)
+                portfolio_fig = create_enhanced_portfolio_chart(results_df, metrics, use_dark_theme=use_dark_theme)
                 st.plotly_chart(portfolio_fig, use_container_width=True)
                 
                 # Advanced liquidation and risk analysis (same as liquidation-reentry)
                 st.markdown("### 🎯 Advanced Risk & Liquidation Analysis")
-                liquidation_fig = create_liquidation_analysis_chart(results_df, metrics)
+                liquidation_fig = create_liquidation_analysis_chart(results_df, metrics, use_dark_theme)
                 st.plotly_chart(liquidation_fig, use_container_width=True)
                 
                 # Margin Cushion Analytics Dashboard (Fresh Capital Mode)
-                cushion_analysis.render_cushion_analytics_section(results_df, metrics, mode="fresh_capital")
+                cushion_analysis.render_cushion_analytics_section(results_df, metrics, mode="fresh_capital", use_dark_theme=use_dark_theme)
                 
                 # Detailed Round Analysis Section (same as liquidation-reentry)
                 st.markdown("### 📋 Detailed Round Analysis")
