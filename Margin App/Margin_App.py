@@ -30,11 +30,8 @@ st.markdown(app_header(), unsafe_allow_html=True)
 if 'active_tab' not in st.session_state:
     st.session_state.active_tab = 0
 
-# Define directory paths
-local_dir = r"D:\Benson\aUpWork\Ben Ruff\Implementation\Data"
-github_dir = ("Data")
-use_local = False
-data_dir = local_dir if use_local else github_dir
+# Define directory paths for containerized deployment
+data_dir = os.path.join(os.path.dirname(__file__), "Data")
 
 # Define default date rangehh
 end_date = datetime.datetime.now()
