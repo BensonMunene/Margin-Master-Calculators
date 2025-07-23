@@ -1,0 +1,16 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(powershell:*)",
+      "Bash(python manage.py startapp:*)",
+      "Bash(mkdir:*)",
+      "Bash(del db.sqlite3)",
+      "Bash(rm:*)",
+      "Bash(where psql)",
+      "Bash(psql:*)",
+      "Bash(\"C:\\Program Files\\PostgreSQL\\17\\bin\\psql.exe\" -U postgres -h localhost -c \"CREATE DATABASE etf_returns_db;\")",
+      "WebFetch(domain:docs.anthropic.com)"
+    ],
+    "deny": []
+  }
+}

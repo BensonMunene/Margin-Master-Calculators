@@ -1,0 +1,382 @@
+{% extends 'etf_analyzer/base.html' %}
+
+{% block content %}
+    <!-- Company Header -->
+    <div class="company-header">
+        <h1 class="company-name">PEARSON CREEK CAPITAL LLC</h1>
+        <p class="company-tagline">Professional ETF Performance Analysis & Investment Research</p>
+    </div>
+    
+    <!-- Control Panel -->
+    <div class="control-panel">
+        <div class="row g-3">
+            <div class="col-md-3">
+                <label for="etfSelect" class="form-label">🎯 Select ETF:</label>
+                <select class="form-select" id="etfSelect">
+                    {% for etf in etf_options %}
+                        <option value="{{ etf }}" {% if forloop.first %}selected{% endif %}>{{ etf }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            
+            <div class="col-md-3">
+                <label for="periodSelect" class="form-label">📅 Time Period:</label>
+                <select class="form-select" id="periodSelect">
+                    {% for period, values in time_periods.items %}
+                        <option value="{{ period }}" {% if forloop.first %}selected{% endif %}>{{ period }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            
+            <div class="col-md-3">
+                <label class="form-label">Start Year:</label>
+                <input type="number" class="form-control" id="startYear" value="2013" min="1990" max="2025">
+                <div class="form-text" id="startYearDisplay">2013</div>
+            </div>
+            
+            <div class="col-md-3">
+                <label class="form-label">End Year:</label>
+                <input type="number" class="form-control" id="endYear" value="2024" min="1990" max="2025">
+                <div class="form-text" id="endYearDisplay">2024</div>
+            </div>
+        </div>
+        
+        <div class="row mt-3">
+            <div class="col-12">
+                <button class="btn btn-primary" id="updateButton">Update Analysis</button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Loading Spinner -->
+    <div id="loadingSpinner" class="spinner-container" style="display: none;">
+        <div class="spinner-border text-primary" role="status" style="width: 3rem; height: 3rem;">
+            <span class="visually-hidden">Loading...</span>
+        </div>
+        <p class="mt-3">📊 Loading market data...</p>
+    </div>
+    
+    <!-- Error Alert -->
+    <div id="errorAlert" class="alert alert-danger" style="display: none;" role="alert"></div>
+    
+    <!-- Heatmap Container -->
+    <div id="heatmapContainer" class="matrix-container" style="display: none;">
+        <div id="heatmapPlot"></div>
+    </div>
+    
+    <!-- Instructions -->
+    <div id="instructions" class="instructions" style="display: none;">
+        <h4>📖 How to Read This Interactive Heatmap</h4>
+        <ul>
+            <li><strong>X-axis (From the start of):</strong> Starting year of investment period</li>
+            <li><strong>Y-axis (To the end of):</strong> Ending year of investment period</li>
+            <li><strong>Cell Values:</strong> Compound Annual Growth Rate (CAGR) for that specific time period</li>
+            <li><strong>Color Coding:</strong> Red shades for negative returns, green shades for positive returns</li>
+            <li><strong>Text Color:</strong> Dynamically adjusted (black/white) for optimal readability</li>
+            <li><strong>Interactive:</strong> Hover over cells to see detailed CAGR information</li>
+        </ul>
+    </div>
+    
+    <!-- Key Statistics -->
+    <div id="statsContainer" class="row g-3 mt-4" style="display: none;">
+        <div class="col-md-3">
+            <div class="stat-card">
+                <div class="stat-value" id="bestSingleYear">-</div>
+                <div class="stat-label" id="bestSingleYearLabel">Best Single Year</div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="stat-card">
+                <div class="stat-value" id="worstSingleYear">-</div>
+                <div class="stat-label" id="worstSingleYearLabel">Worst Single Year</div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="stat-card">
+                <div class="stat-value" id="tenYearCAGR">-</div>
+                <div class="stat-label" id="tenYearCAGRLabel">10-Year CAGR</div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="stat-card">
+                <div class="stat-value" id="fullPeriodCAGR">-</div>
+                <div class="stat-label" id="fullPeriodCAGRLabel">Full Period CAGR</div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- ETF Comparison -->
+    <div id="comparisonContainer" class="mt-5" style="display: none;">
+        <h3>🔄 ETF Performance Comparison</h3>
+        <div class="table-responsive">
+            <table class="table table-striped" id="comparisonTable">
+                <thead>
+                    <tr>
+                        <th>ETF</th>
+                        <th id="comparisonHeader">CAGR (%)</th>
+                    </tr>
+                </thead>
+                <tbody id="comparisonBody">
+                </tbody>
+            </table>
+        </div>
+    </div>
+    
+    <!-- Download Section -->
+    <div id="downloadSection" class="mt-5" style="display: none;">
+        <h3>💾 Export Analysis</h3>
+        <div class="row">
+            <div class="col-md-6">
+                <button class="btn btn-primary" id="downloadMatrix">📥 Download CAGR Matrix</button>
+            </div>
+            <div class="col-md-6">
+                <button class="btn btn-primary" id="downloadReturns">📊 Download Annual Returns Data</button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Footer -->
+    <hr class="mt-5">
+    <div class="text-center text-muted py-3">
+        <strong>Pearson Creek Capital LLC</strong> | Professional Investment Research<br>
+        <em>This analysis is for informational purposes only and does not constitute investment advice.</em>
+    </div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Time period configurations
+    const timePeriods = {{ time_periods|safe }};
+    
+    // Initialize on page load
+    document.addEventListener('DOMContentLoaded', function() {
+        const periodSelect = document.getElementById('periodSelect');
+        const startYearInput = document.getElementById('startYear');
+        const endYearInput = document.getElementById('endYear');
+        const startYearDisplay = document.getElementById('startYearDisplay');
+        const endYearDisplay = document.getElementById('endYearDisplay');
+        
+        // Handle period selection change
+        periodSelect.addEventListener('change', function() {
+            const selectedPeriod = this.value;
+            const periodConfig = timePeriods[selectedPeriod];
+            
+            if (selectedPeriod === 'Custom') {
+                startYearInput.style.display = 'block';
+                endYearInput.style.display = 'block';
+                startYearDisplay.style.display = 'none';
+                endYearDisplay.style.display = 'none';
+            } else {
+                startYearInput.style.display = 'none';
+                endYearInput.style.display = 'none';
+                startYearDisplay.style.display = 'block';
+                endYearDisplay.style.display = 'block';
+                
+                if (selectedPeriod !== 'Full Period') {
+                    startYearInput.value = periodConfig.start;
+                    endYearInput.value = periodConfig.end;
+                    startYearDisplay.textContent = periodConfig.start;
+                    endYearDisplay.textContent = periodConfig.end;
+                }
+            }
+        });
+        
+        // Initial setup
+        periodSelect.dispatchEvent(new Event('change'));
+        
+        // Update button click
+        document.getElementById('updateButton').addEventListener('click', function() {
+            updateAnalysis();
+        });
+        
+        // Download buttons
+        document.getElementById('downloadMatrix').addEventListener('click', downloadMatrix);
+        document.getElementById('downloadReturns').addEventListener('click', downloadReturns);
+        
+        // Load initial data
+        updateAnalysis();
+    });
+    
+    function getCookie(name) {
+        let cookieValue = null;
+        if (document.cookie && document.cookie !== '') {
+            const cookies = document.cookie.split(';');
+            for (let i = 0; i < cookies.length; i++) {
+                const cookie = cookies[i].trim();
+                if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                    break;
+                }
+            }
+        }
+        return cookieValue;
+    }
+    
+    function updateAnalysis() {
+        const etf = document.getElementById('etfSelect').value;
+        const period = document.getElementById('periodSelect').value;
+        const startYear = document.getElementById('startYear').value;
+        const endYear = document.getElementById('endYear').value;
+        
+        // Show loading spinner
+        document.getElementById('loadingSpinner').style.display = 'block';
+        document.getElementById('errorAlert').style.display = 'none';
+        document.getElementById('heatmapContainer').style.display = 'none';
+        document.getElementById('instructions').style.display = 'none';
+        document.getElementById('statsContainer').style.display = 'none';
+        document.getElementById('comparisonContainer').style.display = 'none';
+        document.getElementById('downloadSection').style.display = 'none';
+        
+        // Prepare request data
+        const requestData = {
+            etf: etf,
+            period: period,
+            start_year: startYear,
+            end_year: endYear
+        };
+        
+        // Make API request
+        fetch('/api/get-data/', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': getCookie('csrftoken')
+            },
+            body: JSON.stringify(requestData)
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.error) {
+                throw new Error(data.error);
+            }
+            
+            // Update year inputs if Full Period was selected
+            if (period === 'Full Period' && data.available_years) {
+                document.getElementById('startYear').value = data.available_years.min;
+                document.getElementById('endYear').value = data.available_years.max;
+                document.getElementById('startYearDisplay').textContent = data.available_years.min;
+                document.getElementById('endYearDisplay').textContent = data.available_years.max;
+            }
+            
+            // Hide loading spinner
+            document.getElementById('loadingSpinner').style.display = 'none';
+            
+            // Show containers
+            document.getElementById('heatmapContainer').style.display = 'block';
+            document.getElementById('instructions').style.display = 'block';
+            document.getElementById('statsContainer').style.display = 'flex';
+            document.getElementById('comparisonContainer').style.display = 'block';
+            document.getElementById('downloadSection').style.display = 'block';
+            
+            // Render heatmap
+            Plotly.newPlot('heatmapPlot', data.heatmap.data, data.heatmap.layout);
+            
+            // Update statistics
+            if (data.stats.best_single_year) {
+                document.getElementById('bestSingleYear').textContent = data.stats.best_single_year.value.toFixed(1) + '%';
+                document.getElementById('bestSingleYearLabel').textContent = `Best Single Year (${data.stats.best_single_year.year})`;
+            }
+            
+            if (data.stats.worst_single_year) {
+                document.getElementById('worstSingleYear').textContent = data.stats.worst_single_year.value.toFixed(1) + '%';
+                document.getElementById('worstSingleYearLabel').textContent = `Worst Single Year (${data.stats.worst_single_year.year})`;
+            }
+            
+            if (data.stats.ten_year_cagr) {
+                document.getElementById('tenYearCAGR').textContent = data.stats.ten_year_cagr.value.toFixed(1) + '%';
+                document.getElementById('tenYearCAGRLabel').textContent = `10-Year CAGR (${data.stats.ten_year_cagr.start}-${data.stats.ten_year_cagr.end})`;
+            } else {
+                document.getElementById('tenYearCAGR').textContent = 'N/A';
+                document.getElementById('tenYearCAGRLabel').textContent = '10-Year CAGR';
+            }
+            
+            if (data.stats.full_period_cagr) {
+                document.getElementById('fullPeriodCAGR').textContent = data.stats.full_period_cagr.value.toFixed(1) + '%';
+                document.getElementById('fullPeriodCAGRLabel').textContent = `${data.stats.full_period_cagr.years}-Year CAGR (${data.stats.full_period_cagr.start}-${data.stats.full_period_cagr.end})`;
+            }
+            
+            // Update comparison table
+            const comparisonBody = document.getElementById('comparisonBody');
+            const comparisonHeader = document.getElementById('comparisonHeader');
+            comparisonHeader.textContent = `CAGR ${startYear}-${endYear} (%)`;
+            
+            comparisonBody.innerHTML = '';
+            const sortedComparison = Object.entries(data.comparison)
+                .sort((a, b) => b[1] - a[1]);
+                
+            sortedComparison.forEach(([etf, cagr]) => {
+                const row = comparisonBody.insertRow();
+                row.insertCell(0).textContent = etf;
+                row.insertCell(1).textContent = cagr.toFixed(2) + '%';
+            });
+        })
+        .catch(error => {
+            document.getElementById('loadingSpinner').style.display = 'none';
+            document.getElementById('errorAlert').style.display = 'block';
+            document.getElementById('errorAlert').textContent = '⚠️ ' + error.message;
+        });
+    }
+    
+    function downloadMatrix() {
+        const etf = document.getElementById('etfSelect').value;
+        const startYear = document.getElementById('startYear').value;
+        const endYear = document.getElementById('endYear').value;
+        
+        const requestData = {
+            etf: etf,
+            start_year: startYear,
+            end_year: endYear
+        };
+        
+        fetch('/api/download-matrix/', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': getCookie('csrftoken')
+            },
+            body: JSON.stringify(requestData)
+        })
+        .then(response => response.blob())
+        .then(blob => {
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `PearsonCreek_${etf}_CAGR_Matrix_${startYear}_${endYear}.csv`;
+            document.body.appendChild(a);
+            a.click();
+            window.URL.revokeObjectURL(url);
+            document.body.removeChild(a);
+        });
+    }
+    
+    function downloadReturns() {
+        const startYear = document.getElementById('startYear').value;
+        const endYear = document.getElementById('endYear').value;
+        
+        const requestData = {
+            start_year: startYear,
+            end_year: endYear
+        };
+        
+        fetch('/api/download-returns/', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': getCookie('csrftoken')
+            },
+            body: JSON.stringify(requestData)
+        })
+        .then(response => response.blob())
+        .then(blob => {
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `PearsonCreek_Annual_Returns_${startYear}_${endYear}.csv`;
+            document.body.appendChild(a);
+            a.click();
+            window.URL.revokeObjectURL(url);
+            document.body.removeChild(a);
+        });
+    }
+</script>
+{% endblock %}
