@@ -11,6 +11,7 @@ from UI_Components import (
     kelly_criterion_explanation, app_footer
 )
 from historical_backtest import show_historical_backtest
+from fmp_data_provider import fmp_provider
 
 # Set page configuration - professional dark theme
 st.set_page_config(
@@ -309,21 +310,23 @@ if spy_df is not None and vti_df is not None:
                 etf_col1, etf_col2, etf_col3 = st.columns(3)
                 
                 with etf_col1:
-                    st.markdown("**ETF SELECTION**")
-                    etf_selection = st.selectbox(
-                        "Select ETF",
-                        ["SPY", "VTI"],
-                        help="SELECT ETF FOR ANALYSIS",
+                    st.markdown("**TICKER SYMBOL**")
+                    ticker_input = st.text_input(
+                        "Enter Ticker Symbol",
+                        value="SPY",
+                        help="ENTER STOCK/ETF TICKER SYMBOL",
                         label_visibility="collapsed"
-                    )
+                    ).upper()
                 
-                # Get current market price
-                if etf_selection == "SPY" and not spy_df.empty:
-                    current_market_price = spy_df['Close'].iloc[-1]
-                    selected_df = spy_df
-                elif etf_selection == "VTI" and not vti_df.empty:
-                    current_market_price = vti_df['Close'].iloc[-1]
-                    selected_df = vti_df
+                # Get current market price from FMP API
+                if ticker_input:
+                    current_market_price = fmp_provider.fetch_current_price(ticker_input)
+                    if current_market_price is None:
+                        current_market_price = 0
+                        selected_df = pd.DataFrame()
+                    else:
+                        # Create a simple dataframe for compatibility (not needed for calculations)
+                        selected_df = pd.DataFrame({'Close': [current_market_price]})
                 else:
                     current_market_price = 0
                     selected_df = pd.DataFrame()
@@ -351,19 +354,22 @@ if spy_df is not None and vti_df is not None:
                         label_visibility="collapsed"
                     )
                 
-                # Display current price
-                if abs(custom_price - current_market_price) < 0.01:
-                    st.markdown(f"""
-                    <div style="background-color: #1a1a1a; border: 1px solid #00a2ff; padding: 1rem; color: #e0e0e0;">
-                        <strong style="color: #00a2ff;">CURRENT {etf_selection} PRICE:</strong> ${current_price:.2f} (MARKET)
-                    </div>
-                    """, unsafe_allow_html=True)
+                # Display current price only if we have valid data
+                if current_market_price > 0:
+                    if abs(custom_price - current_market_price) < 0.01:
+                        st.markdown(f"""
+                        <div style="background-color: #1a1a1a; border: 1px solid #00a2ff; padding: 1rem; color: #e0e0e0;">
+                            <strong style="color: #00a2ff;">CURRENT {ticker_input} PRICE:</strong> ${current_price:.2f} (MARKET)
+                        </div>
+                        """, unsafe_allow_html=True)
+                    else:
+                        st.markdown(f"""
+                        <div style="background-color: #1a1a1a; border: 1px solid #00a2ff; padding: 1rem; color: #e0e0e0;">
+                            <strong style="color: #00a2ff;">CUSTOM {ticker_input} PRICE:</strong> ${current_price:.2f}
+                        </div>
+                        """, unsafe_allow_html=True)
                 else:
-                    st.markdown(f"""
-                    <div style="background-color: #1a1a1a; border: 1px solid #00a2ff; padding: 1rem; color: #e0e0e0;">
-                        <strong style="color: #00a2ff;">CUSTOM {etf_selection} PRICE:</strong> ${current_price:.2f}
-                    </div>
-                    """, unsafe_allow_html=True)
+                    st.warning(f"⚠️ **{ticker_input}** is not a valid ticker symbol. Please enter a valid US stock symbol (e.g., TSLA, AAPL, MSFT).")
                 
                 st.markdown("**INVESTMENT AMOUNT ($)**")
                 investment_amount = st.number_input(
@@ -550,27 +556,26 @@ if spy_df is not None and vti_df is not None:
             with results_col:
                 st.markdown("<h2>CALCULATION RESULTS</h2>", unsafe_allow_html=True)
                 
-                # Calculate metrics
-                metrics = calculate_margin_metrics(
-                    investment_amount, leverage, current_price, account_type, position_type
-                )
-                
-                # Display investment breakdown
-                st.markdown(f"""
-                <div class="terminal-card">
-                    <h3 style="color: var(--accent-orange); margin-bottom: 1rem;">INVESTMENT BREAKDOWN</h3>
-                    <div class="data-grid">
-                        <div class="data-label">YOUR CASH:</div>
-                        <div class="data-value">${metrics['cash_investment']:,.0f}</div>
-                        <div class="data-label">MARGIN LOAN:</div>
-                        <div class="data-value">${metrics['margin_loan']:,.0f}</div>
-                        <div class="data-label">BUYING POWER:</div>
-                        <div class="data-value">${investment_amount:,.0f}</div>
-                    </div>
-                </div>
-                """, unsafe_allow_html=True)
-                
                 if current_price > 0:
+                    # Calculate metrics
+                    metrics = calculate_margin_metrics(
+                        investment_amount, leverage, current_price, account_type, position_type
+                    )
+                    
+                    # Display investment breakdown
+                    st.markdown(f"""
+                    <div class="terminal-card">
+                        <h3 style="color: var(--accent-orange); margin-bottom: 1rem;">INVESTMENT BREAKDOWN</h3>
+                        <div class="data-grid">
+                            <div class="data-label">YOUR CASH:</div>
+                            <div class="data-value">${metrics['cash_investment']:,.0f}</div>
+                            <div class="data-label">MARGIN LOAN:</div>
+                            <div class="data-value">${metrics['margin_loan']:,.0f}</div>
+                            <div class="data-label">BUYING POWER:</div>
+                            <div class="data-value">${investment_amount:,.0f}</div>
+                        </div>
+                    </div>
+                    """, unsafe_allow_html=True)
                     # Calculate additional metrics
                     daily_interest_cost = (metrics['margin_loan'] * interest_rate / 100) / 365
                     annual_interest_cost = metrics['margin_loan'] * interest_rate / 100
@@ -691,6 +696,20 @@ if spy_df is not None and vti_df is not None:
                         st.markdown("<h3 style='color: var(--accent-orange); margin-bottom: 1.5rem;'>DETAILED INVESTMENT ANALYSIS & STRATEGIC INSIGHTS</h3>", unsafe_allow_html=True)
                         
                         st.markdown("## COMING SOON")
+                else:
+                    # Show message when ticker is invalid
+                    st.markdown("""
+                    <div class="terminal-card" style="border-color: #ff6b6b; background-color: rgba(255, 107, 107, 0.1);">
+                        <div style="text-align: center; color: #ff6b6b; margin: 2rem 0;">
+                            <div style="font-size: 2rem; margin-bottom: 1rem;">❌</div>
+                            <h3 style="color: #ff6b6b; margin-bottom: 1rem;">No calculations available</h3>
+                            <div style="color: #fff; margin-bottom: 1rem;">Please enter a valid US stock ticker symbol to see margin analysis.</div>
+                            <div style="color: #a0a0a0; font-size: 0.9rem;">
+                                Examples: <strong>TSLA</strong>, <strong>AAPL</strong>, <strong>MSFT</strong>, <strong>SPY</strong>
+                            </div>
+                        </div>
+                    </div>
+                    """, unsafe_allow_html=True)
 
             
             st.markdown("<div style='border-bottom: 1px solid var(--border-color); margin: 2rem 0;'></div>", unsafe_allow_html=True)
@@ -723,14 +742,19 @@ if spy_df is not None and vti_df is not None:
             
             st.markdown(market_overview_explanation(), unsafe_allow_html=True)
             
+            # Fetch SPY and VTI data from FMP API
+            with st.spinner("Loading market data..."):
+                spy_prices, spy_dividends, _ = fmp_provider.get_combined_data('SPY', '2020-01-01', end_date.strftime('%Y-%m-%d'))
+                vti_prices, vti_dividends, _ = fmp_provider.get_combined_data('VTI', '2020-01-01', end_date.strftime('%Y-%m-%d'))
+            
             col1, col2 = st.columns(2, gap="large")
             
             with col1:
                 st.markdown("<h2>S&P 500 ETF (SPY)</h2>", unsafe_allow_html=True)
-                if not spy_df.empty:
-                    latest_price = spy_df['Close'].iloc[-1]
-                    price_change = spy_df['Close'].iloc[-1] - spy_df['Close'].iloc[0]
-                    pct_change = (price_change / spy_df['Close'].iloc[0] * 100) if spy_df['Close'].iloc[0] != 0 else 0
+                if not spy_prices.empty:
+                    latest_price = spy_prices['Close'].iloc[-1]
+                    price_change = spy_prices['Close'].iloc[-1] - spy_prices['Close'].iloc[0]
+                    pct_change = (price_change / spy_prices['Close'].iloc[0] * 100) if spy_prices['Close'].iloc[0] != 0 else 0
                     
                     st.markdown(f"""
                     <div style="background-color: #1a1a1a; border: 1px solid #333333; padding: 1rem; text-align: center;">
@@ -754,18 +778,18 @@ if spy_df is not None and vti_df is not None:
                         </div>
                     </div>
                     """.format(
-                        spy_df['High'].max(),
-                        spy_df['Low'].min(),
-                        spy_df['Volume'].mean(),
-                        spy_dividends_df['Dividends'].sum()
+                        spy_prices['High'].max(),
+                        spy_prices['Low'].min(),
+                        spy_prices['Volume'].mean(),
+                        spy_dividends['Dividends'].sum() if not spy_dividends.empty else 0
                     ), unsafe_allow_html=True)
              
             with col2:
                 st.markdown("<h2>TOTAL MARKET ETF (VTI)</h2>", unsafe_allow_html=True)
-                if not vti_df.empty:
-                    latest_price = vti_df['Close'].iloc[-1]
-                    price_change = vti_df['Close'].iloc[-1] - vti_df['Close'].iloc[0]
-                    pct_change = (price_change / vti_df['Close'].iloc[0] * 100) if vti_df['Close'].iloc[0] != 0 else 0
+                if not vti_prices.empty:
+                    latest_price = vti_prices['Close'].iloc[-1]
+                    price_change = vti_prices['Close'].iloc[-1] - vti_prices['Close'].iloc[0]
+                    pct_change = (price_change / vti_prices['Close'].iloc[0] * 100) if vti_prices['Close'].iloc[0] != 0 else 0
                     
                     st.markdown(f"""
                     <div style="background-color: #1a1a1a; border: 1px solid #333333; padding: 1rem; text-align: center;">
@@ -789,10 +813,10 @@ if spy_df is not None and vti_df is not None:
                         </div>
                     </div>
                     """.format(
-                        vti_df['High'].max(),
-                        vti_df['Low'].min(),
-                        vti_df['Volume'].mean(),
-                        vti_dividends_df['Dividends'].sum()
+                        vti_prices['High'].max(),
+                        vti_prices['Low'].min(),
+                        vti_prices['Volume'].mean(),
+                        vti_dividends['Dividends'].sum() if not vti_dividends.empty else 0
                     ), unsafe_allow_html=True)
         
     elif st.session_state.selected_tab == "PRICE ANALYSIS":
@@ -838,16 +862,13 @@ if spy_df is not None and vti_df is not None:
             
             st.markdown("<div style='border-bottom: 1px solid var(--border-color); margin: 1rem 0;'></div>", unsafe_allow_html=True)
             
-            # Filter data
-            if not spy_df.empty:
-                spy_price_filtered = spy_df.loc[price_start_date:price_end_date]
-            else:
-                spy_price_filtered = spy_df
-                
-            if not vti_df.empty:
-                vti_price_filtered = vti_df.loc[price_start_date:price_end_date]
-            else:
-                vti_price_filtered = vti_df
+            # Fetch data from FMP API for the specified date range
+            with st.spinner("Loading price data..."):
+                spy_price_data, _, _ = fmp_provider.get_combined_data('SPY', price_start_date.strftime('%Y-%m-%d'), price_end_date.strftime('%Y-%m-%d'))
+                vti_price_data, _, _ = fmp_provider.get_combined_data('VTI', price_start_date.strftime('%Y-%m-%d'), price_end_date.strftime('%Y-%m-%d'))
+            
+            spy_price_filtered = spy_price_data
+            vti_price_filtered = vti_price_data
             
             # SPY chart with dark gray background
             st.markdown("""
@@ -894,16 +915,13 @@ if spy_df is not None and vti_df is not None:
             
             st.markdown("<div style='border-bottom: 1px solid var(--border-color); margin: 1rem 0;'></div>", unsafe_allow_html=True)
             
-            # Filter dividend data
-            if not spy_dividends_df.empty:
-                spy_div_filtered = spy_dividends_df.loc[div_start_date:div_end_date]
-            else:
-                spy_div_filtered = spy_dividends_df
-                
-            if not vti_dividends_df.empty:
-                vti_div_filtered = vti_dividends_df.loc[div_start_date:div_end_date]
-            else:
-                vti_div_filtered = vti_dividends_df
+            # Fetch dividend data from FMP API for the specified date range
+            with st.spinner("Loading dividend data..."):
+                _, spy_div_data, _ = fmp_provider.get_combined_data('SPY', div_start_date.strftime('%Y-%m-%d'), div_end_date.strftime('%Y-%m-%d'))
+                _, vti_div_data, _ = fmp_provider.get_combined_data('VTI', div_start_date.strftime('%Y-%m-%d'), div_end_date.strftime('%Y-%m-%d'))
+            
+            spy_div_filtered = spy_div_data
+            vti_div_filtered = vti_div_data
             
             # SPY dividends with dark gray background
             st.markdown("""

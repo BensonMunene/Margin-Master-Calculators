@@ -9,7 +9,10 @@
       "Bash(where psql)",
       "Bash(psql:*)",
       "Bash(\"C:\\Program Files\\PostgreSQL\\17\\bin\\psql.exe\" -U postgres -h localhost -c \"CREATE DATABASE etf_returns_db;\")",
-      "WebFetch(domain:docs.anthropic.com)"
+      "WebFetch(domain:docs.anthropic.com)",
+      "WebFetch(domain:financialmodelingprep.com)",
+      "WebFetch(domain:site.financialmodelingprep.com)",
+      "Bash(python:*)"
     ],
     "deny": []
   }

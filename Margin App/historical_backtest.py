@@ -11,6 +11,73 @@ warnings.filterwarnings('ignore')
 
 # Cushion analytics import
 import cushion_analysis
+from fmp_data_provider import fmp_provider
+
+def prepare_backtest_data(etf: str, start_date: str, end_date: str, 
+                         excel_data: pd.DataFrame = None,
+                         prices_df: pd.DataFrame = None, 
+                         dividends_df: pd.DataFrame = None, 
+                         fed_funds_df: pd.DataFrame = None) -> pd.DataFrame:
+    """
+    Prepare data for backtesting, supporting both Excel and FMP API data sources
+    Returns data in the expected format for existing backtest functions
+    """
+    if excel_data is not None:
+        # Use existing Excel data logic
+        data = excel_data.loc[start_date:end_date].copy()
+        if etf == 'SPY':
+            price_col, dividend_col = 'SPY', 'SPY_Dividends'
+        else:
+            price_col, dividend_col = 'VTI', 'VTI_Dividends'
+        return data.dropna(subset=[price_col, 'FedFunds (%)'])
+    
+    else:
+        # Use FMP API data - convert to Excel format
+        if prices_df is None or prices_df.empty:
+            return pd.DataFrame()
+        
+        # Start with price data
+        data = prices_df.copy()
+        
+        # Add ETF price column (using Close price)
+        data[etf] = data['Close']
+        
+        # Add dividend column
+        data[f'{etf}_Dividends'] = 0.0  # Initialize with zeros
+        if dividends_df is not None and not dividends_df.empty:
+            # Merge dividend data
+            dividend_data = dividends_df.copy()
+            # Align dates and merge
+            for div_date, div_amount in dividend_data.iterrows():
+                if div_date in data.index:
+                    data.loc[div_date, f'{etf}_Dividends'] = div_amount['Dividends']
+        
+        # Add Fed Funds data
+        if fed_funds_df is not None and not fed_funds_df.empty:
+            # Merge fed funds data using forward fill for missing dates
+            fed_data = fed_funds_df.copy()
+            # Use update to avoid column overlap issues
+            for date_idx in data.index:
+                if date_idx in fed_data.index:
+                    data.loc[date_idx, 'FedFunds (%)'] = fed_data.loc[date_idx, 'FedFunds (%)']
+                    data.loc[date_idx, 'FedFunds + 1.5%'] = fed_data.loc[date_idx, 'FedFunds + 1.5%']
+            
+            # Forward fill missing values
+            data['FedFunds (%)'] = data.get('FedFunds (%)', 0.0)
+            data['FedFunds + 1.5%'] = data.get('FedFunds + 1.5%', 1.5)
+            data['FedFunds (%)'] = pd.to_numeric(data['FedFunds (%)'], errors='coerce').fillna(method='ffill').fillna(0.0)
+            data['FedFunds + 1.5%'] = pd.to_numeric(data['FedFunds + 1.5%'], errors='coerce').fillna(method='ffill').fillna(1.5)
+        else:
+            # Default values if no fed funds data
+            data['FedFunds (%)'] = 0.0
+            data['FedFunds + 1.5%'] = 1.5
+        
+        # Filter by date range
+        start_dt = pd.to_datetime(start_date)
+        end_dt = pd.to_datetime(end_date)
+        data = data[(data.index >= start_dt) & (data.index <= end_dt)]
+        
+        return data.dropna(subset=[etf, 'FedFunds (%)'])
 
 # Parameter sweep import (optional)
 try:
@@ -74,7 +141,10 @@ def run_liquidation_reentry_backtest(
     initial_investment: float,
     leverage: float,
     account_type: str,
-    excel_data: pd.DataFrame
+    excel_data: pd.DataFrame = None,
+    prices_df: pd.DataFrame = None,
+    dividends_df: pd.DataFrame = None,
+    fed_funds_df: pd.DataFrame = None
 ) -> Tuple[pd.DataFrame, Dict[str, float], List[Dict]]:
     """
     Advanced backtest with realistic margin call liquidation and re-entry logic.
@@ -92,14 +162,9 @@ def run_liquidation_reentry_backtest(
     # Get margin parameters
     margin_params = calculate_margin_params(account_type, leverage)
     
-    # Prepare data with date range
-    data = excel_data.loc[start_date:end_date].copy()
-    if etf == 'SPY':
-        price_col, dividend_col = 'SPY', 'SPY_Dividends'
-    else:
-        price_col, dividend_col = 'VTI', 'VTI_Dividends'
-    
-    data = data.dropna(subset=[price_col, 'FedFunds (%)'])
+    # Prepare data using helper function (supports both Excel and FMP data)
+    data = prepare_backtest_data(etf, start_date, end_date, excel_data, prices_df, dividends_df, fed_funds_df)
+    price_col, dividend_col = etf, f'{etf}_Dividends'
     
     if len(data) < 10:
         st.error("Insufficient data for the selected date range")
@@ -644,9 +709,12 @@ def run_profit_threshold_backtest(
     initial_investment: float,
     target_leverage: float,
     account_type: str,
-    excel_data: pd.DataFrame,
+    excel_data: pd.DataFrame = None,
     profit_threshold_pct: float = 100.0,
-    transaction_cost_bps: float = 5.0
+    transaction_cost_bps: float = 5.0,
+    prices_df: pd.DataFrame = None,
+    dividends_df: pd.DataFrame = None,
+    fed_funds_df: pd.DataFrame = None
 ) -> Tuple[pd.DataFrame, Dict[str, float], List[Dict]]:
     """
     Profit Threshold Rebalancing Backtest with Liquidation-Reentry Logic
@@ -678,14 +746,9 @@ def run_profit_threshold_backtest(
     # Get margin parameters
     margin_params = calculate_margin_params(account_type, target_leverage)
     
-    # Prepare data with date range
-    data = excel_data.loc[start_date:end_date].copy()
-    if etf == 'SPY':
-        price_col, dividend_col = 'SPY', 'SPY_Dividends'
-    else:
-        price_col, dividend_col = 'VTI', 'VTI_Dividends'
-    
-    data = data.dropna(subset=[price_col, 'FedFunds (%)'])
+    # Prepare data using helper function (supports both Excel and FMP data)
+    data = prepare_backtest_data(etf, start_date, end_date, excel_data, prices_df, dividends_df, fed_funds_df)
+    price_col, dividend_col = etf, f'{etf}_Dividends'
     
     if len(data) < 10:
         st.error("Insufficient data for the selected date range")
@@ -1097,7 +1160,10 @@ def run_margin_restart_backtest(
     initial_investment: float,
     leverage: float,
     account_type: str,
-    excel_data: pd.DataFrame
+    excel_data: pd.DataFrame = None,
+    prices_df: pd.DataFrame = None,
+    dividends_df: pd.DataFrame = None,
+    fed_funds_df: pd.DataFrame = None
 ) -> Tuple[pd.DataFrame, Dict[str, float], List[Dict]]:
     """
     Fresh Capital Restart backtest with daily tracking for complete analysis.
@@ -1108,14 +1174,9 @@ def run_margin_restart_backtest(
     # Get margin parameters
     margin_params = calculate_margin_params(account_type, leverage)
     
-    # Prepare data with date range
-    data = excel_data.loc[start_date:end_date].copy()
-    if etf == 'SPY':
-        price_col, dividend_col = 'SPY', 'SPY_Dividends'
-    else:
-        price_col, dividend_col = 'VTI', 'VTI_Dividends'
-    
-    data = data.dropna(subset=[price_col, 'FedFunds (%)'])
+    # Prepare data using helper function (supports both Excel and FMP data)
+    data = prepare_backtest_data(etf, start_date, end_date, excel_data, prices_df, dividends_df, fed_funds_df)
+    price_col, dividend_col = etf, f'{etf}_Dividends'
     
     if len(data) < 10:
         st.error("Insufficient data for the selected date range")
@@ -2911,19 +2972,19 @@ def render_historical_backtest_tab():
     # Input parameters
     st.markdown("<h2>BACKTEST PARAMETERS</h2>", unsafe_allow_html=True)
     
-    # Get available date range for validation
-    min_date = excel_data.index.min().date()
-    max_date = excel_data.index.max().date()
+    # Set reasonable date ranges for stock data
+    min_date = datetime.date(2000, 1, 1)  # FMP has data back to 2000
+    max_date = datetime.date.today()  # Today's date
     
     input_col1, input_col2, input_col3 = st.columns([1, 1, 1.2])
     
     with input_col1:
-        etf_choice = st.selectbox(
-            "Select ETF",
-            ["SPY", "VTI"],
-            help="Choose the ETF to backtest",
-            key="backtest_etf_choice"
-        )
+        ticker_input = st.text_input(
+            "Enter Ticker Symbol",
+            value="SPY",
+            help="Enter stock/ETF ticker symbol to backtest",
+            key="backtest_ticker_input"
+        ).upper()
         
         start_date = st.date_input(
             "Start Date",
@@ -2936,7 +2997,7 @@ def render_historical_backtest_tab():
         
         end_date = st.date_input(
             "End Date",
-            value=max_date,
+            value=datetime.date.today(),
             min_value=min_date,
             max_value=max_date,
             help="When to end the backtest",
@@ -3090,12 +3151,18 @@ def render_historical_backtest_tab():
         cash_needed = equity  # This is the user's equity input
         margin_loan = initial_investment - cash_needed
         
-        # Calculate actual trading days by counting data observations
-        date_range_data = excel_data.loc[str(start_date):str(end_date)]
-        if etf_choice == "SPY":
-            trading_days = len(date_range_data.dropna(subset=['SPY']))
-        else:
-            trading_days = len(date_range_data.dropna(subset=['VTI']))
+        # Fetch data for the selected ticker using FMP API
+        with st.spinner(f"Fetching data for {ticker_input}..."):
+            prices_df, dividends_df, fed_funds_df = fmp_provider.get_combined_data(
+                ticker_input, str(start_date), str(end_date)
+            )
+        
+        if prices_df.empty:
+            st.error(f"No data available for {ticker_input} in the specified date range.")
+            return
+        
+        # Calculate trading days
+        trading_days = len(prices_df)
         
         # Mode-specific parameter summary card
         if st.session_state.backtest_mode == 'constant_leverage':
@@ -3196,15 +3263,18 @@ def render_historical_backtest_tab():
             if st.session_state.backtest_mode == 'profit_threshold':
                 # Run profit threshold backtest
                 results_df, metrics, rebalancing_events = run_profit_threshold_backtest(
-                    etf=etf_choice,
+                    etf=ticker_input,
                     start_date=str(start_date),
                     end_date=str(end_date),
                     initial_investment=initial_investment,
                     target_leverage=leverage,
                     account_type=account_type,
-                    excel_data=excel_data,
+                    excel_data=None,  # Will use FMP data instead
                     profit_threshold_pct=profit_threshold_pct,
-                    transaction_cost_bps=transaction_cost_bps
+                    transaction_cost_bps=transaction_cost_bps,
+                    prices_df=prices_df,
+                    dividends_df=dividends_df,
+                    fed_funds_df=fed_funds_df
                 )
                 
                 if results_df.empty:
@@ -3384,7 +3454,7 @@ def render_historical_backtest_tab():
                     st.markdown(f"""
                     ### 📊 Complete Profit Threshold Dataset
                     
-                    This dataset contains **{len(results_df):,} daily observations** from your {leverage:.1f}x profit threshold {etf_choice} strategy.
+                    This dataset contains **{len(results_df):,} daily observations** from your {leverage:.1f}x profit threshold {ticker_input} strategy.
                     Tracks portfolio growth and rebalancing triggers based on {profit_threshold_pct:.0f}% profit thresholds.
                     """)
                     
@@ -3416,13 +3486,16 @@ def render_historical_backtest_tab():
             elif st.session_state.backtest_mode == 'standard':
                 # Run enhanced liquidation-reentry backtest
                 results_df, metrics, round_analysis = run_liquidation_reentry_backtest(
-                    etf=etf_choice,
+                    etf=ticker_input,
                     start_date=str(start_date),
                     end_date=str(end_date),
                     initial_investment=initial_investment,
                     leverage=leverage,
                     account_type=account_type,
-                    excel_data=excel_data
+                    excel_data=None,
+                    prices_df=prices_df,
+                    dividends_df=dividends_df,
+                    fed_funds_df=fed_funds_df
                 )
                 
                 if results_df.empty:
@@ -3650,7 +3723,7 @@ def render_historical_backtest_tab():
                     st.markdown(f"""
                     ### 📊 Complete Dataset: Liquidation-Reentry Backtest Results
                     
-                    This dataset contains **{len(results_df):,} daily observations** from your {leverage:.1f}x leveraged {etf_choice} strategy.
+                    This dataset contains **{len(results_df):,} daily observations** from your {leverage:.1f}x leveraged {ticker_input} strategy.
                     Each row represents one trading day showing position status, liquidation events, and comprehensive metrics.
                     """)
                     
@@ -3730,13 +3803,16 @@ def render_historical_backtest_tab():
             else:  # Fresh Capital Restart mode
                 # Run fresh capital restart backtest
                 results_df, metrics, round_analysis = run_margin_restart_backtest(
-                    etf=etf_choice,
+                    etf=ticker_input,
                     start_date=str(start_date),
                     end_date=str(end_date),
                     initial_investment=initial_investment,
                     leverage=leverage,
                     account_type=account_type,
-                    excel_data=excel_data
+                    excel_data=None,
+                    prices_df=prices_df,
+                    dividends_df=dividends_df,
+                    fed_funds_df=fed_funds_df
                 )
                 
                 if results_df.empty:
@@ -3956,7 +4032,7 @@ def render_historical_backtest_tab():
                     st.markdown(f"""
                     ### 📊 Complete Dataset: Fresh Capital Restart Backtest Results
                     
-                    This dataset contains **{len(results_df):,} daily observations** from your {leverage:.1f}x leveraged {etf_choice} fresh capital strategy.
+                    This dataset contains **{len(results_df):,} daily observations** from your {leverage:.1f}x leveraged {ticker_input} fresh capital strategy.
                     Each row represents one trading day with **unlimited fresh capital assumption** after each liquidation.
                     """)
                     
@@ -4037,7 +4113,7 @@ def render_historical_backtest_tab():
     # Parameter sweep section
     if parameter_sweep is not None:
         try:
-            parameter_sweep.render_parameter_sweep_section(etf_choice, start_date, end_date, equity, leverage, account_type, excel_data)
+            parameter_sweep.render_parameter_sweep_section(ticker_input, start_date, end_date, equity, leverage, account_type, None)
         except Exception as e:
             st.error(f"Parameter sweep error: {str(e)}")
             st.info("📊 Parameter sweep functionality temporarily unavailable. Please use individual backtests above.")
