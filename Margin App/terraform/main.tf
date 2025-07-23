@@ -14,7 +14,7 @@ provider "aws" {
 
 # Security Group
 resource "aws_security_group" "margin_app_sg" {
-  name_description = "margin-app-sg"
+  name        = "margin-app-sg"
   description = "Security group for Margin Calculator App"
 
   ingress {
