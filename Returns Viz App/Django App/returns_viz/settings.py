@@ -25,7 +25,7 @@ SECRET_KEY = 'django-insecure-ytarvq!&rm1mlxw2#ph5z!&y&$#t#h+0j877-+!xddg!cfqc)4
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ['localhost', '127.0.0.1', 'testserver', '*']
 
 
 # Application definition
@@ -127,3 +127,18 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 # Data directories
 import os
 DATA_DIR = os.path.join(BASE_DIR.parent, 'Streamlit App', 'Historical Data')
+
+# Financial Modeling Prep API Configuration
+FMP_API_KEY = "f2IedVpstXz7qOfWiHl86s8BzVdQBMSC"
+
+# Cache configuration
+CACHES = {
+    'default': {
+        'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
+        'LOCATION': 'unique-snowflake',
+        'TIMEOUT': 3600,  # 1 hour default timeout
+        'OPTIONS': {
+            'MAX_ENTRIES': 1000
+        }
+    }
+}

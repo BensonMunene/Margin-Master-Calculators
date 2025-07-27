@@ -11,12 +11,19 @@
     <div class="control-panel">
         <div class="row g-3">
             <div class="col-md-3">
-                <label for="etfSelect" class="form-label">🎯 Select ETF:</label>
-                <select class="form-select" id="etfSelect">
-                    {% for etf in etf_options %}
-                        <option value="{{ etf }}" {% if forloop.first %}selected{% endif %}>{{ etf }}</option>
-                    {% endfor %}
-                </select>
+                <label for="tickerInput" class="form-label">🎯 Enter Ticker Symbol:</label>
+                <div class="ticker-input-container">
+                    <div class="input-group">
+                        <input type="text" class="form-control" id="tickerInput" placeholder="e.g., AAPL, SPY, MSFT" 
+                               value="SPY" autocomplete="off">
+                        <button class="btn btn-outline-secondary" type="button" id="validateTicker">
+                            <i class="bi bi-check-circle"></i> Validate
+                        </button>
+                    </div>
+                    <div id="tickerSuggestions" class="ticker-suggestions" style="display: none;"></div>
+                </div>
+                <div class="form-text" id="tickerInfo"></div>
+                <div class="invalid-feedback" id="tickerError" style="display: none;"></div>
             </div>
             
             <div class="col-md-3">
@@ -30,14 +37,14 @@
             
             <div class="col-md-3">
                 <label class="form-label">Start Year:</label>
-                <input type="number" class="form-control" id="startYear" value="2013" min="1990" max="2025">
-                <div class="form-text" id="startYearDisplay">2013</div>
+                <input type="number" class="form-control" id="startYear" value="2014" min="1990" max="2025">
+                <div class="form-text" id="startYearDisplay">2014</div>
             </div>
             
             <div class="col-md-3">
                 <label class="form-label">End Year:</label>
-                <input type="number" class="form-control" id="endYear" value="2024" min="1990" max="2025">
-                <div class="form-text" id="endYearDisplay">2024</div>
+                <input type="number" class="form-control" id="endYear" value="2025" min="1990" max="2025">
+                <div class="form-text" id="endYearDisplay">2025</div>
             </div>
         </div>
         
@@ -105,20 +112,126 @@
         </div>
     </div>
     
-    <!-- ETF Comparison -->
-    <div id="comparisonContainer" class="mt-5" style="display: none;">
-        <h3>🔄 ETF Performance Comparison</h3>
-        <div class="table-responsive">
-            <table class="table table-striped" id="comparisonTable">
-                <thead>
-                    <tr>
-                        <th>ETF</th>
-                        <th id="comparisonHeader">CAGR (%)</th>
-                    </tr>
-                </thead>
-                <tbody id="comparisonBody">
-                </tbody>
-            </table>
+    <!-- Performance Overview -->
+    <div id="performanceContainer" class="mt-5" style="display: none;">
+        <h3>📊 Performance Overview</h3>
+        <div class="row g-4">
+            <!-- Return Metrics -->
+            <div class="col-md-6">
+                <div class="performance-card">
+                    <h5 class="performance-card-header">📈 Return Metrics</h5>
+                    <div class="performance-metrics">
+                        <div class="metric-row">
+                            <span class="metric-label">CAGR:</span>
+                            <span class="metric-value" id="perf-cagr">-</span>
+                        </div>
+                        <div class="metric-row">
+                            <span class="metric-label">Total Return:</span>
+                            <span class="metric-value" id="perf-total-return">-</span>
+                        </div>
+                        <div class="metric-row">
+                            <span class="metric-label">Best Year:</span>
+                            <span class="metric-value" id="perf-best-year">-</span>
+                        </div>
+                        <div class="metric-row">
+                            <span class="metric-label">Worst Year:</span>
+                            <span class="metric-value" id="perf-worst-year">-</span>
+                        </div>
+                        <div class="metric-row">
+                            <span class="metric-label">Win Rate:</span>
+                            <span class="metric-value" id="perf-win-rate">-</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Risk Metrics -->
+            <div class="col-md-6">
+                <div class="performance-card">
+                    <h5 class="performance-card-header">⚠️ Risk Metrics</h5>
+                    <div class="performance-metrics">
+                        <div class="metric-row">
+                            <span class="metric-label">Volatility:</span>
+                            <span class="metric-value" id="perf-volatility">-</span>
+                        </div>
+                        <div class="metric-row">
+                            <span class="metric-label">Max Drawdown:</span>
+                            <span class="metric-value" id="perf-max-dd">-</span>
+                        </div>
+                        <div class="metric-row">
+                            <span class="metric-label">Recovery Days:</span>
+                            <span class="metric-value" id="perf-recovery">-</span>
+                        </div>
+                        <div class="metric-row">
+                            <span class="metric-label">VaR (5%):</span>
+                            <span class="metric-value" id="perf-var">-</span>
+                        </div>
+                        <div class="metric-row">
+                            <span class="metric-label">Pain Index:</span>
+                            <span class="metric-value" id="perf-pain">-</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Risk-Adjusted Metrics -->
+            <div class="col-md-6">
+                <div class="performance-card">
+                    <h5 class="performance-card-header">⚖️ Risk-Adjusted Returns</h5>
+                    <div class="performance-metrics">
+                        <div class="metric-row">
+                            <span class="metric-label">Sharpe Ratio:</span>
+                            <span class="metric-value" id="perf-sharpe">-</span>
+                        </div>
+                        <div class="metric-row">
+                            <span class="metric-label">Sortino Ratio:</span>
+                            <span class="metric-value" id="perf-sortino">-</span>
+                        </div>
+                        <div class="metric-row">
+                            <span class="metric-label">Calmar Ratio:</span>
+                            <span class="metric-value" id="perf-calmar">-</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Relative Metrics (vs S&P 500) -->
+            <div class="col-md-6">
+                <div class="performance-card">
+                    <h5 class="performance-card-header">📊 Relative to S&P 500</h5>
+                    <div class="performance-metrics">
+                        <div class="metric-row">
+                            <span class="metric-label">Beta:</span>
+                            <span class="metric-value" id="perf-beta">-</span>
+                        </div>
+                        <div class="metric-row">
+                            <span class="metric-label">Alpha:</span>
+                            <span class="metric-value" id="perf-alpha">-</span>
+                        </div>
+                        <div class="metric-row">
+                            <span class="metric-label">R-Squared:</span>
+                            <span class="metric-value" id="perf-r-squared">-</span>
+                        </div>
+                        <div class="metric-row">
+                            <span class="metric-label">Treynor Ratio:</span>
+                            <span class="metric-value" id="perf-treynor">-</span>
+                        </div>
+                        <div class="metric-row">
+                            <span class="metric-label">Information Ratio:</span>
+                            <span class="metric-value" id="perf-info-ratio">-</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Period Information -->
+        <div class="row mt-3">
+            <div class="col-12">
+                <div class="alert alert-info">
+                    <strong>Analysis Period:</strong> <span id="perf-period-info">-</span>
+                </div>
+            </div>
         </div>
     </div>
     
@@ -141,6 +254,129 @@
         <strong>Pearson Creek Capital LLC</strong> | Professional Investment Research<br>
         <em>This analysis is for informational purposes only and does not constitute investment advice.</em>
     </div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+    .ticker-input-container {
+        position: relative;
+    }
+    
+    .ticker-suggestions {
+        position: absolute;
+        top: 100%;
+        left: 0;
+        right: 0;
+        background: white;
+        border: 1px solid #dee2e6;
+        border-radius: 0.375rem;
+        max-height: 200px;
+        overflow-y: auto;
+        z-index: 1000;
+        box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
+    }
+    
+    .ticker-suggestion-item {
+        padding: 0.5rem 1rem;
+        cursor: pointer;
+        border-bottom: 1px solid #f8f9fa;
+    }
+    
+    .ticker-suggestion-item:hover {
+        background-color: #f8f9fa;
+    }
+    
+    .ticker-suggestion-symbol {
+        font-weight: bold;
+        color: #1f4e79;
+    }
+    
+    .ticker-suggestion-name {
+        color: #6c757d;
+        font-size: 0.875rem;
+    }
+    
+    .ticker-suggestion-exchange {
+        color: #6c757d;
+        font-size: 0.75rem;
+        float: right;
+    }
+    
+    .ticker-input-valid {
+        border-color: #28a745 !important;
+    }
+    
+    .ticker-input-invalid {
+        border-color: #dc3545 !important;
+    }
+    
+    /* Performance Overview Styling */
+    .performance-card {
+        background: white;
+        border: 1px solid #e9ecef;
+        border-radius: 10px;
+        padding: 1.5rem;
+        height: 100%;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+        transition: box-shadow 0.3s ease;
+    }
+    
+    .performance-card:hover {
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    }
+    
+    .performance-card-header {
+        color: #1f4e79;
+        font-weight: 600;
+        margin-bottom: 1rem;
+        padding-bottom: 0.5rem;
+        border-bottom: 2px solid #f8f9fa;
+    }
+    
+    .performance-metrics {
+        display: flex;
+        flex-direction: column;
+        gap: 0.75rem;
+    }
+    
+    .metric-row {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 0.5rem 0;
+        border-bottom: 1px solid #f8f9fa;
+    }
+    
+    .metric-row:last-child {
+        border-bottom: none;
+    }
+    
+    .metric-label {
+        font-weight: 500;
+        color: #495057;
+        flex: 1;
+    }
+    
+    .metric-value {
+        font-weight: 600;
+        color: #212529;
+        text-align: right;
+        font-family: 'Courier New', monospace;
+        min-width: 80px;
+    }
+    
+    .metric-value.positive {
+        color: #28a745;
+    }
+    
+    .metric-value.negative {
+        color: #dc3545;
+    }
+    
+    .metric-value.neutral {
+        color: #6c757d;
+    }
+</style>
 {% endblock %}
 
 {% block extra_js %}
@@ -193,8 +429,13 @@
         document.getElementById('downloadMatrix').addEventListener('click', downloadMatrix);
         document.getElementById('downloadReturns').addEventListener('click', downloadReturns);
         
-        // Load initial data
-        updateAnalysis();
+        // Validate initial ticker and load data
+        validateTicker();
+        setTimeout(function() {
+            if (isValidTicker) {
+                updateAnalysis();
+            }
+        }, 1000);
     });
     
     function getCookie(name) {
@@ -212,11 +453,277 @@
         return cookieValue;
     }
     
+    let currentTicker = 'SPY';
+    let isValidTicker = true;
+    
+    // Ticker input handling
+    const tickerInput = document.getElementById('tickerInput');
+    const tickerSuggestions = document.getElementById('tickerSuggestions');
+    const tickerInfo = document.getElementById('tickerInfo');
+    const tickerError = document.getElementById('tickerError');
+    const validateButton = document.getElementById('validateTicker');
+    
+    // Debounce function for search
+    function debounce(func, wait) {
+        let timeout;
+        return function executedFunction(...args) {
+            const later = () => {
+                clearTimeout(timeout);
+                func(...args);
+            };
+            clearTimeout(timeout);
+            timeout = setTimeout(later, wait);
+        };
+    }
+    
+    // Search for tickers
+    const searchTickers = debounce(function(query) {
+        if (query.length < 1) {
+            tickerSuggestions.style.display = 'none';
+            return;
+        }
+        
+        fetch(`/api/search-tickers/?q=${encodeURIComponent(query)}`)
+            .then(response => response.json())
+            .then(data => {
+                if (data.results && data.results.length > 0) {
+                    tickerSuggestions.innerHTML = '';
+                    data.results.forEach(item => {
+                        const div = document.createElement('div');
+                        div.className = 'ticker-suggestion-item';
+                        div.innerHTML = `
+                            <span class="ticker-suggestion-symbol">${item.symbol}</span>
+                            <span class="ticker-suggestion-exchange">${item.exchange}</span><br>
+                            <span class="ticker-suggestion-name">${item.name}</span>
+                        `;
+                        div.addEventListener('click', function() {
+                            tickerInput.value = item.symbol;
+                            tickerSuggestions.style.display = 'none';
+                            validateTicker();
+                        });
+                        tickerSuggestions.appendChild(div);
+                    });
+                    tickerSuggestions.style.display = 'block';
+                } else {
+                    tickerSuggestions.style.display = 'none';
+                }
+            });
+    }, 300);
+    
+    // Ticker input events
+    tickerInput.addEventListener('input', function() {
+        searchTickers(this.value);
+        tickerInput.classList.remove('ticker-input-valid', 'ticker-input-invalid');
+        tickerError.style.display = 'none';
+        tickerInfo.textContent = '';
+    });
+    
+    // Hide suggestions when clicking outside
+    document.addEventListener('click', function(e) {
+        if (!tickerInput.contains(e.target) && !tickerSuggestions.contains(e.target)) {
+            tickerSuggestions.style.display = 'none';
+        }
+    });
+    
+    // Validate ticker
+    function validateTicker() {
+        const ticker = tickerInput.value.trim().toUpperCase();
+        if (!ticker) {
+            tickerError.textContent = 'Please enter a ticker symbol';
+            tickerError.style.display = 'block';
+            tickerInput.classList.add('ticker-input-invalid');
+            isValidTicker = false;
+            return;
+        }
+        
+        tickerInfo.textContent = 'Validating...';
+        tickerError.style.display = 'none';
+        
+        fetch('/api/validate-ticker/', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': getCookie('csrftoken')
+            },
+            body: JSON.stringify({ ticker: ticker })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.valid) {
+                currentTicker = data.ticker;
+                isValidTicker = true;
+                tickerInput.classList.remove('ticker-input-invalid');
+                tickerInput.classList.add('ticker-input-valid');
+                tickerError.style.display = 'none';
+                
+                if (data.info && data.info.name) {
+                    tickerInfo.innerHTML = `<small class="text-success">✓ ${data.info.name} (${data.info.exchange})</small>`;
+                } else {
+                    tickerInfo.innerHTML = '<small class="text-success">✓ Valid ticker</small>';
+                }
+            } else {
+                isValidTicker = false;
+                tickerInput.classList.remove('ticker-input-valid');
+                tickerInput.classList.add('ticker-input-invalid');
+                tickerError.textContent = data.error || 'Invalid ticker symbol';
+                tickerError.style.display = 'block';
+                tickerInfo.textContent = '';
+            }
+        })
+        .catch(error => {
+            isValidTicker = false;
+            tickerError.textContent = 'Error validating ticker';
+            tickerError.style.display = 'block';
+            tickerInfo.textContent = '';
+        });
+    }
+    
+    validateButton.addEventListener('click', validateTicker);
+    
+    // Enter key to validate
+    tickerInput.addEventListener('keypress', function(e) {
+        if (e.key === 'Enter') {
+            validateTicker();
+        }
+    });
+    
+    // Performance Overview Update Function
+    function updatePerformanceOverview(performanceData, ticker, startYear, endYear) {
+        // Check if performanceData exists and has the required structure
+        if (!performanceData || typeof performanceData !== 'object') {
+            console.error('Performance data is null or invalid:', performanceData);
+            return;
+        }
+        
+        const formatPercent = (value, decimals = 2) => {
+            if (value === null || value === undefined || isNaN(value)) return 'N/A';
+            return (value * 100).toFixed(decimals) + '%';
+        };
+        
+        const formatNumber = (value, decimals = 2) => {
+            if (value === null || value === undefined || isNaN(value)) return 'N/A';
+            return value.toFixed(decimals);
+        };
+        
+        const formatDays = (days) => {
+            if (days === null || days === undefined) return 'N/A';
+            if (days > 365) return `${Math.round(days / 365)} years`;
+            return `${days} days`;
+        };
+        
+        const addColorClass = (element, value, positiveGood = true) => {
+            element.classList.remove('positive', 'negative', 'neutral');
+            if (value === null || value === undefined || isNaN(value)) {
+                element.classList.add('neutral');
+            } else if ((value > 0 && positiveGood) || (value < 0 && !positiveGood)) {
+                element.classList.add('positive');
+            } else if ((value < 0 && positiveGood) || (value > 0 && !positiveGood)) {
+                element.classList.add('negative');
+            } else {
+                element.classList.add('neutral');
+            }
+        };
+        
+        // Return Metrics
+        if (performanceData.return_metrics) {
+            const perfCagr = document.getElementById('perf-cagr');
+            const perfTotalReturn = document.getElementById('perf-total-return');
+            const perfBestYear = document.getElementById('perf-best-year');
+            const perfWorstYear = document.getElementById('perf-worst-year');
+            const perfWinRate = document.getElementById('perf-win-rate');
+            
+            perfCagr.textContent = formatPercent(performanceData.return_metrics.cagr);
+            perfTotalReturn.textContent = formatPercent(performanceData.return_metrics.total_return);
+            perfBestYear.textContent = `${formatPercent(performanceData.return_metrics.best_year)} (${performanceData.return_metrics.best_year_date})`;
+            perfWorstYear.textContent = `${formatPercent(performanceData.return_metrics.worst_year)} (${performanceData.return_metrics.worst_year_date})`;
+            perfWinRate.textContent = formatPercent(performanceData.return_metrics.win_rate);
+            
+            addColorClass(perfCagr, performanceData.return_metrics.cagr);
+            addColorClass(perfTotalReturn, performanceData.return_metrics.total_return);
+            addColorClass(perfBestYear, performanceData.return_metrics.best_year);
+            addColorClass(perfWorstYear, performanceData.return_metrics.worst_year, false);
+            addColorClass(perfWinRate, performanceData.return_metrics.win_rate);
+        }
+        
+        
+        // Risk Metrics
+        if (performanceData.risk_metrics) {
+            const perfVolatility = document.getElementById('perf-volatility');
+            const perfMaxDD = document.getElementById('perf-max-dd');
+            const perfRecovery = document.getElementById('perf-recovery');
+            const perfVar = document.getElementById('perf-var');
+            const perfPain = document.getElementById('perf-pain');
+            
+            perfVolatility.textContent = formatPercent(performanceData.risk_metrics.volatility);
+            perfMaxDD.textContent = formatPercent(performanceData.risk_metrics.maximum_drawdown);
+            perfRecovery.textContent = formatDays(performanceData.risk_metrics.recovery_days);
+            perfVar.textContent = formatPercent(performanceData.risk_metrics.var_5);
+            perfPain.textContent = formatPercent(performanceData.risk_metrics.pain_index);
+            
+            addColorClass(perfVolatility, performanceData.risk_metrics.volatility, false);
+            addColorClass(perfMaxDD, performanceData.risk_metrics.maximum_drawdown, false);
+            addColorClass(perfVar, performanceData.risk_metrics.var_5, false);
+            addColorClass(perfPain, performanceData.risk_metrics.pain_index, false);
+        }
+        
+        // Risk-Adjusted Metrics
+        if (performanceData.risk_adjusted_metrics) {
+            const perfSharpe = document.getElementById('perf-sharpe');
+            const perfSortino = document.getElementById('perf-sortino');
+            const perfCalmar = document.getElementById('perf-calmar');
+            
+            perfSharpe.textContent = formatNumber(performanceData.risk_adjusted_metrics.sharpe_ratio);
+            perfSortino.textContent = formatNumber(performanceData.risk_adjusted_metrics.sortino_ratio);
+            perfCalmar.textContent = formatNumber(performanceData.risk_adjusted_metrics.calmar_ratio);
+            
+            addColorClass(perfSharpe, performanceData.risk_adjusted_metrics.sharpe_ratio);
+            addColorClass(perfSortino, performanceData.risk_adjusted_metrics.sortino_ratio);
+            addColorClass(perfCalmar, performanceData.risk_adjusted_metrics.calmar_ratio);
+        }
+        
+        // Relative Metrics
+        if (performanceData.relative_metrics) {
+            const perfBeta = document.getElementById('perf-beta');
+            const perfAlpha = document.getElementById('perf-alpha');
+            const perfRSquared = document.getElementById('perf-r-squared');
+            const perfTreynor = document.getElementById('perf-treynor');
+            const perfInfoRatio = document.getElementById('perf-info-ratio');
+            
+            perfBeta.textContent = formatNumber(performanceData.relative_metrics.beta);
+            perfAlpha.textContent = formatPercent(performanceData.relative_metrics.alpha);
+            perfRSquared.textContent = formatNumber(performanceData.relative_metrics.r_squared);
+            perfTreynor.textContent = formatNumber(performanceData.relative_metrics.treynor_ratio);
+            perfInfoRatio.textContent = formatNumber(performanceData.relative_metrics.information_ratio);
+            
+            addColorClass(perfAlpha, performanceData.relative_metrics.alpha);
+            addColorClass(perfTreynor, performanceData.relative_metrics.treynor_ratio);
+            addColorClass(perfInfoRatio, performanceData.relative_metrics.information_ratio);
+        }
+        
+        // Period Information
+        if (performanceData.period_info) {
+            const perfPeriodInfo = document.getElementById('perf-period-info');
+            perfPeriodInfo.textContent = `${ticker} from ${startYear} to ${endYear} (${performanceData.period_info.num_years.toFixed(1)} years, ${performanceData.period_info.num_observations} observations)`;
+        }
+    }
+    
     function updateAnalysis() {
-        const etf = document.getElementById('etfSelect').value;
+        const ticker = tickerInput.value.trim().toUpperCase();
         const period = document.getElementById('periodSelect').value;
         const startYear = document.getElementById('startYear').value;
         const endYear = document.getElementById('endYear').value;
+        
+        if (!ticker) {
+            tickerError.textContent = 'Please enter a ticker symbol';
+            tickerError.style.display = 'block';
+            return;
+        }
+        
+        if (!isValidTicker) {
+            tickerError.textContent = 'Please validate the ticker symbol first';
+            tickerError.style.display = 'block';
+            return;
+        }
         
         // Show loading spinner
         document.getElementById('loadingSpinner').style.display = 'block';
@@ -224,12 +731,12 @@
         document.getElementById('heatmapContainer').style.display = 'none';
         document.getElementById('instructions').style.display = 'none';
         document.getElementById('statsContainer').style.display = 'none';
-        document.getElementById('comparisonContainer').style.display = 'none';
+        document.getElementById('performanceContainer').style.display = 'none';
         document.getElementById('downloadSection').style.display = 'none';
         
         // Prepare request data
         const requestData = {
-            etf: etf,
+            ticker: ticker,
             period: period,
             start_year: startYear,
             end_year: endYear
@@ -258,6 +765,22 @@
                 document.getElementById('endYearDisplay').textContent = data.available_years.max;
             }
             
+            // Clear any previous adjustment messages
+            const existingAdjustmentAlerts = document.querySelectorAll('.alert-info.adjustment-alert');
+            existingAdjustmentAlerts.forEach(alert => alert.remove());
+            
+            // Show adjustment message if date range was auto-adjusted
+            if (data.date_adjusted && data.adjustment_message) {
+                const alertDiv = document.createElement('div');
+                alertDiv.className = 'alert alert-info alert-dismissible fade show adjustment-alert';
+                alertDiv.role = 'alert';
+                alertDiv.innerHTML = `
+                    <strong>📅 Date Range Adjusted:</strong> ${data.adjustment_message}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                `;
+                document.getElementById('errorAlert').parentNode.insertBefore(alertDiv, document.getElementById('errorAlert').nextSibling);
+            }
+            
             // Hide loading spinner
             document.getElementById('loadingSpinner').style.display = 'none';
             
@@ -265,7 +788,7 @@
             document.getElementById('heatmapContainer').style.display = 'block';
             document.getElementById('instructions').style.display = 'block';
             document.getElementById('statsContainer').style.display = 'flex';
-            document.getElementById('comparisonContainer').style.display = 'block';
+            document.getElementById('performanceContainer').style.display = 'block';
             document.getElementById('downloadSection').style.display = 'block';
             
             // Render heatmap
@@ -295,20 +818,10 @@
                 document.getElementById('fullPeriodCAGRLabel').textContent = `${data.stats.full_period_cagr.years}-Year CAGR (${data.stats.full_period_cagr.start}-${data.stats.full_period_cagr.end})`;
             }
             
-            // Update comparison table
-            const comparisonBody = document.getElementById('comparisonBody');
-            const comparisonHeader = document.getElementById('comparisonHeader');
-            comparisonHeader.textContent = `CAGR ${startYear}-${endYear} (%)`;
-            
-            comparisonBody.innerHTML = '';
-            const sortedComparison = Object.entries(data.comparison)
-                .sort((a, b) => b[1] - a[1]);
-                
-            sortedComparison.forEach(([etf, cagr]) => {
-                const row = comparisonBody.insertRow();
-                row.insertCell(0).textContent = etf;
-                row.insertCell(1).textContent = cagr.toFixed(2) + '%';
-            });
+            // Update performance overview
+            if (data.performance_overview) {
+                updatePerformanceOverview(data.performance_overview, ticker, startYear, endYear);
+            }
         })
         .catch(error => {
             document.getElementById('loadingSpinner').style.display = 'none';
@@ -318,12 +831,17 @@
     }
     
     function downloadMatrix() {
-        const etf = document.getElementById('etfSelect').value;
+        const ticker = tickerInput.value.trim().toUpperCase();
         const startYear = document.getElementById('startYear').value;
         const endYear = document.getElementById('endYear').value;
         
+        if (!ticker || !isValidTicker) {
+            alert('Please enter and validate a ticker symbol first');
+            return;
+        }
+        
         const requestData = {
-            etf: etf,
+            ticker: ticker,
             start_year: startYear,
             end_year: endYear
         };
@@ -341,7 +859,7 @@
             const url = window.URL.createObjectURL(blob);
             const a = document.createElement('a');
             a.href = url;
-            a.download = `PearsonCreek_${etf}_CAGR_Matrix_${startYear}_${endYear}.csv`;
+            a.download = `PearsonCreek_${ticker}_CAGR_Matrix_${startYear}_${endYear}.csv`;
             document.body.appendChild(a);
             a.click();
             window.URL.revokeObjectURL(url);
@@ -350,12 +868,22 @@
     }
     
     function downloadReturns() {
+        const ticker = tickerInput.value.trim().toUpperCase();
         const startYear = document.getElementById('startYear').value;
         const endYear = document.getElementById('endYear').value;
         
+        if (!ticker || !isValidTicker) {
+            alert('Please enter and validate a ticker symbol first');
+            return;
+        }
+        
+        // Use current ticker for download
+        const tickers = [ticker];
+        
         const requestData = {
             start_year: startYear,
-            end_year: endYear
+            end_year: endYear,
+            tickers: tickers.length > 0 ? tickers : [ticker]
         };
         
         fetch('/api/download-returns/', {

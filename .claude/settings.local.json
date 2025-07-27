@@ -12,7 +12,9 @@
       "WebFetch(domain:docs.anthropic.com)",
       "WebFetch(domain:financialmodelingprep.com)",
       "WebFetch(domain:site.financialmodelingprep.com)",
-      "Bash(python:*)"
+      "Bash(python:*)",
+      "Bash(ls:*)",
+      "Bash(find:*)"
     ],
     "deny": []
   }
