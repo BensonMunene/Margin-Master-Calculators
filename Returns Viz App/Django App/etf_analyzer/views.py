@@ -1,6 +1,6 @@
 from django.shortcuts import render
 from django.http import JsonResponse, HttpResponse
-from django.views.decorators.csrf import csrf_exempt
+from django.views.decorators.csrf import csrf_exempt, ensure_csrf_cookie
 import json
 import pandas as pd
 import numpy as np
@@ -12,6 +12,7 @@ import io
 from django.conf import settings
 
 
+@ensure_csrf_cookie
 def index(request):
     """Main view for the ETF CAGR Analysis dashboard"""
     context = {
