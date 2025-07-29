@@ -1,0 +1,3 @@
+# Ignore password files
+.htpasswd
+*.htpasswd
