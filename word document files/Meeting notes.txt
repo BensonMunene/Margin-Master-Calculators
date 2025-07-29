@@ -1,0 +1,2 @@
+Total returns with dividends
+Fix hover over Margin cushion over time plot

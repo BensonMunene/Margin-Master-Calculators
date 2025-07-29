@@ -14,70 +14,59 @@ import cushion_analysis
 from fmp_data_provider import fmp_provider
 
 def prepare_backtest_data(etf: str, start_date: str, end_date: str, 
-                         excel_data: pd.DataFrame = None,
                          prices_df: pd.DataFrame = None, 
                          dividends_df: pd.DataFrame = None, 
                          fed_funds_df: pd.DataFrame = None) -> pd.DataFrame:
     """
-    Prepare data for backtesting, supporting both Excel and FMP API data sources
+    Prepare data for backtesting using FMP API data sources
     Returns data in the expected format for existing backtest functions
     """
-    if excel_data is not None:
-        # Use existing Excel data logic
-        data = excel_data.loc[start_date:end_date].copy()
-        if etf == 'SPY':
-            price_col, dividend_col = 'SPY', 'SPY_Dividends'
-        else:
-            price_col, dividend_col = 'VTI', 'VTI_Dividends'
-        return data.dropna(subset=[price_col, 'FedFunds (%)'])
+    # Use FMP API data - convert to Excel format
+    if prices_df is None or prices_df.empty:
+        return pd.DataFrame()
     
+    # Start with price data
+    data = prices_df.copy()
+    
+    # Add ETF price column (using Close price)
+    data[etf] = data['Close']
+    
+    # Add dividend column
+    data[f'{etf}_Dividends'] = 0.0  # Initialize with zeros
+    if dividends_df is not None and not dividends_df.empty:
+        # Merge dividend data
+        dividend_data = dividends_df.copy()
+        # Align dates and merge
+        for div_date, div_amount in dividend_data.iterrows():
+            if div_date in data.index:
+                data.loc[div_date, f'{etf}_Dividends'] = div_amount['Dividends']
+    
+    # Add Fed Funds data from FMP API
+    if fed_funds_df is not None and not fed_funds_df.empty:
+        # Merge fed funds data using forward fill for missing dates
+        fed_data = fed_funds_df.copy()
+        # Use update to avoid column overlap issues
+        for date_idx in data.index:
+            if date_idx in fed_data.index:
+                data.loc[date_idx, 'FedFunds (%)'] = fed_data.loc[date_idx, 'FedFunds (%)']
+                data.loc[date_idx, 'FedFunds + 1.5%'] = fed_data.loc[date_idx, 'FedFunds + 1.5%']
+        
+        # Forward fill missing values
+        data['FedFunds (%)'] = data.get('FedFunds (%)', 0.0)
+        data['FedFunds + 1.5%'] = data.get('FedFunds + 1.5%', 1.5)
+        data['FedFunds (%)'] = pd.to_numeric(data['FedFunds (%)'], errors='coerce').fillna(method='ffill').fillna(0.0)
+        data['FedFunds + 1.5%'] = pd.to_numeric(data['FedFunds + 1.5%'], errors='coerce').fillna(method='ffill').fillna(1.5)
     else:
-        # Use FMP API data - convert to Excel format
-        if prices_df is None or prices_df.empty:
-            return pd.DataFrame()
-        
-        # Start with price data
-        data = prices_df.copy()
-        
-        # Add ETF price column (using Close price)
-        data[etf] = data['Close']
-        
-        # Add dividend column
-        data[f'{etf}_Dividends'] = 0.0  # Initialize with zeros
-        if dividends_df is not None and not dividends_df.empty:
-            # Merge dividend data
-            dividend_data = dividends_df.copy()
-            # Align dates and merge
-            for div_date, div_amount in dividend_data.iterrows():
-                if div_date in data.index:
-                    data.loc[div_date, f'{etf}_Dividends'] = div_amount['Dividends']
-        
-        # Add Fed Funds data
-        if fed_funds_df is not None and not fed_funds_df.empty:
-            # Merge fed funds data using forward fill for missing dates
-            fed_data = fed_funds_df.copy()
-            # Use update to avoid column overlap issues
-            for date_idx in data.index:
-                if date_idx in fed_data.index:
-                    data.loc[date_idx, 'FedFunds (%)'] = fed_data.loc[date_idx, 'FedFunds (%)']
-                    data.loc[date_idx, 'FedFunds + 1.5%'] = fed_data.loc[date_idx, 'FedFunds + 1.5%']
-            
-            # Forward fill missing values
-            data['FedFunds (%)'] = data.get('FedFunds (%)', 0.0)
-            data['FedFunds + 1.5%'] = data.get('FedFunds + 1.5%', 1.5)
-            data['FedFunds (%)'] = pd.to_numeric(data['FedFunds (%)'], errors='coerce').fillna(method='ffill').fillna(0.0)
-            data['FedFunds + 1.5%'] = pd.to_numeric(data['FedFunds + 1.5%'], errors='coerce').fillna(method='ffill').fillna(1.5)
-        else:
-            # Default values if no fed funds data
-            data['FedFunds (%)'] = 0.0
-            data['FedFunds + 1.5%'] = 1.5
-        
-        # Filter by date range
-        start_dt = pd.to_datetime(start_date)
-        end_dt = pd.to_datetime(end_date)
-        data = data[(data.index >= start_dt) & (data.index <= end_dt)]
-        
-        return data.dropna(subset=[etf, 'FedFunds (%)'])
+        # Default values if no fed funds data
+        data['FedFunds (%)'] = 0.0
+        data['FedFunds + 1.5%'] = 1.5
+    
+    # Filter by date range
+    start_dt = pd.to_datetime(start_date)
+    end_dt = pd.to_datetime(end_date)
+    data = data[(data.index >= start_dt) & (data.index <= end_dt)]
+    
+    return data.dropna(subset=[etf, 'FedFunds (%)'])
 
 # Parameter sweep import (optional)
 try:
@@ -86,36 +75,7 @@ except ImportError:
     parameter_sweep = None
 
 # Cache data loading for performance
-@st.cache_data(ttl=3600)
-def load_comprehensive_data():
-    """Load ALL required data from ONLY the ETFs and Fed Funds Data.xlsx file"""
-    try:
-        # Define directory paths
-        local_dir = r"D:\Benson\aUpWork\Ben Ruff\Implementation\Data"
-        github_dir = "Data"
-        
-        # Choose which directory to use (True for local, False for GitHub)
-        use_local = True
-        data_dir = local_dir if use_local else github_dir
-        
-        # Load ONLY the Excel file - it contains everything we need
-        excel_path = f"{data_dir}/ETFs and Fed Funds Data.xlsx"
-        excel_data = pd.read_excel(excel_path)
-        
-        # Process the Excel data
-        excel_data['Date'] = pd.to_datetime(excel_data['Unnamed: 0'])
-        excel_data.set_index('Date', inplace=True)
-        excel_data = excel_data.drop('Unnamed: 0', axis=1)
-        
-        # The Excel file contains everything: SPY, VTI, dividends, and Fed Funds
-        # No need for separate CSV files
-        return excel_data, None, None, None, None
-        
-    except Exception as e:
-        st.error(f"Error loading data: {e}")
-        st.error("Please ensure ETFs and Fed Funds Data.xlsx is in the Data/ directory")
-        st.error("This file should contain: SPY prices, VTI prices, dividends, and Fed Funds rates")
-        return None, None, None, None, None
+# Data loading function removed - all data now fetched from FMP API
 
 @st.cache_data
 def calculate_margin_params(account_type: str, leverage: float) -> Dict[str, float]:
@@ -141,7 +101,6 @@ def run_liquidation_reentry_backtest(
     initial_investment: float,
     leverage: float,
     account_type: str,
-    excel_data: pd.DataFrame = None,
     prices_df: pd.DataFrame = None,
     dividends_df: pd.DataFrame = None,
     fed_funds_df: pd.DataFrame = None
@@ -162,8 +121,8 @@ def run_liquidation_reentry_backtest(
     # Get margin parameters
     margin_params = calculate_margin_params(account_type, leverage)
     
-    # Prepare data using helper function (supports both Excel and FMP data)
-    data = prepare_backtest_data(etf, start_date, end_date, excel_data, prices_df, dividends_df, fed_funds_df)
+    # Prepare data using helper function (FMP API data)
+    data = prepare_backtest_data(etf, start_date, end_date, prices_df, dividends_df, fed_funds_df)
     price_col, dividend_col = etf, f'{etf}_Dividends'
     
     if len(data) < 10:
@@ -539,24 +498,7 @@ def run_liquidation_reentry_backtest(
     
     return df_results, metrics, round_analysis
 
-@st.cache_data
-def run_historical_backtest(
-    etf: str,
-    start_date: str,
-    initial_investment: float,
-    leverage: float,
-    account_type: str,
-    excel_data: pd.DataFrame
-) -> Tuple[pd.DataFrame, Dict[str, float]]:
-    """
-    Run comprehensive historical backtest with realistic margin calculations
-    """
-    
-    # Get margin parameters
-    margin_params = calculate_margin_params(account_type, leverage)
-    
-    # Filter data for selected date range and ETF
-    data = excel_data.loc[start_date:].copy()
+# run_historical_backtest function removed - Excel data dependency eliminated
     
     if etf == 'SPY':
         price_col = 'SPY'
@@ -709,7 +651,6 @@ def run_profit_threshold_backtest(
     initial_investment: float,
     target_leverage: float,
     account_type: str,
-    excel_data: pd.DataFrame = None,
     profit_threshold_pct: float = 100.0,
     transaction_cost_bps: float = 5.0,
     prices_df: pd.DataFrame = None,
@@ -746,8 +687,8 @@ def run_profit_threshold_backtest(
     # Get margin parameters
     margin_params = calculate_margin_params(account_type, target_leverage)
     
-    # Prepare data using helper function (supports both Excel and FMP data)
-    data = prepare_backtest_data(etf, start_date, end_date, excel_data, prices_df, dividends_df, fed_funds_df)
+    # Prepare data using helper function (FMP API data)
+    data = prepare_backtest_data(etf, start_date, end_date, prices_df, dividends_df, fed_funds_df)
     price_col, dividend_col = etf, f'{etf}_Dividends'
     
     if len(data) < 10:
@@ -1160,7 +1101,6 @@ def run_margin_restart_backtest(
     initial_investment: float,
     leverage: float,
     account_type: str,
-    excel_data: pd.DataFrame = None,
     prices_df: pd.DataFrame = None,
     dividends_df: pd.DataFrame = None,
     fed_funds_df: pd.DataFrame = None
@@ -1174,8 +1114,8 @@ def run_margin_restart_backtest(
     # Get margin parameters
     margin_params = calculate_margin_params(account_type, leverage)
     
-    # Prepare data using helper function (supports both Excel and FMP data)
-    data = prepare_backtest_data(etf, start_date, end_date, excel_data, prices_df, dividends_df, fed_funds_df)
+    # Prepare data using helper function (FMP API data)
+    data = prepare_backtest_data(etf, start_date, end_date, prices_df, dividends_df, fed_funds_df)
     price_col, dividend_col = etf, f'{etf}_Dividends'
     
     if len(data) < 10:
@@ -2528,14 +2468,9 @@ def render_historical_backtest_tab():
     </div>
     """, unsafe_allow_html=True)
     
-    # Load data
-    excel_data, _, _, _, _ = load_comprehensive_data()
+    # All data is now fetched from FMP API - no local file dependency
+    # Fed Funds rate will be simulated or fetched from alternative source if needed
     
-    if excel_data is None:
-        st.error("DATA LOAD FAILURE: ETFs and Fed Funds Data.xlsx not found or corrupted")
-        return
-    
-
     
     # Backtest mode selection
     st.markdown("<h2>BACKTEST MODE SELECTION</h2>", unsafe_allow_html=True)
@@ -3269,7 +3204,7 @@ def render_historical_backtest_tab():
                     initial_investment=initial_investment,
                     target_leverage=leverage,
                     account_type=account_type,
-                    excel_data=None,  # Will use FMP data instead
+                                                # FMP API data will be fetched automatically
                     profit_threshold_pct=profit_threshold_pct,
                     transaction_cost_bps=transaction_cost_bps,
                     prices_df=prices_df,
@@ -3492,7 +3427,6 @@ def render_historical_backtest_tab():
                     initial_investment=initial_investment,
                     leverage=leverage,
                     account_type=account_type,
-                    excel_data=None,
                     prices_df=prices_df,
                     dividends_df=dividends_df,
                     fed_funds_df=fed_funds_df
@@ -3809,7 +3743,6 @@ def render_historical_backtest_tab():
                     initial_investment=initial_investment,
                     leverage=leverage,
                     account_type=account_type,
-                    excel_data=None,
                     prices_df=prices_df,
                     dividends_df=dividends_df,
                     fed_funds_df=fed_funds_df
