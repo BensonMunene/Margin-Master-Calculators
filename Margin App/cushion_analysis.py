@@ -214,11 +214,25 @@ def create_cushion_analytics_dashboard(df_results: pd.DataFrame, metrics: Dict[s
             row=1, col=1
         )
         
-        # Create colored segments for different risk zones
+        # Create main cushion line with single hover information
         cushion_data = active_positions['Cushion_Percentage']
         dates = active_positions.index
         
-        # Create continuous colored segments
+        # Add main cushion line with consolidated hover info
+        fig.add_trace(
+            go.Scatter(
+                x=dates,
+                y=cushion_data,
+                mode='lines',
+                name='Margin Cushion %',
+                showlegend=True,
+                line=dict(color=primary_line_color, width=3),
+                hovertemplate='Date: %{x}<br>Cushion: %{y:.1f}%<extra></extra>'
+            ),
+            row=1, col=1
+        )
+        
+        # Create colored segments for visual zones (no hover info to avoid duplication)
         for i in range(len(cushion_data)):
             if i == 0:
                 continue  # Skip first point as we need pairs for segments
@@ -232,29 +246,25 @@ def create_cushion_analytics_dashboard(df_results: pd.DataFrame, metrics: Dict[s
             # Determine color based on the current cushion level
             if curr_cushion >= 50:
                 color = safe_color
-                zone_name = 'Safe Zone'
             elif curr_cushion >= 20:
                 color = caution_color
-                zone_name = 'Caution Zone'
             elif curr_cushion >= 5:
                 color = warning_color
-                zone_name = 'Warning Zone'
             else:
                 color = critical_color
-                zone_name = 'Critical Zone'
             
-            # Add line segment
+            # Add background colored segment (no hover to avoid duplication)
             fig.add_trace(
                 go.Scatter(
                     x=[prev_date, curr_date],
                     y=[prev_cushion, curr_cushion],
                     mode='lines',
-                    name='Margin Cushion %' if i == 1 else None,  # Only show name for first segment
-                    showlegend=True if i == 1 else False,  # Only show in legend once
-                    line=dict(color=color, width=3),
+                    name=None,  # No name to avoid legend clutter
+                    showlegend=False,  # No legend entry
+                    line=dict(color=color, width=1),
                     fill='tozeroy',  # Fill area below the line
                     fillcolor=f'rgba({int(color[1:3], 16)}, {int(color[3:5], 16)}, {int(color[5:7], 16)}, 0.05)',  # Very light transparent fill
-                    hovertemplate=f'{zone_name}<br>Date: %{{x}}<br>Cushion: %{{y:.1f}}%<extra></extra>'
+                    hoverinfo='skip'  # Skip hover to avoid duplication
                 ),
                 row=1, col=1
             )
