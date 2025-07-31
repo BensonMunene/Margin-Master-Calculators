@@ -45,9 +45,10 @@ jobs:
           # Use rsync with --no-group and --no-perms to avoid permission issues
           rsync -avz --no-group --no-perms -e "ssh -i ~/.ssh/marginapp.pem" --exclude="__pycache__" --exclude="*.pyc" --exclude=".terraform" ./ ec2-user@margin-ec2:/home/ec2-user/Margin-Master-Calculators/Margin\ App/
           
+          # Deploy with Docker
           ssh -i ~/.ssh/marginapp.pem ec2-user@margin-ec2 << 'ENDSSH'
             cd /home/ec2-user/Margin-Master-Calculators/Margin\ App
             docker-compose down
             docker-compose up -d --build
             echo "Deployment completed at $(date)"
-          ENDSSH 
+          ENDSSH
