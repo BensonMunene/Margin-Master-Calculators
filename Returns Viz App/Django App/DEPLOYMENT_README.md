@@ -403,4 +403,4 @@ For issues or questions:
 ---
 
 **Last Updated**: January 2025
-**Version**: 1.0
+**Version**: 1.0.
