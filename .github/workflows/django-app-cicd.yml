@@ -48,10 +48,11 @@ jobs:
       - name: Deploy to EC2
         run: |
           cd "Returns Viz App/Django App"
-          # Fix permissions on EC2 first
+          # Install rsync and create directory structure on EC2
           ssh -i ~/.ssh/marginapp.pem ec2-user@django-ec2 << 'ENDSSH'
-            sudo chown -R ec2-user:ec2-user /home/ec2-user/etf-returns-viz/
+            sudo yum install -y rsync
             mkdir -p /home/ec2-user/etf-returns-viz/Returns\ Viz\ App/Django\ App
+            sudo chown -R ec2-user:ec2-user /home/ec2-user/etf-returns-viz/
           ENDSSH
           
           # Use rsync with --no-group and --no-perms to avoid permission issues
