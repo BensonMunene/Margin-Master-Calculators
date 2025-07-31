@@ -138,4 +138,4 @@ After SSL setup:
 - ✅ Created requirements.txt for container
 - ✅ Set up basic HTTP authentication
 - ✅ Configured for us-east-1 region
-- ✅ Minimal Terraform with t2.micro instance.
+- ✅ Minimal Terraform with t2.micro instance

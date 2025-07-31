@@ -36,7 +36,14 @@ jobs:
       - name: Deploy to EC2
         run: |
           cd "Margin App"
-          rsync -avz -e "ssh -i ~/.ssh/marginapp.pem" --exclude="__pycache__" --exclude="*.pyc" ./ ec2-user@margin-ec2:/home/ec2-user/Margin-Master-Calculators/Margin\ App/
+          # Fix permissions on EC2 first
+          ssh -i ~/.ssh/marginapp.pem ec2-user@margin-ec2 << 'ENDSSH'
+            sudo chown -R ec2-user:ec2-user /home/ec2-user/Margin-Master-Calculators/
+            mkdir -p /home/ec2-user/Margin-Master-Calculators/Margin\ App
+          ENDSSH
+          
+          # Use rsync with --no-group and --no-perms to avoid permission issues
+          rsync -avz --no-group --no-perms -e "ssh -i ~/.ssh/marginapp.pem" --exclude="__pycache__" --exclude="*.pyc" --exclude=".terraform" ./ ec2-user@margin-ec2:/home/ec2-user/Margin-Master-Calculators/Margin\ App/
           
           ssh -i ~/.ssh/marginapp.pem ec2-user@margin-ec2 << 'ENDSSH'
             cd /home/ec2-user/Margin-Master-Calculators/Margin\ App
