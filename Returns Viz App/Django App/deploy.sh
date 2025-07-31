@@ -11,10 +11,6 @@ if [ ! -f /sys/hypervisor/uuid ] || [ `head -c 3 /sys/hypervisor/uuid` != "ec2" 
     echo "Warning: This script is designed to run on an EC2 instance"
 fi
 
-# Configuration
-APP_DIR="/home/ec2-user/etf-returns-viz"
-REPO_URL="${REPO_URL:-}"
-
 # Function to check if command exists
 command_exists() {
     command -v "$1" >/dev/null 2>&1
@@ -32,35 +28,8 @@ if ! command_exists docker-compose; then
     exit 1
 fi
 
-if ! command_exists git; then
-    echo "Error: Git is not installed"
-    exit 1
-fi
-
-# Clone or update repository
-if [ -n "$REPO_URL" ]; then
-    echo "Setting up application from repository..."
-    if [ -d "$APP_DIR" ]; then
-        echo "Updating existing repository..."
-        cd "$APP_DIR"
-        git pull
-    else
-        echo "Cloning repository..."
-        git clone "$REPO_URL" "$APP_DIR"
-        cd "$APP_DIR"
-    fi
-    
-    # Navigate to Django app directory
-    cd "Returns Viz App/Django App"
-else
-    echo "No repository URL provided. Assuming code is already in place."
-    if [ ! -d "$APP_DIR" ]; then
-        echo "Error: Application directory not found at $APP_DIR"
-        echo "Please clone the repository manually or provide REPO_URL"
-        exit 1
-    fi
-    cd "$APP_DIR"
-fi
+# We're already in the correct directory from the CI/CD pipeline
+echo "Working directory: $(pwd)"
 
 # Create necessary directories
 echo "Creating necessary directories..."
@@ -87,12 +56,6 @@ if [ ! -f .env ]; then
     else
         echo "WARNING: No .env file found and no .env.example to copy from!"
     fi
-fi
-
-# Copy data files if they exist
-if [ -d "../../Data" ]; then
-    echo "Copying data files..."
-    cp -r ../../Data/* Data/ 2>/dev/null || true
 fi
 
 # Stop existing containers

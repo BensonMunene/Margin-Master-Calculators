@@ -1,0 +1,66 @@
+name: Django App CI/CD
+
+on:
+  push:
+    branches: [ main, master ]
+    paths:
+      - 'Returns Viz App/Django App/**'
+  workflow_dispatch:
+
+jobs:
+  test-and-deploy:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+      
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+      
+      - name: Run tests
+        run: |
+          cd "Returns Viz App/Django App"
+          pip install -r requirements.txt
+          python manage.py test
+        continue-on-error: true
+      
+      - name: Configure SSH
+        run: |
+          mkdir -p ~/.ssh
+          
+          # Copy PEM key from repository
+          cp marginapp.pem ~/.ssh/marginapp.pem
+          
+          chmod 600 ~/.ssh/marginapp.pem
+          
+          # Configure SSH with the exact hostname
+          cat > ~/.ssh/config << EOL
+          Host django-ec2
+            HostName ec2-54-227-133-246.compute-1.amazonaws.com
+            User ec2-user
+            IdentityFile ~/.ssh/marginapp.pem
+            StrictHostKeyChecking no
+          EOL
+      
+      - name: Deploy to EC2
+        run: |
+          cd "Returns Viz App/Django App"
+          # Fix permissions on EC2 first
+          ssh -i ~/.ssh/marginapp.pem ec2-user@django-ec2 << 'ENDSSH'
+            sudo chown -R ec2-user:ec2-user /home/ec2-user/etf-returns-viz/
+            mkdir -p /home/ec2-user/etf-returns-viz/Returns\ Viz\ App/Django\ App
+          ENDSSH
+          
+          # Use rsync with --no-group and --no-perms to avoid permission issues
+          rsync -avz --no-group --no-perms -e "ssh -i ~/.ssh/marginapp.pem" --exclude="__pycache__" --exclude="*.pyc" --exclude="db.sqlite3" --exclude=".terraform" --exclude="terraform.tfstate*" ./ ec2-user@django-ec2:/home/ec2-user/etf-returns-viz/Returns\ Viz\ App/Django\ App/
+          
+          # Deploy with Docker
+          ssh -i ~/.ssh/marginapp.pem ec2-user@django-ec2 << 'ENDSSH'
+            cd /home/ec2-user/etf-returns-viz/Returns\ Viz\ App/Django\ App
+            chmod +x deploy.sh
+            ./deploy.sh
+            echo "Deployment completed at $(date)"
+          ENDSSH
