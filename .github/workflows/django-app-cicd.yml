@@ -48,7 +48,7 @@ jobs:
       - name: Deploy to EC2
         run: |
           cd "Returns Viz App/Django App"
-          # Install rsync and create directory structure on EC2
+          # Fix permissions on EC2 first
           ssh -i ~/.ssh/marginapp.pem ec2-user@django-ec2 << 'ENDSSH'
             sudo yum install -y rsync
             mkdir -p /home/ec2-user/etf-returns-viz/Returns\ Viz\ App/Django\ App
@@ -58,10 +58,20 @@ jobs:
           # Use rsync with --no-group and --no-perms to avoid permission issues
           rsync -avz --no-group --no-perms -e "ssh -i ~/.ssh/marginapp.pem" --exclude="__pycache__" --exclude="*.pyc" --exclude="db.sqlite3" --exclude=".terraform" --exclude="terraform.tfstate*" ./ ec2-user@django-ec2:/home/ec2-user/etf-returns-viz/Returns\ Viz\ App/Django\ App/
           
-          # Deploy with Docker
+          # Deploy with Docker directly (no deploy.sh)
           ssh -i ~/.ssh/marginapp.pem ec2-user@django-ec2 << 'ENDSSH'
             cd /home/ec2-user/etf-returns-viz/Returns\ Viz\ App/Django\ App
-            chmod +x deploy.sh
-            ./deploy.sh
+            
+            # Create necessary directories
+            mkdir -p auth ssl Data
+            
+            # Check if .htpasswd exists
+            if [ ! -f auth/.htpasswd ]; then
+              echo "WARNING: No .htpasswd file found! Create with: htpasswd -c auth/.htpasswd username"
+            fi
+            
+            # Stop and rebuild containers
+            docker-compose down
+            docker-compose up -d --build
             echo "Deployment completed at $(date)"
           ENDSSH
