@@ -4,7 +4,7 @@ from django.views.decorators.csrf import csrf_exempt, ensure_csrf_cookie
 import json
 import pandas as pd
 import numpy as np
-from .utils import create_cagr_matrix, create_cagr_heatmap
+from .utils import create_cagr_matrix, create_total_return_matrix, create_cagr_heatmap
 from .fmp_api import FMPDataProvider
 from .performance_metrics import calculate_performance_metrics
 import plotly.io as pio
@@ -71,6 +71,7 @@ def get_data(request):
             ticker = data.get('ticker', '').strip().upper()
             start_year = int(data.get('start_year'))
             end_year = int(data.get('end_year'))
+            matrix_type = data.get('matrix_type', 'CAGR')  # Default to CAGR
             
             if not ticker:
                 return JsonResponse({'error': 'Please enter a ticker symbol'}, status=400)
@@ -133,7 +134,7 @@ def get_data(request):
                     'error': f'No data available for {ticker}'
                 }, status=400)
             
-            # Generate CAGR matrix
+            # Generate matrix based on type
             # Ensure annual_returns is a Series with integer year index
             if isinstance(annual_returns, pd.Series):
                 # Make sure index is integer type
@@ -145,15 +146,18 @@ def get_data(request):
             else:
                 return JsonResponse({'error': 'Invalid returns data structure'}, status=500)
                 
-            cagr_matrix = create_cagr_matrix(annual_returns, actual_start_year, actual_end_year)
+            if matrix_type == 'Total Return':
+                matrix = create_total_return_matrix(annual_returns, actual_start_year, actual_end_year)
+            else:
+                matrix = create_cagr_matrix(annual_returns, actual_start_year, actual_end_year)
             
             # Create heatmap
-            heatmap_fig = create_cagr_heatmap(cagr_matrix, ticker, actual_start_year, actual_end_year)
+            heatmap_fig = create_cagr_heatmap(matrix, ticker, actual_start_year, actual_end_year, matrix_type)
             heatmap_json = pio.to_json(heatmap_fig)
             
             # Calculate statistics
-            single_year_data = {year: cagr_matrix.loc[year, year] for year in cagr_matrix.index 
-                               if not pd.isna(cagr_matrix.loc[year, year])}
+            single_year_data = {year: matrix.loc[year, year] for year in matrix.index 
+                               if not pd.isna(matrix.loc[year, year])}
             
             stats = {}
             if single_year_data:
@@ -165,26 +169,28 @@ def get_data(request):
                 stats['best_single_year'] = {'value': best_year_value, 'year': best_year}
                 stats['worst_single_year'] = {'value': worst_year_value, 'year': worst_year}
             
-            # 10-year CAGR if available
+            # 10-year metric if available
             if end_year - 9 >= start_year:
                 ten_year_start = end_year - 9
-                if ten_year_start in cagr_matrix.index:
-                    ten_year_cagr = cagr_matrix.loc[end_year, ten_year_start]
-                    stats['ten_year_cagr'] = {
-                        'value': ten_year_cagr,
+                if ten_year_start in matrix.index:
+                    ten_year_value = matrix.loc[end_year, ten_year_start]
+                    stats['ten_year_metric'] = {
+                        'value': ten_year_value,
                         'start': ten_year_start,
-                        'end': end_year
+                        'end': end_year,
+                        'type': matrix_type
                     }
             
-            # Full period CAGR
-            if start_year in cagr_matrix.index and end_year in cagr_matrix.index:
-                full_period_cagr = cagr_matrix.loc[end_year, start_year]
+            # Full period metric
+            if start_year in matrix.index and end_year in matrix.index:
+                full_period_value = matrix.loc[end_year, start_year]
                 period_years = end_year - start_year + 1
-                stats['full_period_cagr'] = {
-                    'value': full_period_cagr,
+                stats['full_period_metric'] = {
+                    'value': full_period_value,
                     'years': period_years,
                     'start': start_year,
-                    'end': end_year
+                    'end': end_year,
+                    'type': matrix_type
                 }
             
             # Calculate comprehensive performance metrics
@@ -309,13 +315,14 @@ def get_data(request):
 
 
 def download_matrix(request):
-    """Download CAGR matrix as CSV"""
+    """Download matrix as CSV"""
     if request.method == 'POST':
         try:
             data = json.loads(request.body)
             ticker = data.get('ticker', '').strip().upper()
             start_year = int(data.get('start_year'))
             end_year = int(data.get('end_year'))
+            matrix_type = data.get('matrix_type', 'CAGR')  # Default to CAGR
             
             if not ticker:
                 return JsonResponse({'error': 'Please provide a ticker symbol'}, status=400)
@@ -330,15 +337,19 @@ def download_matrix(request):
             if not pd.api.types.is_integer_dtype(annual_returns.index):
                 annual_returns.index = annual_returns.index.astype(int)
                 
-            cagr_matrix = create_cagr_matrix(annual_returns, start_year, end_year)
+            if matrix_type == 'Total Return':
+                matrix = create_total_return_matrix(annual_returns, start_year, end_year)
+            else:
+                matrix = create_cagr_matrix(annual_returns, start_year, end_year)
             
             # Convert to CSV
-            display_matrix = cagr_matrix.round(2).fillna('')
+            display_matrix = matrix.round(2).fillna('')
             display_matrix_reversed = display_matrix.iloc[::-1]
             
             # Create CSV response
             response = HttpResponse(content_type='text/csv')
-            response['Content-Disposition'] = f'attachment; filename="PearsonCreek_{ticker}_CAGR_Matrix_{start_year}_{end_year}.csv"'
+            matrix_name = matrix_type.replace(' ', '_')
+            response['Content-Disposition'] = f'attachment; filename="PearsonCreek_{ticker}_{matrix_name}_Matrix_{start_year}_{end_year}.csv"'
             
             display_matrix_reversed.to_csv(response)
             return response

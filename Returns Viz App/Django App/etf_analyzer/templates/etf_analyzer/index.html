@@ -53,6 +53,22 @@
                 <button class="btn btn-primary" id="updateButton">Update Analysis</button>
             </div>
         </div>
+        
+        <div class="row mt-3">
+            <div class="col-12">
+                <label class="form-label">📊 Matrix Type:</label>
+                <div class="btn-group" role="group" id="matrixTypeToggle">
+                    <input type="radio" class="btn-check" name="matrixType" id="cagrRadio" value="CAGR" checked>
+                    <label class="btn btn-outline-primary" for="cagrRadio">CAGR</label>
+                    
+                    <input type="radio" class="btn-check" name="matrixType" id="totalReturnRadio" value="Total Return">
+                    <label class="btn btn-outline-primary" for="totalReturnRadio">Total Return</label>
+                </div>
+                <div class="form-text" id="matrixTypeInfo">
+                    <span id="matrixTypeDescription">CAGR shows annualized returns between periods</span>
+                </div>
+            </div>
+        </div>
     </div>
     
     <!-- Loading Spinner -->
@@ -429,6 +445,29 @@
         document.getElementById('downloadMatrix').addEventListener('click', downloadMatrix);
         document.getElementById('downloadReturns').addEventListener('click', downloadReturns);
         
+        // Matrix type toggle handlers
+        document.getElementById('cagrRadio').addEventListener('change', function() {
+            if (this.checked) {
+                document.getElementById('matrixTypeDescription').textContent = 'CAGR shows annualized returns between periods';
+                updateStatisticLabels('CAGR');
+                // Auto-update if we have valid data
+                if (isValidTicker && document.getElementById('heatmapContainer').style.display !== 'none') {
+                    updateAnalysis();
+                }
+            }
+        });
+        
+        document.getElementById('totalReturnRadio').addEventListener('change', function() {
+            if (this.checked) {
+                document.getElementById('matrixTypeDescription').textContent = 'Total Return shows cumulative returns between periods';
+                updateStatisticLabels('Total Return');
+                // Auto-update if we have valid data
+                if (isValidTicker && document.getElementById('heatmapContainer').style.display !== 'none') {
+                    updateAnalysis();
+                }
+            }
+        });
+        
         // Validate initial ticker and load data
         validateTicker();
         setTimeout(function() {
@@ -437,6 +476,21 @@
             }
         }, 1000);
     });
+    
+    function updateStatisticLabels(matrixType) {
+        // Update the instructions based on matrix type
+        const instructionsContainer = document.getElementById('instructions');
+        if (instructionsContainer) {
+            const cellDescription = instructionsContainer.querySelector('li:nth-child(3)');
+            if (cellDescription) {
+                if (matrixType === 'Total Return') {
+                    cellDescription.innerHTML = '<strong>Cell Values:</strong> Total Return percentage for that specific time period';
+                } else {
+                    cellDescription.innerHTML = '<strong>Cell Values:</strong> Compound Annual Growth Rate (CAGR) for that specific time period';
+                }
+            }
+        }
+    }
     
     function getCookie(name) {
         let cookieValue = null;
@@ -734,12 +788,16 @@
         document.getElementById('performanceContainer').style.display = 'none';
         document.getElementById('downloadSection').style.display = 'none';
         
+        // Get selected matrix type
+        const matrixType = document.querySelector('input[name="matrixType"]:checked').value;
+        
         // Prepare request data
         const requestData = {
             ticker: ticker,
             period: period,
             start_year: startYear,
-            end_year: endYear
+            end_year: endYear,
+            matrix_type: matrixType
         };
         
         // Make API request
@@ -805,17 +863,18 @@
                 document.getElementById('worstSingleYearLabel').textContent = `Worst Single Year (${data.stats.worst_single_year.year})`;
             }
             
-            if (data.stats.ten_year_cagr) {
-                document.getElementById('tenYearCAGR').textContent = data.stats.ten_year_cagr.value.toFixed(1) + '%';
-                document.getElementById('tenYearCAGRLabel').textContent = `10-Year CAGR (${data.stats.ten_year_cagr.start}-${data.stats.ten_year_cagr.end})`;
+            if (data.stats.ten_year_metric) {
+                document.getElementById('tenYearCAGR').textContent = data.stats.ten_year_metric.value.toFixed(1) + '%';
+                document.getElementById('tenYearCAGRLabel').textContent = `10-Year ${data.stats.ten_year_metric.type} (${data.stats.ten_year_metric.start}-${data.stats.ten_year_metric.end})`;
             } else {
+                const currentMatrixType = document.querySelector('input[name="matrixType"]:checked').value;
                 document.getElementById('tenYearCAGR').textContent = 'N/A';
-                document.getElementById('tenYearCAGRLabel').textContent = '10-Year CAGR';
+                document.getElementById('tenYearCAGRLabel').textContent = `10-Year ${currentMatrixType}`;
             }
             
-            if (data.stats.full_period_cagr) {
-                document.getElementById('fullPeriodCAGR').textContent = data.stats.full_period_cagr.value.toFixed(1) + '%';
-                document.getElementById('fullPeriodCAGRLabel').textContent = `${data.stats.full_period_cagr.years}-Year CAGR (${data.stats.full_period_cagr.start}-${data.stats.full_period_cagr.end})`;
+            if (data.stats.full_period_metric) {
+                document.getElementById('fullPeriodCAGR').textContent = data.stats.full_period_metric.value.toFixed(1) + '%';
+                document.getElementById('fullPeriodCAGRLabel').textContent = `${data.stats.full_period_metric.years}-Year ${data.stats.full_period_metric.type} (${data.stats.full_period_metric.start}-${data.stats.full_period_metric.end})`;
             }
             
             // Update performance overview
@@ -834,6 +893,7 @@
         const ticker = tickerInput.value.trim().toUpperCase();
         const startYear = document.getElementById('startYear').value;
         const endYear = document.getElementById('endYear').value;
+        const matrixType = document.querySelector('input[name="matrixType"]:checked').value;
         
         if (!ticker || !isValidTicker) {
             alert('Please enter and validate a ticker symbol first');
@@ -843,7 +903,8 @@
         const requestData = {
             ticker: ticker,
             start_year: startYear,
-            end_year: endYear
+            end_year: endYear,
+            matrix_type: matrixType
         };
         
         fetch('/api/download-matrix/', {
@@ -859,7 +920,8 @@
             const url = window.URL.createObjectURL(blob);
             const a = document.createElement('a');
             a.href = url;
-            a.download = `PearsonCreek_${ticker}_CAGR_Matrix_${startYear}_${endYear}.csv`;
+            const matrixName = matrixType.replace(' ', '_');
+            a.download = `PearsonCreek_${ticker}_${matrixName}_Matrix_${startYear}_${endYear}.csv`;
             document.body.appendChild(a);
             a.click();
             window.URL.revokeObjectURL(url);

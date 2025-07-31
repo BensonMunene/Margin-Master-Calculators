@@ -47,6 +47,45 @@ def create_cagr_matrix(annual_returns_series, start_year=None, end_year=None):
     return matrix
 
 
+def create_total_return_matrix(annual_returns_series, start_year=None, end_year=None):
+    """
+    Creates a matrix of Total Returns between different year ranges.
+    
+    Parameters:
+    annual_returns_series: Series with annual returns as percentages, indexed by year
+    start_year: First year to include (default: earliest year in data)
+    end_year: Last year to include (default: latest year in data)
+    
+    Returns:
+    DataFrame where columns are starting years, rows are ending years,
+    and values are total return percentages
+    """
+    returns_decimal = annual_returns_series / 100
+    
+    if start_year is None:
+        start_year = returns_decimal.index.min()
+    if end_year is None:
+        end_year = returns_decimal.index.max()
+    
+    returns_filtered = returns_decimal.loc[start_year:end_year]
+    years = returns_filtered.index.tolist()
+    
+    matrix = pd.DataFrame(index=years, columns=years, dtype=float)
+    
+    for start_yr in years:
+        for end_yr in years:
+            if end_yr >= start_yr:
+                period_returns = returns_filtered.loc[start_yr:end_yr]
+                
+                # Calculate total return: compound the returns and subtract 1
+                cumulative_return = (1 + period_returns).prod()
+                total_return = (cumulative_return - 1) * 100
+                
+                matrix.loc[end_yr, start_yr] = total_return
+    
+    return matrix
+
+
 def load_etf_data():
     """Load and process ETF data to calculate annual returns"""
     
@@ -102,7 +141,7 @@ def load_etf_data():
         raise Exception(f"Error loading data: {e}")
 
 
-def create_cagr_heatmap(matrix_data, etf_name, start_year, end_year):
+def create_cagr_heatmap(matrix_data, etf_name, start_year, end_year, matrix_type="CAGR"):
     """Create professional Plotly heatmap with excellent visibility and contrast"""
     
     display_matrix = matrix_data.iloc[::-1].copy()
@@ -157,7 +196,7 @@ def create_cagr_heatmap(matrix_data, etf_name, start_year, end_year):
         showscale=True,
         colorbar=dict(
             title=dict(
-                text="CAGR (%)",
+                text=f"{matrix_type} (%)",
                 side="right",
                 font=dict(size=14, color='#1f4e79')
             ),
@@ -170,7 +209,7 @@ def create_cagr_heatmap(matrix_data, etf_name, start_year, end_year):
             tickfont=dict(size=12, color='#1f4e79')
         ),
         hoverongaps=False,
-        hovertemplate='<b>From %{x} to %{y}</b><br>CAGR: %{z:.1f}%<extra></extra>',
+        hovertemplate=f'<b>From %{{x}} to %{{y}}</b><br>{matrix_type}: %{{z:.1f}}%<extra></extra>',
         text=display_matrix_clean.round(1),
         texttemplate='%{text}%',
         textfont=dict(size=11, color='black')
@@ -215,9 +254,13 @@ def create_cagr_heatmap(matrix_data, etf_name, start_year, end_year):
                     )
                 )
     
+    title_text = f'{etf_name} - {matrix_type} Matrix Period {start_year}-{end_year}'
+    if matrix_type == "CAGR":
+        title_text = f'{etf_name} - Compound Annual Growth Rate Matrix Period {start_year}-{end_year}'
+    
     fig.update_layout(
         title=dict(
-            text=f'{etf_name} - Compound Annual Growth Rate Matrix Period {start_year}-{end_year}',
+            text=title_text,
             x=0.5,
             xanchor='center',
             font=dict(size=20, color='#1f4e79', family='Arial'),
