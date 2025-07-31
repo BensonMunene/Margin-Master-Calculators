@@ -46,11 +46,20 @@ def validate_ticker(request):
             if is_valid:
                 # Get additional info about the ticker
                 ticker_info = fmp.get_ticker_info(ticker)
-                return JsonResponse({
+                
+                # Get available date range for Full Period functionality
+                date_range = fmp.get_available_date_range(ticker.upper())
+                
+                response_data = {
                     'valid': True,
                     'ticker': ticker.upper(),
                     'info': ticker_info
-                })
+                }
+                
+                if date_range:
+                    response_data['date_range'] = date_range
+                
+                return JsonResponse(response_data)
             else:
                 return JsonResponse({
                     'valid': False,

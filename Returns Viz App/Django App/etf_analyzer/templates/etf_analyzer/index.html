@@ -1,6 +1,112 @@
 {% extends 'etf_analyzer/base.html' %}
 
 {% block content %}
+<style>
+/* Custom Performance Card Styling */
+.performance-card-returns {
+    background: linear-gradient(135deg, #e8f5e8 0%, #f0fff0 100%);
+    border-left: 4px solid #28a745;
+    box-shadow: 0 4px 12px rgba(40, 167, 69, 0.15);
+    transition: all 0.3s ease;
+}
+
+.performance-card-returns:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(40, 167, 69, 0.25);
+}
+
+.performance-card-returns .performance-card-header {
+    color: #1e7e34;
+    background: linear-gradient(90deg, #28a745, #20c997);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+.performance-card-risk {
+    background: linear-gradient(135deg, #fff3e0 0%, #ffeaa7 100%);
+    border-left: 4px solid #ff8c00;
+    box-shadow: 0 4px 12px rgba(255, 140, 0, 0.15);
+    transition: all 0.3s ease;
+}
+
+.performance-card-risk:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(255, 140, 0, 0.25);
+}
+
+.performance-card-risk .performance-card-header {
+    color: #e65100;
+    background: linear-gradient(90deg, #ff8c00, #ff6b35);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+.performance-card-adjusted {
+    background: linear-gradient(135deg, #e3f2fd 0%, #f0f8ff 100%);
+    border-left: 4px solid #2196f3;
+    box-shadow: 0 4px 12px rgba(33, 150, 243, 0.15);
+    transition: all 0.3s ease;
+}
+
+.performance-card-adjusted:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(33, 150, 243, 0.25);
+}
+
+.performance-card-adjusted .performance-card-header {
+    color: #1565c0;
+    background: linear-gradient(90deg, #2196f3, #1e88e5);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+.performance-card-relative {
+    background: linear-gradient(135deg, #f3e5f5 0%, #faf4ff 100%);
+    border-left: 4px solid #9c27b0;
+    box-shadow: 0 4px 12px rgba(156, 39, 176, 0.15);
+    transition: all 0.3s ease;
+}
+
+.performance-card-relative:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(156, 39, 176, 0.25);
+}
+
+.performance-card-relative .performance-card-header {
+    color: #6a1b9a;
+    background: linear-gradient(90deg, #9c27b0, #8e24aa);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+/* Enhanced metric values with better contrast */
+.performance-card-returns .metric-value { color: #1e7e34; }
+.performance-card-risk .metric-value { color: #e65100; }
+.performance-card-adjusted .metric-value { color: #1565c0; }
+.performance-card-relative .metric-value { color: #6a1b9a; }
+
+/* Subtle background pattern */
+.performance-card {
+    position: relative;
+    overflow: hidden;
+}
+
+.performance-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-image: radial-gradient(circle at 20% 80%, rgba(255,255,255,0.1) 0%, transparent 50%),
+                      radial-gradient(circle at 80% 20%, rgba(255,255,255,0.1) 0%, transparent 50%);
+    pointer-events: none;
+}
+</style>
     <!-- Company Header -->
     <div class="company-header">
         <h1 class="company-name">PEARSON CREEK CAPITAL LLC</h1>
@@ -134,7 +240,7 @@
         <div class="row g-4">
             <!-- Return Metrics -->
             <div class="col-md-6">
-                <div class="performance-card">
+                <div class="performance-card performance-card-returns">
                     <h5 class="performance-card-header">📈 Return Metrics</h5>
                     <div class="performance-metrics">
                         <div class="metric-row">
@@ -163,7 +269,7 @@
 
             <!-- Risk Metrics -->
             <div class="col-md-6">
-                <div class="performance-card">
+                <div class="performance-card performance-card-risk">
                     <h5 class="performance-card-header">⚠️ Risk Metrics</h5>
                     <div class="performance-metrics">
                         <div class="metric-row">
@@ -192,7 +298,7 @@
 
             <!-- Risk-Adjusted Metrics -->
             <div class="col-md-6">
-                <div class="performance-card">
+                <div class="performance-card performance-card-adjusted">
                     <h5 class="performance-card-header">⚖️ Risk-Adjusted Returns</h5>
                     <div class="performance-metrics">
                         <div class="metric-row">
@@ -213,7 +319,7 @@
 
             <!-- Relative Metrics (vs S&P 500) -->
             <div class="col-md-6">
-                <div class="performance-card">
+                <div class="performance-card performance-card-relative">
                     <h5 class="performance-card-header">📊 Relative to S&P 500</h5>
                     <div class="performance-metrics">
                         <div class="metric-row">
@@ -424,7 +530,21 @@
                 startYearDisplay.style.display = 'block';
                 endYearDisplay.style.display = 'block';
                 
-                if (selectedPeriod !== 'Full Period') {
+                if (selectedPeriod === 'Full Period') {
+                    // Use ticker's actual date range if available
+                    if (tickerDateRange && isValidTicker) {
+                        startYearInput.value = tickerDateRange.start_year;
+                        endYearInput.value = tickerDateRange.end_year;
+                        startYearDisplay.textContent = tickerDateRange.start_year;
+                        endYearDisplay.textContent = tickerDateRange.end_year;
+                    } else {
+                        // Fallback to default range if no ticker data available
+                        startYearInput.value = 2000;
+                        endYearInput.value = new Date().getFullYear();
+                        startYearDisplay.textContent = 2000;
+                        endYearDisplay.textContent = new Date().getFullYear();
+                    }
+                } else if (selectedPeriod !== 'Full Period') {
                     startYearInput.value = periodConfig.start;
                     endYearInput.value = periodConfig.end;
                     startYearDisplay.textContent = periodConfig.start;
@@ -490,6 +610,41 @@
                 }
             }
         }
+        
+        // Update statistic labels if data is already displayed
+        if (document.getElementById('statsContainer').style.display !== 'none') {
+            const bestYearElement = document.getElementById('bestSingleYearLabel');
+            const worstYearElement = document.getElementById('worstSingleYearLabel');
+            const tenYearElement = document.getElementById('tenYearCAGRLabel');
+            const fullPeriodElement = document.getElementById('fullPeriodCAGRLabel');
+            
+            if (bestYearElement && bestYearElement.textContent.includes('(')) {
+                const year = bestYearElement.textContent.match(/\((\d{4})\)/)[1];
+                bestYearElement.textContent = `Best Single Year ${matrixType} (${year})`;
+            }
+            
+            if (worstYearElement && worstYearElement.textContent.includes('(')) {
+                const year = worstYearElement.textContent.match(/\((\d{4})\)/)[1];
+                worstYearElement.textContent = `Worst Single Year ${matrixType} (${year})`;
+            }
+            
+            if (tenYearElement && tenYearElement.textContent.includes('10-Year')) {
+                const yearMatch = tenYearElement.textContent.match(/\((\d{4}-\d{4})\)/);
+                if (yearMatch) {
+                    tenYearElement.textContent = `10-Year ${matrixType} (${yearMatch[1]})`;
+                } else {
+                    tenYearElement.textContent = `10-Year ${matrixType}`;
+                }
+            }
+            
+            if (fullPeriodElement && fullPeriodElement.textContent.includes('-Year')) {
+                const yearMatch = fullPeriodElement.textContent.match(/(\d+)-Year/);
+                const periodMatch = fullPeriodElement.textContent.match(/\((\d{4}-\d{4})\)/);
+                if (yearMatch && periodMatch) {
+                    fullPeriodElement.textContent = `${yearMatch[1]}-Year ${matrixType} (${periodMatch[1]})`;
+                }
+            }
+        }
     }
     
     function getCookie(name) {
@@ -509,6 +664,7 @@
     
     let currentTicker = 'SPY';
     let isValidTicker = true;
+    let tickerDateRange = null; // Store the available date range for the current ticker
     
     // Ticker input handling
     const tickerInput = document.getElementById('tickerInput');
@@ -606,17 +762,36 @@
             if (data.valid) {
                 currentTicker = data.ticker;
                 isValidTicker = true;
+                tickerDateRange = data.date_range || null; // Store the available date range
                 tickerInput.classList.remove('ticker-input-invalid');
                 tickerInput.classList.add('ticker-input-valid');
                 tickerError.style.display = 'none';
                 
+                let infoText = '';
                 if (data.info && data.info.name) {
-                    tickerInfo.innerHTML = `<small class="text-success">✓ ${data.info.name} (${data.info.exchange})</small>`;
+                    infoText = `<small class="text-success">✓ ${data.info.name} (${data.info.exchange})`;
                 } else {
-                    tickerInfo.innerHTML = '<small class="text-success">✓ Valid ticker</small>';
+                    infoText = '<small class="text-success">✓ Valid ticker';
+                }
+                
+                // Add date range info if available
+                if (tickerDateRange) {
+                    infoText += ` • Available: ${tickerDateRange.start_year}-${tickerDateRange.end_year}`;
+                }
+                infoText += '</small>';
+                
+                tickerInfo.innerHTML = infoText;
+                
+                // Update Full Period option if it's currently selected
+                if (document.getElementById('periodSelect').value === 'Full Period' && tickerDateRange) {
+                    document.getElementById('startYear').value = tickerDateRange.start_year;
+                    document.getElementById('endYear').value = tickerDateRange.end_year;
+                    document.getElementById('startYearDisplay').textContent = tickerDateRange.start_year;
+                    document.getElementById('endYearDisplay').textContent = tickerDateRange.end_year;
                 }
             } else {
                 isValidTicker = false;
+                tickerDateRange = null;
                 tickerInput.classList.remove('ticker-input-valid');
                 tickerInput.classList.add('ticker-input-invalid');
                 tickerError.textContent = data.error || 'Invalid ticker symbol';
@@ -853,14 +1028,15 @@
             Plotly.newPlot('heatmapPlot', data.heatmap.data, data.heatmap.layout);
             
             // Update statistics
+            const currentMatrixType = document.querySelector('input[name="matrixType"]:checked').value;
             if (data.stats.best_single_year) {
                 document.getElementById('bestSingleYear').textContent = data.stats.best_single_year.value.toFixed(1) + '%';
-                document.getElementById('bestSingleYearLabel').textContent = `Best Single Year (${data.stats.best_single_year.year})`;
+                document.getElementById('bestSingleYearLabel').textContent = `Best Single Year ${currentMatrixType} (${data.stats.best_single_year.year})`;
             }
             
             if (data.stats.worst_single_year) {
                 document.getElementById('worstSingleYear').textContent = data.stats.worst_single_year.value.toFixed(1) + '%';
-                document.getElementById('worstSingleYearLabel').textContent = `Worst Single Year (${data.stats.worst_single_year.year})`;
+                document.getElementById('worstSingleYearLabel').textContent = `Worst Single Year ${currentMatrixType} (${data.stats.worst_single_year.year})`;
             }
             
             if (data.stats.ten_year_metric) {

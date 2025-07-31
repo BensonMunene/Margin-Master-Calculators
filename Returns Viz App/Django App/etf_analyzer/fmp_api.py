@@ -51,6 +51,61 @@ class FMPDataProvider:
             print(f"Error validating ticker {ticker}: {e}")
             return False
     
+    def get_available_date_range(self, ticker):
+        """Get the available date range for a ticker (first and last available dates)"""
+        ticker = ticker.upper().strip()
+        
+        # Check cache first
+        cache_key = f"ticker_date_range_{ticker}"
+        cached_result = cache.get(cache_key)
+        if cached_result is not None:
+            return cached_result
+        
+        try:
+            # Get a small sample of historical data to determine date range
+            url = f"{self.base_url}/historical-price-full/{ticker}"
+            params = {
+                "apikey": self.api_key,
+                "serietype": "line"
+            }
+            
+            response = requests.get(url, params=params)
+            response.raise_for_status()
+            
+            data = response.json()
+            
+            if 'historical' not in data or not data['historical']:
+                return None
+            
+            # Get the date range
+            historical = data['historical']
+            dates = [entry['date'] for entry in historical]
+            
+            if not dates:
+                return None
+            
+            # Convert to datetime and get min/max years
+            date_objects = [datetime.strptime(date, '%Y-%m-%d') for date in dates]
+            min_date = min(date_objects)
+            max_date = max(date_objects)
+            
+            result = {
+                'start_year': min_date.year,
+                'end_year': max_date.year,
+                'start_date': min_date.strftime('%Y-%m-%d'),
+                'end_date': max_date.strftime('%Y-%m-%d'),
+                'total_years': max_date.year - min_date.year + 1
+            }
+            
+            # Cache for 24 hours (date ranges don't change often)
+            cache.set(cache_key, result, 86400)
+            
+            return result
+            
+        except Exception as e:
+            print(f"Error getting date range for {ticker}: {e}")
+            return None
+
     def get_ticker_info(self, ticker):
         """Get basic information about a ticker"""
         ticker = ticker.upper().strip()
