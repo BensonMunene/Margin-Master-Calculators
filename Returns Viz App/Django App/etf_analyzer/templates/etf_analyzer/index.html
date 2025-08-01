@@ -2,92 +2,240 @@
 
 {% block content %}
 <style>
-/* Custom Performance Card Styling */
+/* BLOOMBERG TERMINAL THEME VARIABLES */
+:root {
+    /* Inherit from base.html terminal colors */
+    --terminal-black: #0a0a0a;
+    --terminal-dark: #141414;
+    --terminal-darker: #1a1a1a;
+    --terminal-grid: #262626;
+    --terminal-border: #333333;
+    
+    --bloomberg-orange: #ff6600;
+    --bloomberg-orange-bright: #ff8533;
+    --bloomberg-orange-glow: #ff9d4d;
+    --bloomberg-orange-dark: #cc5200;
+    
+    --data-green: #00ff41;
+    --data-red: #ff0040;
+    --data-blue: #00b4ff;
+    --data-yellow: #ffcc00;
+    --data-purple: #cc00ff;
+    
+    --text-primary: #ffffff;
+    --text-secondary: #b3b3b3;
+    --text-tertiary: #808080;
+    --text-quaternary: #666666;
+    
+    --glow-orange: 0 0 20px rgba(255, 102, 0, 0.6);
+    --glow-green: 0 0 15px rgba(0, 255, 65, 0.5);
+    --glow-red: 0 0 15px rgba(255, 0, 64, 0.5);
+    --glow-blue: 0 0 15px rgba(0, 180, 255, 0.5);
+    --glow-purple: 0 0 15px rgba(204, 0, 255, 0.5);
+}
+/* BLOOMBERG TERMINAL PERFORMANCE CARDS - NUCLEAR MODE */
 .performance-card-returns {
-    background: linear-gradient(135deg, #e8f5e8 0%, #f0fff0 100%);
-    border-left: 4px solid #28a745;
-    box-shadow: 0 4px 12px rgba(40, 167, 69, 0.15);
-    transition: all 0.3s ease;
+    background: var(--terminal-dark);
+    border: 1px solid var(--data-green);
+    border-left: 3px solid var(--data-green);
+    box-shadow: 
+        inset 0 0 20px rgba(0, 255, 65, 0.05),
+        0 0 15px rgba(0, 255, 65, 0.1);
+    transition: all 0.2s ease;
+    position: relative;
+    overflow: hidden;
 }
 
 .performance-card-returns:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 6px 20px rgba(40, 167, 69, 0.25);
+    border-color: var(--data-green);
+    box-shadow: 
+        inset 0 0 30px rgba(0, 255, 65, 0.1),
+        0 0 30px rgba(0, 255, 65, 0.2),
+        var(--glow-green);
+}
+
+.performance-card-returns::before {
+    content: 'RETURNS';
+    position: absolute;
+    top: -12px;
+    left: 10px;
+    background: var(--terminal-dark);
+    color: var(--data-green);
+    padding: 2px 8px;
+    font-size: 9px;
+    font-family: 'Orbitron', monospace;
+    font-weight: 700;
+    letter-spacing: 2px;
+    border: 1px solid var(--data-green);
+    z-index: 10;
 }
 
 .performance-card-returns .performance-card-header {
-    color: #1e7e34;
-    background: linear-gradient(90deg, #28a745, #20c997);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
+    color: var(--data-green);
+    font-family: 'Orbitron', monospace;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    text-shadow: 0 0 10px rgba(0, 255, 65, 0.5);
 }
 
 .performance-card-risk {
-    background: linear-gradient(135deg, #fff3e0 0%, #ffeaa7 100%);
-    border-left: 4px solid #ff8c00;
-    box-shadow: 0 4px 12px rgba(255, 140, 0, 0.15);
-    transition: all 0.3s ease;
+    background: var(--terminal-dark);
+    border: 1px solid var(--bloomberg-orange-dark);
+    border-left: 3px solid var(--bloomberg-orange);
+    box-shadow: 
+        inset 0 0 20px rgba(255, 102, 0, 0.05),
+        0 0 15px rgba(255, 102, 0, 0.1);
+    transition: all 0.2s ease;
+    position: relative;
+    overflow: hidden;
 }
 
 .performance-card-risk:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 6px 20px rgba(255, 140, 0, 0.25);
+    border-color: var(--bloomberg-orange);
+    box-shadow: 
+        inset 0 0 30px rgba(255, 102, 0, 0.1),
+        0 0 30px rgba(255, 102, 0, 0.2),
+        var(--glow-orange);
+}
+
+.performance-card-risk::before {
+    content: 'RISK';
+    position: absolute;
+    top: -12px;
+    left: 10px;
+    background: var(--terminal-dark);
+    color: var(--bloomberg-orange);
+    padding: 2px 8px;
+    font-size: 9px;
+    font-family: 'Orbitron', monospace;
+    font-weight: 700;
+    letter-spacing: 2px;
+    border: 1px solid var(--bloomberg-orange-dark);
+    z-index: 10;
 }
 
 .performance-card-risk .performance-card-header {
-    color: #e65100;
-    background: linear-gradient(90deg, #ff8c00, #ff6b35);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
+    color: var(--bloomberg-orange);
+    font-family: 'Orbitron', monospace;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    text-shadow: 0 0 10px rgba(255, 102, 0, 0.5);
 }
 
 .performance-card-adjusted {
-    background: linear-gradient(135deg, #e3f2fd 0%, #f0f8ff 100%);
-    border-left: 4px solid #2196f3;
-    box-shadow: 0 4px 12px rgba(33, 150, 243, 0.15);
-    transition: all 0.3s ease;
+    background: var(--terminal-dark);
+    border: 1px solid var(--data-blue);
+    border-left: 3px solid var(--data-blue);
+    box-shadow: 
+        inset 0 0 20px rgba(0, 180, 255, 0.05),
+        0 0 15px rgba(0, 180, 255, 0.1);
+    transition: all 0.2s ease;
+    position: relative;
+    overflow: hidden;
 }
 
 .performance-card-adjusted:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 6px 20px rgba(33, 150, 243, 0.25);
+    border-color: var(--data-blue);
+    box-shadow: 
+        inset 0 0 30px rgba(0, 180, 255, 0.1),
+        0 0 30px rgba(0, 180, 255, 0.2),
+        var(--glow-blue);
+}
+
+.performance-card-adjusted::before {
+    content: 'ADJUSTED';
+    position: absolute;
+    top: -12px;
+    left: 10px;
+    background: var(--terminal-dark);
+    color: var(--data-blue);
+    padding: 2px 8px;
+    font-size: 9px;
+    font-family: 'Orbitron', monospace;
+    font-weight: 700;
+    letter-spacing: 2px;
+    border: 1px solid var(--data-blue);
+    z-index: 10;
 }
 
 .performance-card-adjusted .performance-card-header {
-    color: #1565c0;
-    background: linear-gradient(90deg, #2196f3, #1e88e5);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
+    color: var(--data-blue);
+    font-family: 'Orbitron', monospace;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    text-shadow: 0 0 10px rgba(0, 180, 255, 0.5);
 }
 
 .performance-card-relative {
-    background: linear-gradient(135deg, #f3e5f5 0%, #faf4ff 100%);
-    border-left: 4px solid #9c27b0;
-    box-shadow: 0 4px 12px rgba(156, 39, 176, 0.15);
-    transition: all 0.3s ease;
+    background: var(--terminal-dark);
+    border: 1px solid var(--data-purple);
+    border-left: 3px solid var(--data-purple);
+    box-shadow: 
+        inset 0 0 20px rgba(204, 0, 255, 0.05),
+        0 0 15px rgba(204, 0, 255, 0.1);
+    transition: all 0.2s ease;
+    position: relative;
+    overflow: hidden;
 }
 
 .performance-card-relative:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 6px 20px rgba(156, 39, 176, 0.25);
+    border-color: var(--data-purple);
+    box-shadow: 
+        inset 0 0 30px rgba(204, 0, 255, 0.1),
+        0 0 30px rgba(204, 0, 255, 0.2),
+        var(--glow-purple);
+}
+
+.performance-card-relative::before {
+    content: 'RELATIVE';
+    position: absolute;
+    top: -12px;
+    left: 10px;
+    background: var(--terminal-dark);
+    color: var(--data-purple);
+    padding: 2px 8px;
+    font-size: 9px;
+    font-family: 'Orbitron', monospace;
+    font-weight: 700;
+    letter-spacing: 2px;
+    border: 1px solid var(--data-purple);
+    z-index: 10;
 }
 
 .performance-card-relative .performance-card-header {
-    color: #6a1b9a;
-    background: linear-gradient(90deg, #9c27b0, #8e24aa);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
+    color: var(--data-purple);
+    font-family: 'Orbitron', monospace;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    text-shadow: 0 0 10px rgba(204, 0, 255, 0.5);
 }
 
-/* Enhanced metric values with better contrast */
-.performance-card-returns .metric-value { color: #1e7e34; }
-.performance-card-risk .metric-value { color: #e65100; }
-.performance-card-adjusted .metric-value { color: #1565c0; }
-.performance-card-relative .metric-value { color: #6a1b9a; }
+/* Bloomberg Terminal metric values */
+.performance-card-returns .metric-value { 
+    color: var(--data-green); 
+    text-shadow: 0 0 5px rgba(0, 255, 65, 0.3);
+}
+.performance-card-risk .metric-value { 
+    color: var(--bloomberg-orange); 
+    text-shadow: 0 0 5px rgba(255, 102, 0, 0.3);
+}
+.performance-card-adjusted .metric-value { 
+    color: var(--data-blue); 
+    text-shadow: 0 0 5px rgba(0, 180, 255, 0.3);
+}
+.performance-card-relative .metric-value { 
+    color: var(--data-purple); 
+    text-shadow: 0 0 5px rgba(204, 0, 255, 0.3);
+}
+
+/* Add purple glow effect */
+:root {
+    --glow-purple: 0 0 15px rgba(204, 0, 255, 0.5);
+}
 
 /* Subtle background pattern */
 .performance-card {
@@ -106,11 +254,333 @@
                       radial-gradient(circle at 80% 20%, rgba(255,255,255,0.1) 0%, transparent 50%);
     pointer-events: none;
 }
+
+/* BLOOMBERG TERMINAL OVERVIEW CARD */
+.overview-showcase {
+    margin: 30px 20px;
+    padding: 0;
+}
+
+.overview-card {
+    background: var(--terminal-dark);
+    border: 2px solid var(--bloomberg-orange-dark);
+    border-radius: 0;
+    padding: 30px;
+    position: relative;
+    overflow: visible;
+    box-shadow: 
+        inset 0 0 30px rgba(255, 102, 0, 0.1),
+        0 0 40px rgba(255, 102, 0, 0.15);
+    transform: translateY(0);
+    transition: all 0.3s ease;
+}
+
+/* Terminal Header Label */
+.overview-card::before {
+    content: 'ANALYTICS ENGINE // PERFORMANCE METRICS';
+    position: absolute;
+    top: -2px;
+    left: -2px;
+    background: var(--terminal-black);
+    color: var(--bloomberg-orange);
+    padding: 5px 20px;
+    font-size: 11px;
+    font-weight: 700;
+    font-family: 'Orbitron', monospace;
+    letter-spacing: 2px;
+    border: 2px solid var(--bloomberg-orange-dark);
+    border-bottom: none;
+    z-index: 10;
+}
+
+.overview-card:hover {
+    box-shadow: 
+        inset 0 0 40px rgba(255, 102, 0, 0.15),
+        0 0 60px rgba(255, 102, 0, 0.2),
+        var(--glow-orange);
+    border-color: var(--bloomberg-orange);
+}
+
+/* Data Stream Animation */
+.overview-card::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-image: 
+        linear-gradient(0deg, transparent 0%, rgba(255, 102, 0, 0.05) 50%, transparent 100%);
+    background-size: 100% 20px;
+    animation: dataFlow 2s linear infinite;
+    pointer-events: none;
+}
+
+@keyframes dataFlow {
+    0% { transform: translateY(0); }
+    100% { transform: translateY(20px); }
+}
+
+.overview-header {
+    display: flex;
+    align-items: center;
+    margin-bottom: 2rem;
+    position: relative;
+    z-index: 2;
+}
+
+.overview-icon {
+    background: var(--terminal-black);
+    border: 2px solid var(--bloomberg-orange-dark);
+    border-radius: 0;
+    padding: 15px;
+    margin-right: 20px;
+    box-shadow: 
+        inset 0 0 15px rgba(255, 102, 0, 0.2),
+        0 0 20px rgba(255, 102, 0, 0.1);
+    position: relative;
+}
+
+.overview-svg {
+    width: 30px;
+    height: 30px;
+    color: var(--bloomberg-orange);
+    stroke-width: 2;
+    filter: drop-shadow(0 0 10px rgba(255, 102, 0, 0.6));
+    animation: iconPulse 2s ease-in-out infinite;
+}
+
+@keyframes iconPulse {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.1); }
+}
+
+.overview-title {
+    color: var(--bloomberg-orange);
+    font-size: 1.8rem;
+    font-weight: 800;
+    margin: 0;
+    font-family: 'Orbitron', monospace;
+    text-transform: uppercase;
+    letter-spacing: 3px;
+    text-shadow: 
+        0 0 10px var(--bloomberg-orange),
+        0 0 20px var(--bloomberg-orange-dark);
+}
+
+.overview-content {
+    position: relative;
+    z-index: 2;
+}
+
+.formula-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+    margin-bottom: 30px;
+    margin-top: 40px;
+}
+
+.formula-item {
+    background: var(--terminal-black);
+    border: 1px solid var(--terminal-border);
+    border-radius: 0;
+    padding: 20px;
+    transition: all 0.2s ease;
+    position: relative;
+    overflow: hidden;
+    box-shadow: inset 0 0 20px rgba(0, 0, 0, 0.5);
+}
+
+.formula-item::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 2px;
+    transition: all 0.3s ease;
+}
+
+.formula-item.cagr-theme::before {
+    background: var(--data-blue);
+    box-shadow: 0 0 10px var(--data-blue);
+}
+
+.formula-item.total-return-theme::before {
+    background: var(--data-green);
+    box-shadow: 0 0 10px var(--data-green);
+}
+
+.formula-item:hover {
+    border-color: var(--bloomberg-orange-dark);
+    box-shadow: 
+        inset 0 0 25px rgba(255, 102, 0, 0.1),
+        0 0 20px rgba(255, 102, 0, 0.1);
+}
+
+.formula-label {
+    color: var(--bloomberg-orange);
+    font-weight: 700;
+    font-size: 0.85rem;
+    margin-bottom: 10px;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    font-family: 'Orbitron', monospace;
+}
+
+.formula-equation {
+    color: var(--data-green);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.95rem;
+    font-weight: 600;
+    margin-bottom: 15px;
+    background: rgba(0, 255, 65, 0.05);
+    padding: 10px;
+    border-radius: 0;
+    border: 1px solid rgba(0, 255, 65, 0.2);
+    text-shadow: 0 0 5px rgba(0, 255, 65, 0.5);
+}
+
+.formula-desc {
+    color: var(--text-secondary);
+    font-size: 0.8rem;
+    line-height: 1.5;
+    font-family: 'Share Tech Mono', monospace;
+    opacity: 0.9;
+}
+
+.metrics-overview {
+    display: flex;
+    gap: 1rem;
+    flex-wrap: wrap;
+}
+
+.metrics-badge {
+    display: flex;
+    align-items: center;
+    background: var(--terminal-black);
+    border: 1px solid var(--terminal-border);
+    border-radius: 0;
+    padding: 15px 20px;
+    transition: all 0.2s ease;
+    flex: 1;
+    min-width: 280px;
+    position: relative;
+    overflow: hidden;
+}
+
+.metrics-badge::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    width: 3px;
+    background: var(--bloomberg-orange);
+    transition: width 0.3s ease;
+}
+
+.metrics-badge:hover {
+    border-color: var(--bloomberg-orange-dark);
+    box-shadow: 
+        inset 0 0 20px rgba(255, 102, 0, 0.1),
+        0 0 15px rgba(255, 102, 0, 0.1);
+}
+
+.metrics-badge:hover::before {
+    width: 100%;
+    opacity: 0.1;
+}
+
+.badge-icon {
+    font-size: 1.2rem;
+    margin-right: 15px;
+    z-index: 2;
+    position: relative;
+    filter: contrast(1.2);
+}
+
+.badge-text {
+    color: var(--text-secondary);
+    font-size: 0.85rem;
+    font-weight: 400;
+    line-height: 1.4;
+    font-family: 'Share Tech Mono', monospace;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    z-index: 2;
+    position: relative;
+}
+
+@media (max-width: 768px) {
+    .formula-grid {
+        grid-template-columns: 1fr;
+        gap: 1rem;
+    }
+    
+    .overview-card {
+        padding: 1.5rem;
+    }
+    
+    .overview-title {
+        font-size: 1.5rem;
+    }
+    
+    .metrics-badge {
+        min-width: 100%;
+    }
+}
 </style>
     <!-- Company Header -->
     <div class="company-header">
         <h1 class="company-name">PEARSON CREEK CAPITAL LLC</h1>
         <p class="company-tagline">Professional ETF Performance Analysis & Investment Research</p>
+    </div>
+    
+    <!-- Overview Card -->
+    <div class="overview-showcase">
+        <div class="overview-card">
+            <div class="overview-header">
+                <div class="overview-icon">
+                    <svg class="overview-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"/>
+                    </svg>
+                </div>
+                <h3 class="overview-title">Investment Performance Analytics</h3>
+            </div>
+            
+            <div class="overview-content">
+                <div class="formula-grid">
+                    <div class="formula-item cagr-theme">
+                        <div class="formula-label">CAGR Formula</div>
+                        <div class="formula-equation">(End Value / Start Value)^(1/Years) - 1</div>
+                        <div class="formula-desc">Annualized growth rate over multiple periods</div>
+                    </div>
+                    
+                    <div class="formula-item total-return-theme">
+                        <div class="formula-label">Total Return Formula</div>
+                        <div class="formula-equation">(End Value / Start Value) - 1</div>
+                        <div class="formula-desc">Cumulative growth between two points</div>
+                    </div>
+                </div>
+                
+                <div class="metrics-overview">
+                    <div class="metrics-badge">
+                        <span class="badge-icon">📊</span>
+                        <span class="badge-text">Interactive heatmap matrix visualization</span>
+                    </div>
+                    <div class="metrics-badge">
+                        <span class="badge-icon">🎯</span>
+                        <span class="badge-text">Risk-adjusted performance metrics</span>
+                    </div>
+                    <div class="metrics-badge">
+                        <span class="badge-icon">📈</span>
+                        <span class="badge-text">Multi-timeframe comparative analysis</span>
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
     
     <!-- Control Panel -->
@@ -235,113 +705,119 @@
     </div>
     
     <!-- Performance Overview -->
-    <div id="performanceContainer" class="mt-5" style="display: none;">
-        <h3>📊 Performance Overview</h3>
-        <div class="row g-4">
-            <!-- Return Metrics -->
-            <div class="col-md-6">
-                <div class="performance-card performance-card-returns">
-                    <h5 class="performance-card-header">📈 Return Metrics</h5>
-                    <div class="performance-metrics">
-                        <div class="metric-row">
-                            <span class="metric-label">CAGR:</span>
-                            <span class="metric-value" id="perf-cagr">-</span>
-                        </div>
-                        <div class="metric-row">
-                            <span class="metric-label">Total Return:</span>
-                            <span class="metric-value" id="perf-total-return">-</span>
-                        </div>
-                        <div class="metric-row">
-                            <span class="metric-label">Best Year:</span>
-                            <span class="metric-value" id="perf-best-year">-</span>
-                        </div>
-                        <div class="metric-row">
-                            <span class="metric-label">Worst Year:</span>
-                            <span class="metric-value" id="perf-worst-year">-</span>
-                        </div>
-                        <div class="metric-row">
-                            <span class="metric-label">Win Rate:</span>
-                            <span class="metric-value" id="perf-win-rate">-</span>
-                        </div>
+    <div id="performanceContainer" class="mt-5" style="display: none; background: #1a1a1a; padding: 20px; border: 2px solid #ff6600;">
+
+        <h3 style="color: var(--bloomberg-orange); font-family: 'Orbitron', monospace; text-transform: uppercase; letter-spacing: 2px;">📊 Performance Overview</h3>
+        <!-- NEW BLOOMBERG PERFORMANCE CARDS -->
+        <div class="performance-grid">
+            <!-- Return Metrics Card -->
+            <div class="bloomberg-metric-card" data-metric-type="returns">
+                <div class="bloomberg-card-header">
+                    <span class="bloomberg-card-icon">📈</span>
+                    <span class="bloomberg-card-title">RETURN METRICS</span>
+                </div>
+                <div class="bloomberg-card-body">
+                    <div class="bloomberg-metric-item">
+                        <span class="bloomberg-metric-name">CAGR</span>
+                        <span class="bloomberg-metric-value" id="perf-cagr">-</span>
+                    </div>
+                    <div class="bloomberg-metric-item">
+                        <span class="bloomberg-metric-name">TOTAL RETURN</span>
+                        <span class="bloomberg-metric-value" id="perf-total-return">-</span>
+                    </div>
+                    <div class="bloomberg-metric-item">
+                        <span class="bloomberg-metric-name">BEST YEAR</span>
+                        <span class="bloomberg-metric-value" id="perf-best-year">-</span>
+                    </div>
+                    <div class="bloomberg-metric-item">
+                        <span class="bloomberg-metric-name">WORST YEAR</span>
+                        <span class="bloomberg-metric-value" id="perf-worst-year">-</span>
+                    </div>
+                    <div class="bloomberg-metric-item">
+                        <span class="bloomberg-metric-name">WIN RATE</span>
+                        <span class="bloomberg-metric-value" id="perf-win-rate">-</span>
                     </div>
                 </div>
             </div>
 
-            <!-- Risk Metrics -->
-            <div class="col-md-6">
-                <div class="performance-card performance-card-risk">
-                    <h5 class="performance-card-header">⚠️ Risk Metrics</h5>
-                    <div class="performance-metrics">
-                        <div class="metric-row">
-                            <span class="metric-label">Volatility:</span>
-                            <span class="metric-value" id="perf-volatility">-</span>
-                        </div>
-                        <div class="metric-row">
-                            <span class="metric-label">Max Drawdown:</span>
-                            <span class="metric-value" id="perf-max-dd">-</span>
-                        </div>
-                        <div class="metric-row">
-                            <span class="metric-label">Recovery Days:</span>
-                            <span class="metric-value" id="perf-recovery">-</span>
-                        </div>
-                        <div class="metric-row">
-                            <span class="metric-label">VaR (5%):</span>
-                            <span class="metric-value" id="perf-var">-</span>
-                        </div>
-                        <div class="metric-row">
-                            <span class="metric-label">Pain Index:</span>
-                            <span class="metric-value" id="perf-pain">-</span>
-                        </div>
+            <!-- Risk Metrics Card -->
+            <div class="bloomberg-metric-card" data-metric-type="risk">
+                <div class="bloomberg-card-header">
+                    <span class="bloomberg-card-icon">⚠️</span>
+                    <span class="bloomberg-card-title">RISK METRICS</span>
+                </div>
+                <div class="bloomberg-card-body">
+                    <div class="bloomberg-metric-item">
+                        <span class="bloomberg-metric-name">VOLATILITY</span>
+                        <span class="bloomberg-metric-value" id="perf-volatility">-</span>
+                    </div>
+                    <div class="bloomberg-metric-item">
+                        <span class="bloomberg-metric-name">MAX DRAWDOWN</span>
+                        <span class="bloomberg-metric-value" id="perf-max-dd">-</span>
+                    </div>
+                    <div class="bloomberg-metric-item">
+                        <span class="bloomberg-metric-name">RECOVERY DAYS</span>
+                        <span class="bloomberg-metric-value" id="perf-recovery">-</span>
+                    </div>
+                    <div class="bloomberg-metric-item">
+                        <span class="bloomberg-metric-name">VAR (5%)</span>
+                        <span class="bloomberg-metric-value" id="perf-var">-</span>
+                    </div>
+                    <div class="bloomberg-metric-item">
+                        <span class="bloomberg-metric-name">PAIN INDEX</span>
+                        <span class="bloomberg-metric-value" id="perf-pain">-</span>
                     </div>
                 </div>
             </div>
 
-            <!-- Risk-Adjusted Metrics -->
-            <div class="col-md-6">
-                <div class="performance-card performance-card-adjusted">
-                    <h5 class="performance-card-header">⚖️ Risk-Adjusted Returns</h5>
-                    <div class="performance-metrics">
-                        <div class="metric-row">
-                            <span class="metric-label">Sharpe Ratio:</span>
-                            <span class="metric-value" id="perf-sharpe">-</span>
-                        </div>
-                        <div class="metric-row">
-                            <span class="metric-label">Sortino Ratio:</span>
-                            <span class="metric-value" id="perf-sortino">-</span>
-                        </div>
-                        <div class="metric-row">
-                            <span class="metric-label">Calmar Ratio:</span>
-                            <span class="metric-value" id="perf-calmar">-</span>
-                        </div>
+            <!-- Risk-Adjusted Card -->
+            <div class="bloomberg-metric-card" data-metric-type="adjusted">
+                <div class="bloomberg-card-header">
+                    <span class="bloomberg-card-icon">⚖️</span>
+                    <span class="bloomberg-card-title">RISK-ADJUSTED RETURNS</span>
+                </div>
+                <div class="bloomberg-card-body">
+                    <div class="bloomberg-metric-item">
+                        <span class="bloomberg-metric-name">SHARPE RATIO</span>
+                        <span class="bloomberg-metric-value" id="perf-sharpe">-</span>
+                    </div>
+                    <div class="bloomberg-metric-item">
+                        <span class="bloomberg-metric-name">SORTINO RATIO</span>
+                        <span class="bloomberg-metric-value" id="perf-sortino">-</span>
+                    </div>
+                    <div class="bloomberg-metric-item">
+                        <span class="bloomberg-metric-name">CALMAR RATIO</span>
+                        <span class="bloomberg-metric-value" id="perf-calmar">-</span>
                     </div>
                 </div>
             </div>
 
-            <!-- Relative Metrics (vs S&P 500) -->
-            <div class="col-md-6">
-                <div class="performance-card performance-card-relative">
-                    <h5 class="performance-card-header">📊 Relative to S&P 500</h5>
-                    <div class="performance-metrics">
-                        <div class="metric-row">
-                            <span class="metric-label">Beta:</span>
-                            <span class="metric-value" id="perf-beta">-</span>
-                        </div>
-                        <div class="metric-row">
-                            <span class="metric-label">Alpha:</span>
-                            <span class="metric-value" id="perf-alpha">-</span>
-                        </div>
-                        <div class="metric-row">
-                            <span class="metric-label">R-Squared:</span>
-                            <span class="metric-value" id="perf-r-squared">-</span>
-                        </div>
-                        <div class="metric-row">
-                            <span class="metric-label">Treynor Ratio:</span>
-                            <span class="metric-value" id="perf-treynor">-</span>
-                        </div>
-                        <div class="metric-row">
-                            <span class="metric-label">Information Ratio:</span>
-                            <span class="metric-value" id="perf-info-ratio">-</span>
-                        </div>
+            <!-- Relative Performance Card -->
+            <div class="bloomberg-metric-card" data-metric-type="relative">
+                <div class="bloomberg-card-header">
+                    <span class="bloomberg-card-icon">📊</span>
+                    <span class="bloomberg-card-title">VS S&P 500</span>
+                </div>
+                <div class="bloomberg-card-body">
+                    <div class="bloomberg-metric-item">
+                        <span class="bloomberg-metric-name">BETA</span>
+                        <span class="bloomberg-metric-value" id="perf-beta">-</span>
+                    </div>
+                    <div class="bloomberg-metric-item">
+                        <span class="bloomberg-metric-name">ALPHA</span>
+                        <span class="bloomberg-metric-value" id="perf-alpha">-</span>
+                    </div>
+                    <div class="bloomberg-metric-item">
+                        <span class="bloomberg-metric-name">R-SQUARED</span>
+                        <span class="bloomberg-metric-value" id="perf-r-squared">-</span>
+                    </div>
+                    <div class="bloomberg-metric-item">
+                        <span class="bloomberg-metric-name">TREYNOR RATIO</span>
+                        <span class="bloomberg-metric-value" id="perf-treynor">-</span>
+                    </div>
+                    <div class="bloomberg-metric-item">
+                        <span class="bloomberg-metric-name">INFO RATIO</span>
+                        <span class="bloomberg-metric-value" id="perf-info-ratio">-</span>
                     </div>
                 </div>
             </div>
@@ -359,7 +835,7 @@
     
     <!-- Download Section -->
     <div id="downloadSection" class="mt-5" style="display: none;">
-        <h3>💾 Export Analysis</h3>
+        <h3 style="color: var(--bloomberg-orange); font-family: 'Orbitron', monospace; text-transform: uppercase; letter-spacing: 2px; margin-bottom: 20px;">💾 Export Analysis</h3>
         <div class="row">
             <div class="col-md-6">
                 <button class="btn btn-primary" id="downloadMatrix">📥 Download CAGR Matrix</button>
@@ -385,16 +861,13 @@
     }
     
     .ticker-suggestions {
-        position: absolute;
-        top: 100%;
-        left: 0;
-        right: 0;
+        position: fixed;
         background: white;
         border: 1px solid #dee2e6;
         border-radius: 0.375rem;
         max-height: 200px;
         overflow-y: auto;
-        z-index: 1000;
+        z-index: 9999;
         box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
     }
     
@@ -432,41 +905,202 @@
         border-color: #dc3545 !important;
     }
     
-    /* Performance Overview Styling */
+    /* BLOOMBERG TERMINAL PERFORMANCE CARD BASE */
     .performance-card {
-        background: white;
-        border: 1px solid #e9ecef;
-        border-radius: 10px;
-        padding: 1.5rem;
+        background: var(--terminal-dark);
+        border: 1px solid var(--terminal-border);
+        border-radius: 0;
+        padding: 30px 25px 25px 25px;
         height: 100%;
-        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
-        transition: box-shadow 0.3s ease;
+        box-shadow: inset 0 0 15px rgba(0, 0, 0, 0.5);
+        transition: all 0.2s ease;
+        position: relative;
+        overflow: visible;
+    }
+    
+    /* NEW BLOOMBERG METRIC CARDS - GUARANTEED TO WORK */
+    .performance-grid {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 20px;
+        margin-bottom: 2rem;
+    }
+    
+    @media (max-width: 768px) {
+        .performance-grid {
+            grid-template-columns: 1fr;
+        }
+    }
+    
+    .bloomberg-metric-card {
+        background: #0a0a0a;
+        border: 2px solid #ff6600;
+        padding: 0;
+        position: relative;
+        box-shadow: 
+            0 0 20px rgba(255, 102, 0, 0.3),
+            inset 0 0 20px rgba(255, 102, 0, 0.1);
+        animation: terminalBoot 0.5s ease-out;
+    }
+    
+    .bloomberg-metric-card::before {
+        content: '';
+        position: absolute;
+        top: -1px;
+        left: -1px;
+        right: -1px;
+        bottom: -1px;
+        background: linear-gradient(45deg, #ff6600, #ff3300, #ff6600);
+        opacity: 0;
+        z-index: -1;
+        transition: opacity 0.3s ease;
+    }
+    
+    .bloomberg-metric-card:hover::before {
+        opacity: 0.5;
+    }
+    
+    .bloomberg-card-header {
+        background: #ff6600;
+        color: #000;
+        padding: 12px 20px;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        font-family: 'Orbitron', monospace;
+        font-weight: 900;
+        letter-spacing: 2px;
+        text-transform: uppercase;
+        border-bottom: 2px solid #ff3300;
+    }
+    
+    .bloomberg-card-icon {
+        font-size: 1.2rem;
+    }
+    
+    .bloomberg-card-title {
+        font-size: 0.9rem;
+    }
+    
+    .bloomberg-card-body {
+        padding: 20px;
+        background: #141414;
+    }
+    
+    .bloomberg-metric-item {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 12px 0;
+        border-bottom: 1px solid #333;
+    }
+    
+    .bloomberg-metric-item:last-child {
+        border-bottom: none;
+    }
+    
+    .bloomberg-metric-name {
+        color: #b3b3b3;
+        font-family: 'Share Tech Mono', monospace;
+        font-size: 0.85rem;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+    }
+    
+    .bloomberg-metric-value {
+        color: #ff6600;
+        font-family: 'JetBrains Mono', monospace;
+        font-size: 1.2rem;
+        font-weight: 700;
+        text-shadow: 0 0 10px rgba(255, 102, 0, 0.5);
+        transition: all 0.3s ease;
+    }
+    
+    .bloomberg-metric-value:hover {
+        transform: scale(1.05);
+        text-shadow: 0 0 20px rgba(255, 102, 0, 0.8);
+    }
+    
+    /* Data type specific colors */
+    .bloomberg-metric-card[data-metric-type="returns"] .bloomberg-metric-value {
+        color: #00ff41;
+        text-shadow: 0 0 10px rgba(0, 255, 65, 0.5);
+    }
+    
+    .bloomberg-metric-card[data-metric-type="risk"] .bloomberg-metric-value {
+        color: #ff0040;
+        text-shadow: 0 0 10px rgba(255, 0, 64, 0.5);
+    }
+    
+    .bloomberg-metric-card[data-metric-type="adjusted"] .bloomberg-metric-value {
+        color: #00b4ff;
+        text-shadow: 0 0 10px rgba(0, 180, 255, 0.5);
+    }
+    
+    .bloomberg-metric-card[data-metric-type="relative"] .bloomberg-metric-value {
+        color: #cc00ff;
+        text-shadow: 0 0 10px rgba(204, 0, 255, 0.5);
+    }
+    
+    /* HEATMAP BOLD WHITE TEXT */
+    .plotly .gtitle, 
+    .plotly .annotation-text,
+    .plotly text {
+        font-weight: 900 !important;
+        color: white !important;
+        text-shadow: 0 0 2px rgba(0, 0, 0, 0.8) !important;
+    }
+    
+    /* Specifically target heatmap text elements */
+    #heatmapPlot .plotly .annotation-text,
+    #heatmapPlot .plotly text,
+    #heatmapPlot .annotation {
+        font-weight: 900 !important;
+        color: white !important;
+        text-shadow: 0 0 3px rgba(0, 0, 0, 0.9) !important;
+        font-family: 'JetBrains Mono', monospace !important;
     }
     
     .performance-card:hover {
-        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        box-shadow: 
+            inset 0 0 20px rgba(0, 0, 0, 0.7),
+            0 0 10px rgba(255, 102, 0, 0.1);
     }
     
     .performance-card-header {
-        color: #1f4e79;
-        font-weight: 600;
-        margin-bottom: 1rem;
-        padding-bottom: 0.5rem;
-        border-bottom: 2px solid #f8f9fa;
+        color: var(--bloomberg-orange);
+        font-weight: 700;
+        margin-bottom: 20px;
+        padding-bottom: 10px;
+        border-bottom: 1px solid var(--terminal-border);
+        font-family: 'Orbitron', monospace;
+        text-transform: uppercase;
+        letter-spacing: 2px;
+        font-size: 0.9rem;
     }
     
     .performance-metrics {
-        display: flex;
+        display: flex !important;
         flex-direction: column;
-        gap: 0.75rem;
+        gap: 12px;
+        width: 100%;
     }
     
     .metric-row {
         display: flex;
         justify-content: space-between;
         align-items: center;
-        padding: 0.5rem 0;
-        border-bottom: 1px solid #f8f9fa;
+        padding: 8px 0;
+        border-bottom: 1px solid rgba(255, 102, 0, 0.1);
+        transition: all 0.2s ease;
+    }
+    
+    .metric-row:hover {
+        background: rgba(255, 102, 0, 0.05);
+        padding-left: 10px;
+        padding-right: 10px;
+        margin-left: -10px;
+        margin-right: -10px;
     }
     
     .metric-row:last-child {
@@ -474,29 +1108,177 @@
     }
     
     .metric-label {
-        font-weight: 500;
-        color: #495057;
+        font-weight: 400;
+        color: var(--text-secondary) !important;
         flex: 1;
+        font-family: 'Share Tech Mono', monospace;
+        font-size: 0.85rem;
+        text-transform: uppercase;
+        letter-spacing: 1px;
     }
     
     .metric-value {
-        font-weight: 600;
-        color: #212529;
+        font-weight: 700;
+        color: var(--bloomberg-orange) !important;
         text-align: right;
-        font-family: 'Courier New', monospace;
-        min-width: 80px;
+        font-family: 'JetBrains Mono', monospace;
+        min-width: 100px;
+        font-size: 1.1rem;
+        letter-spacing: 1px;
+        text-shadow: 0 0 8px rgba(255, 102, 0, 0.5);
     }
     
     .metric-value.positive {
-        color: #28a745;
+        color: var(--data-green);
+        text-shadow: 0 0 8px rgba(0, 255, 65, 0.6);
     }
     
     .metric-value.negative {
-        color: #dc3545;
+        color: var(--data-red);
+        text-shadow: 0 0 8px rgba(255, 0, 64, 0.6);
     }
     
     .metric-value.neutral {
-        color: #6c757d;
+        color: var(--text-tertiary);
+    }
+    
+    /* BLOOMBERG TERMINAL ANIMATIONS */
+    @keyframes terminalBoot {
+        0% {
+            opacity: 0;
+            transform: translateY(20px);
+            filter: blur(5px);
+        }
+        50% {
+            opacity: 0.5;
+            filter: blur(2px);
+        }
+        100% {
+            opacity: 1;
+            transform: translateY(0);
+            filter: blur(0);
+        }
+    }
+    
+    @keyframes dataStream {
+        0% {
+            background-position: 0 0;
+        }
+        100% {
+            background-position: 100px 0;
+        }
+    }
+    
+    /* Apply boot animation to all cards */
+    .performance-card,
+    .overview-card,
+    .control-panel {
+        animation: terminalBoot 0.8s ease-out;
+    }
+    
+    /* Matrix container styling */
+    .matrix-container {
+        background: var(--terminal-dark);
+        border: 2px solid var(--bloomberg-orange-dark);
+        border-radius: 0;
+        padding: 20px;
+        box-shadow: 
+            inset 0 0 30px rgba(255, 102, 0, 0.1),
+            0 0 40px rgba(255, 102, 0, 0.1);
+        overflow: visible;
+        position: relative;
+        min-height: 700px;
+    }
+    
+    #heatmapPlot {
+        width: 100%;
+        height: 100%;
+        min-height: 650px;
+    }
+    
+    /* Loading spinner Bloomberg style */
+    .spinner-container {
+        background: var(--terminal-black);
+        padding: 50px;
+        border-radius: 0;
+        border: 2px solid var(--bloomberg-orange);
+        animation: pulse 1s ease-in-out infinite;
+    }
+    
+    @keyframes pulse {
+        0%, 100% {
+            box-shadow: 0 0 30px rgba(255, 102, 0, 0.3);
+        }
+        50% {
+            box-shadow: 0 0 60px rgba(255, 102, 0, 0.6);
+        }
+    }
+    
+    .spinner-border {
+        border-color: var(--bloomberg-orange);
+        border-right-color: transparent;
+    }
+    
+    /* Error alert Bloomberg style */
+    .alert-danger {
+        background: var(--terminal-dark);
+        border: 2px solid var(--data-red);
+        color: var(--data-red);
+        border-radius: 0;
+        font-family: 'JetBrains Mono', monospace;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        padding: 20px;
+        box-shadow: 
+            inset 0 0 20px rgba(255, 0, 64, 0.1),
+            0 0 30px rgba(255, 0, 64, 0.2);
+    }
+    
+    /* Ticker input Bloomberg style */
+    #tickerInput {
+        background: var(--terminal-black) !important;
+        border: 1px solid var(--bloomberg-orange-dark) !important;
+        color: var(--data-green) !important;
+        font-family: 'JetBrains Mono', monospace !important;
+        text-transform: uppercase !important;
+        letter-spacing: 2px !important;
+    }
+    
+    #tickerInput:focus {
+        box-shadow: var(--glow-orange) !important;
+        border-color: var(--bloomberg-orange) !important;
+    }
+    
+    /* Download buttons Bloomberg style */
+    .btn-outline-success {
+        background: var(--terminal-black);
+        border: 1px solid var(--data-green);
+        color: var(--data-green);
+        font-family: 'JetBrains Mono', monospace;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        border-radius: 0;
+        transition: all 0.2s ease;
+    }
+    
+    .btn-outline-success:hover {
+        background: var(--data-green);
+        color: var(--terminal-black);
+        box-shadow: var(--glow-green);
+        border-color: var(--data-green);
+    }
+    
+    /* Terminal cursor effect */
+    .terminal-cursor::after {
+        content: '_';
+        animation: blink 1s infinite;
+        color: var(--bloomberg-orange);
+        font-weight: bold;
+    }
+    
+    @keyframes blink {
+        0%, 50% { opacity: 1; }
+        51%, 100% { opacity: 0; }
     }
 </style>
 {% endblock %}
@@ -713,6 +1495,13 @@
                         });
                         tickerSuggestions.appendChild(div);
                     });
+                    
+                    // Position the suggestions below the input field
+                    const inputRect = tickerInput.getBoundingClientRect();
+                    tickerSuggestions.style.top = (inputRect.bottom + window.scrollY) + 'px';
+                    tickerSuggestions.style.left = inputRect.left + 'px';
+                    tickerSuggestions.style.width = inputRect.width + 'px';
+                    
                     tickerSuggestions.style.display = 'block';
                 } else {
                     tickerSuggestions.style.display = 'none';
@@ -728,12 +1517,26 @@
         tickerInfo.textContent = '';
     });
     
+    // Function to position suggestions
+    function positionSuggestions() {
+        if (tickerSuggestions.style.display === 'block') {
+            const inputRect = tickerInput.getBoundingClientRect();
+            tickerSuggestions.style.top = (inputRect.bottom + window.scrollY) + 'px';
+            tickerSuggestions.style.left = inputRect.left + 'px';
+            tickerSuggestions.style.width = inputRect.width + 'px';
+        }
+    }
+    
     // Hide suggestions when clicking outside
     document.addEventListener('click', function(e) {
         if (!tickerInput.contains(e.target) && !tickerSuggestions.contains(e.target)) {
             tickerSuggestions.style.display = 'none';
         }
     });
+    
+    // Reposition suggestions on window resize or scroll
+    window.addEventListener('resize', positionSuggestions);
+    window.addEventListener('scroll', positionSuggestions);
     
     // Validate ticker
     function validateTicker() {
@@ -855,23 +1658,53 @@
         
         // Return Metrics
         if (performanceData.return_metrics) {
+            console.log('Updating return metrics:', performanceData.return_metrics);
             const perfCagr = document.getElementById('perf-cagr');
             const perfTotalReturn = document.getElementById('perf-total-return');
             const perfBestYear = document.getElementById('perf-best-year');
             const perfWorstYear = document.getElementById('perf-worst-year');
             const perfWinRate = document.getElementById('perf-win-rate');
             
-            perfCagr.textContent = formatPercent(performanceData.return_metrics.cagr);
-            perfTotalReturn.textContent = formatPercent(performanceData.return_metrics.total_return);
-            perfBestYear.textContent = `${formatPercent(performanceData.return_metrics.best_year)} (${performanceData.return_metrics.best_year_date})`;
-            perfWorstYear.textContent = `${formatPercent(performanceData.return_metrics.worst_year)} (${performanceData.return_metrics.worst_year_date})`;
-            perfWinRate.textContent = formatPercent(performanceData.return_metrics.win_rate);
+            if (!perfCagr) {
+                console.error('Could not find perf-cagr element!');
+                return;
+            }
             
-            addColorClass(perfCagr, performanceData.return_metrics.cagr);
-            addColorClass(perfTotalReturn, performanceData.return_metrics.total_return);
-            addColorClass(perfBestYear, performanceData.return_metrics.best_year);
-            addColorClass(perfWorstYear, performanceData.return_metrics.worst_year, false);
-            addColorClass(perfWinRate, performanceData.return_metrics.win_rate);
+            console.log('Setting CAGR value:', formatPercent(performanceData.return_metrics.cagr));
+            perfCagr.textContent = formatPercent(performanceData.return_metrics.cagr);
+            perfCagr.style.color = '#00ff41';  // Use direct color
+            perfCagr.style.textShadow = '0 0 8px rgba(0, 255, 65, 0.6)';
+            perfCagr.style.display = 'block';
+            perfCagr.style.visibility = 'visible';
+            
+            perfTotalReturn.textContent = formatPercent(performanceData.return_metrics.total_return);
+            perfTotalReturn.style.color = '#00ff41';
+            perfTotalReturn.style.display = 'block';
+            perfTotalReturn.style.visibility = 'visible';
+            
+            perfBestYear.textContent = `${formatPercent(performanceData.return_metrics.best_year)} (${performanceData.return_metrics.best_year_date})`;
+            perfBestYear.style.color = '#00ff41';
+            perfBestYear.style.display = 'block';
+            perfBestYear.style.visibility = 'visible';
+            
+            perfWorstYear.textContent = `${formatPercent(performanceData.return_metrics.worst_year)} (${performanceData.return_metrics.worst_year_date})`;
+            perfWorstYear.style.color = '#ff0040';
+            perfWorstYear.style.display = 'block';
+            perfWorstYear.style.visibility = 'visible';
+            
+            perfWinRate.textContent = formatPercent(performanceData.return_metrics.win_rate);
+            perfWinRate.style.color = '#00ff41';
+            perfWinRate.style.display = 'block';
+            perfWinRate.style.visibility = 'visible';
+            
+            // Skip addColorClass since we're setting colors directly
+            // addColorClass(perfCagr, performanceData.return_metrics.cagr);
+            // addColorClass(perfTotalReturn, performanceData.return_metrics.total_return);
+            // addColorClass(perfBestYear, performanceData.return_metrics.best_year);
+            // addColorClass(perfWorstYear, performanceData.return_metrics.worst_year, false);
+            // addColorClass(perfWinRate, performanceData.return_metrics.win_rate);
+        } else {
+            console.error('No return_metrics in performance data!');
         }
         
         
@@ -884,15 +1717,29 @@
             const perfPain = document.getElementById('perf-pain');
             
             perfVolatility.textContent = formatPercent(performanceData.risk_metrics.volatility);
-            perfMaxDD.textContent = formatPercent(performanceData.risk_metrics.maximum_drawdown);
-            perfRecovery.textContent = formatDays(performanceData.risk_metrics.recovery_days);
-            perfVar.textContent = formatPercent(performanceData.risk_metrics.var_5);
-            perfPain.textContent = formatPercent(performanceData.risk_metrics.pain_index);
+            perfVolatility.style.color = '#ff6600';
+            perfVolatility.style.display = 'block';
+            perfVolatility.style.visibility = 'visible';
             
-            addColorClass(perfVolatility, performanceData.risk_metrics.volatility, false);
-            addColorClass(perfMaxDD, performanceData.risk_metrics.maximum_drawdown, false);
-            addColorClass(perfVar, performanceData.risk_metrics.var_5, false);
-            addColorClass(perfPain, performanceData.risk_metrics.pain_index, false);
+            perfMaxDD.textContent = formatPercent(performanceData.risk_metrics.maximum_drawdown);
+            perfMaxDD.style.color = '#ff0040';
+            perfMaxDD.style.display = 'block';
+            perfMaxDD.style.visibility = 'visible';
+            
+            perfRecovery.textContent = formatDays(performanceData.risk_metrics.recovery_days);
+            perfRecovery.style.color = '#ff6600';
+            perfRecovery.style.display = 'block';
+            perfRecovery.style.visibility = 'visible';
+            
+            perfVar.textContent = formatPercent(performanceData.risk_metrics.var_5);
+            perfVar.style.color = '#ff0040';
+            perfVar.style.display = 'block';
+            perfVar.style.visibility = 'visible';
+            
+            perfPain.textContent = formatPercent(performanceData.risk_metrics.pain_index);
+            perfPain.style.color = '#ff0040';
+            perfPain.style.display = 'block';
+            perfPain.style.visibility = 'visible';
         }
         
         // Risk-Adjusted Metrics
@@ -902,12 +1749,19 @@
             const perfCalmar = document.getElementById('perf-calmar');
             
             perfSharpe.textContent = formatNumber(performanceData.risk_adjusted_metrics.sharpe_ratio);
-            perfSortino.textContent = formatNumber(performanceData.risk_adjusted_metrics.sortino_ratio);
-            perfCalmar.textContent = formatNumber(performanceData.risk_adjusted_metrics.calmar_ratio);
+            perfSharpe.style.color = '#00b4ff';
+            perfSharpe.style.display = 'block';
+            perfSharpe.style.visibility = 'visible';
             
-            addColorClass(perfSharpe, performanceData.risk_adjusted_metrics.sharpe_ratio);
-            addColorClass(perfSortino, performanceData.risk_adjusted_metrics.sortino_ratio);
-            addColorClass(perfCalmar, performanceData.risk_adjusted_metrics.calmar_ratio);
+            perfSortino.textContent = formatNumber(performanceData.risk_adjusted_metrics.sortino_ratio);
+            perfSortino.style.color = '#00b4ff';
+            perfSortino.style.display = 'block';
+            perfSortino.style.visibility = 'visible';
+            
+            perfCalmar.textContent = formatNumber(performanceData.risk_adjusted_metrics.calmar_ratio);
+            perfCalmar.style.color = '#00b4ff';
+            perfCalmar.style.display = 'block';
+            perfCalmar.style.visibility = 'visible';
         }
         
         // Relative Metrics
@@ -919,14 +1773,29 @@
             const perfInfoRatio = document.getElementById('perf-info-ratio');
             
             perfBeta.textContent = formatNumber(performanceData.relative_metrics.beta);
-            perfAlpha.textContent = formatPercent(performanceData.relative_metrics.alpha);
-            perfRSquared.textContent = formatNumber(performanceData.relative_metrics.r_squared);
-            perfTreynor.textContent = formatNumber(performanceData.relative_metrics.treynor_ratio);
-            perfInfoRatio.textContent = formatNumber(performanceData.relative_metrics.information_ratio);
+            perfBeta.style.color = '#cc00ff';
+            perfBeta.style.display = 'block';
+            perfBeta.style.visibility = 'visible';
             
-            addColorClass(perfAlpha, performanceData.relative_metrics.alpha);
-            addColorClass(perfTreynor, performanceData.relative_metrics.treynor_ratio);
-            addColorClass(perfInfoRatio, performanceData.relative_metrics.information_ratio);
+            perfAlpha.textContent = formatPercent(performanceData.relative_metrics.alpha);
+            perfAlpha.style.color = performanceData.relative_metrics.alpha > 0 ? '#00ff41' : '#ff0040';
+            perfAlpha.style.display = 'block';
+            perfAlpha.style.visibility = 'visible';
+            
+            perfRSquared.textContent = formatNumber(performanceData.relative_metrics.r_squared);
+            perfRSquared.style.color = '#cc00ff';
+            perfRSquared.style.display = 'block';
+            perfRSquared.style.visibility = 'visible';
+            
+            perfTreynor.textContent = formatNumber(performanceData.relative_metrics.treynor_ratio);
+            perfTreynor.style.color = '#cc00ff';
+            perfTreynor.style.display = 'block';
+            perfTreynor.style.visibility = 'visible';
+            
+            perfInfoRatio.textContent = formatNumber(performanceData.relative_metrics.information_ratio);
+            perfInfoRatio.style.color = performanceData.relative_metrics.information_ratio > 0 ? '#00ff41' : '#ff0040';
+            perfInfoRatio.style.display = 'block';
+            perfInfoRatio.style.visibility = 'visible';
         }
         
         // Period Information
@@ -1022,40 +1891,92 @@
             document.getElementById('instructions').style.display = 'block';
             document.getElementById('statsContainer').style.display = 'flex';
             document.getElementById('performanceContainer').style.display = 'block';
+            console.log('Performance container made visible');
+            
+            // Force check all bloomberg metric values are visible
+            document.querySelectorAll('.bloomberg-metric-value').forEach(el => {
+                console.log('Bloomberg metric element:', el.id, 'Text:', el.textContent);
+                el.style.display = 'inline-block';
+                el.style.visibility = 'visible';
+                el.style.opacity = '1';
+            });
             document.getElementById('downloadSection').style.display = 'block';
             
-            // Render heatmap
-            Plotly.newPlot('heatmapPlot', data.heatmap.data, data.heatmap.layout);
+            // Render heatmap with Bloomberg terminal styling
+            const terminalLayout = {
+                ...data.heatmap.layout,
+                paper_bgcolor: 'rgba(20, 20, 20, 0.8)',
+                plot_bgcolor: '#0a0a0a',
+                font: {
+                    color: '#ff6600',
+                    family: 'JetBrains Mono, monospace'
+                }
+            };
             
-            // Update statistics
+            // Ensure the data has proper styling
+            const terminalData = data.heatmap.data.map(trace => ({
+                ...trace,
+                hovertemplate: trace.hovertemplate || '<b style="color: #ff6600;">FROM %{x} → %{y}</b><br><span style="color: #00ff41;">Value: %{z:.1f}%</span><extra></extra>'
+            }));
+            
+            Plotly.newPlot('heatmapPlot', terminalData, terminalLayout, {responsive: true});
+            
+            // Update statistics with Bloomberg terminal colors
             const currentMatrixType = document.querySelector('input[name="matrixType"]:checked').value;
             if (data.stats.best_single_year) {
-                document.getElementById('bestSingleYear').textContent = data.stats.best_single_year.value.toFixed(1) + '%';
+                const bestYearEl = document.getElementById('bestSingleYear');
+                bestYearEl.textContent = data.stats.best_single_year.value.toFixed(1) + '%';
+                bestYearEl.style.color = 'var(--data-green)';
+                bestYearEl.style.textShadow = '0 0 15px rgba(0, 255, 65, 0.6)';
                 document.getElementById('bestSingleYearLabel').textContent = `Best Single Year ${currentMatrixType} (${data.stats.best_single_year.year})`;
             }
             
             if (data.stats.worst_single_year) {
-                document.getElementById('worstSingleYear').textContent = data.stats.worst_single_year.value.toFixed(1) + '%';
+                const worstYearEl = document.getElementById('worstSingleYear');
+                worstYearEl.textContent = data.stats.worst_single_year.value.toFixed(1) + '%';
+                worstYearEl.style.color = 'var(--data-red)';
+                worstYearEl.style.textShadow = '0 0 15px rgba(255, 0, 64, 0.6)';
                 document.getElementById('worstSingleYearLabel').textContent = `Worst Single Year ${currentMatrixType} (${data.stats.worst_single_year.year})`;
             }
             
             if (data.stats.ten_year_metric) {
-                document.getElementById('tenYearCAGR').textContent = data.stats.ten_year_metric.value.toFixed(1) + '%';
+                const tenYearEl = document.getElementById('tenYearCAGR');
+                tenYearEl.textContent = data.stats.ten_year_metric.value.toFixed(1) + '%';
+                if (data.stats.ten_year_metric.value > 0) {
+                    tenYearEl.style.color = 'var(--data-green)';
+                    tenYearEl.style.textShadow = '0 0 15px rgba(0, 255, 65, 0.6)';
+                } else {
+                    tenYearEl.style.color = 'var(--data-red)';
+                    tenYearEl.style.textShadow = '0 0 15px rgba(255, 0, 64, 0.6)';
+                }
                 document.getElementById('tenYearCAGRLabel').textContent = `10-Year ${data.stats.ten_year_metric.type} (${data.stats.ten_year_metric.start}-${data.stats.ten_year_metric.end})`;
             } else {
                 const currentMatrixType = document.querySelector('input[name="matrixType"]:checked').value;
-                document.getElementById('tenYearCAGR').textContent = 'N/A';
+                const tenYearEl = document.getElementById('tenYearCAGR');
+                tenYearEl.textContent = 'N/A';
+                tenYearEl.style.color = 'var(--text-tertiary)';
                 document.getElementById('tenYearCAGRLabel').textContent = `10-Year ${currentMatrixType}`;
             }
             
             if (data.stats.full_period_metric) {
-                document.getElementById('fullPeriodCAGR').textContent = data.stats.full_period_metric.value.toFixed(1) + '%';
+                const fullPeriodEl = document.getElementById('fullPeriodCAGR');
+                fullPeriodEl.textContent = data.stats.full_period_metric.value.toFixed(1) + '%';
+                if (data.stats.full_period_metric.value > 0) {
+                    fullPeriodEl.style.color = 'var(--data-green)';
+                    fullPeriodEl.style.textShadow = '0 0 15px rgba(0, 255, 65, 0.6)';
+                } else {
+                    fullPeriodEl.style.color = 'var(--data-red)';
+                    fullPeriodEl.style.textShadow = '0 0 15px rgba(255, 0, 64, 0.6)';
+                }
                 document.getElementById('fullPeriodCAGRLabel').textContent = `${data.stats.full_period_metric.years}-Year ${data.stats.full_period_metric.type} (${data.stats.full_period_metric.start}-${data.stats.full_period_metric.end})`;
             }
             
             // Update performance overview
             if (data.performance_overview) {
+                console.log('Performance data received:', data.performance_overview);
                 updatePerformanceOverview(data.performance_overview, ticker, startYear, endYear);
+            } else {
+                console.error('No performance overview data received!');
             }
         })
         .catch(error => {
@@ -1144,5 +2065,7 @@
             document.body.removeChild(a);
         });
     }
+    
+
 </script>
 {% endblock %}

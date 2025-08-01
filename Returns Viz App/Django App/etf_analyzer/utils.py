@@ -147,16 +147,17 @@ def create_cagr_heatmap(matrix_data, etf_name, start_year, end_year, matrix_type
     display_matrix = matrix_data.iloc[::-1].copy()
     display_matrix_clean = display_matrix.where(pd.notna(display_matrix), None)
     
+    # BLOOMBERG TERMINAL COLORSCALE - NUCLEAR MODE 🔥
     colorscale = [
-        [0.0, '#800000'],
-        [0.15, '#CC0000'],
-        [0.35, '#FF6666'],
-        [0.45, '#FFE6E6'],
-        [0.5, '#F8F8F8'],
-        [0.55, '#E6F3E6'],
-        [0.65, '#66CC66'],
-        [0.8, '#339933'],
-        [1.0, '#006600']
+        [0.0, 'rgb(255,0,64)'],      # Bright red for extreme losses
+        [0.2, 'rgb(204,0,51)'],      # Dark red for significant losses
+        [0.35, 'rgb(102,0,25)'],     # Deep red for moderate losses
+        [0.45, 'rgb(51,26,0)'],      # Dark brown for mild losses
+        [0.5, 'rgb(20,20,20)'],      # Terminal black for neutral
+        [0.55, 'rgb(0,51,25)'],      # Dark green for mild gains
+        [0.65, 'rgb(0,102,51)'],     # Medium green for moderate gains
+        [0.8, 'rgb(0,204,102)'],     # Bright green for significant gains
+        [1.0, 'rgb(0,255,65)']       # Neon green for extreme gains
     ]
     
     flat_values = display_matrix_clean.values.flatten()
@@ -212,7 +213,7 @@ def create_cagr_heatmap(matrix_data, etf_name, start_year, end_year, matrix_type
         hovertemplate=f'<b>From %{{x}} to %{{y}}</b><br>{matrix_type}: %{{z:.1f}}%<extra></extra>',
         text=display_matrix_clean.round(1),
         texttemplate='%{text}%',
-        textfont=dict(size=11, color='black')
+        textfont=dict(size=11, color='white', family='JetBrains Mono, monospace')
     ))
     
     annotations = []
@@ -221,9 +222,9 @@ def create_cagr_heatmap(matrix_data, etf_name, start_year, end_year, matrix_type
         dict(
             x=0.02,
             y=1.12,
-            text='From the start of',
+            text='▶ FROM START OF',
             showarrow=False,
-            font=dict(color='#1f4e79', size=16, family='Arial'),
+            font=dict(color='#ff6600', size=14, family='Orbitron'),
             xref='paper',
             yref='paper',
             xanchor='left',
@@ -235,12 +236,7 @@ def create_cagr_heatmap(matrix_data, etf_name, start_year, end_year, matrix_type
         for j, col_year in enumerate(display_matrix_clean.columns):
             value = display_matrix_clean.iloc[i, j]
             if pd.notna(value) and value is not None:
-                if value < -15:
-                    text_color = 'white'
-                elif value > 25:
-                    text_color = 'white'
-                else:
-                    text_color = 'black'
+                # Bloomberg terminal text colors - WHITE for readability
                 
                 annotations.append(
                     dict(
@@ -248,54 +244,57 @@ def create_cagr_heatmap(matrix_data, etf_name, start_year, end_year, matrix_type
                         y=row_year,
                         text=f'{value:.1f}%',
                         showarrow=False,
-                        font=dict(color=text_color, size=12, family='Arial'),
+                        font=dict(color='#ffffff', size=12, family='JetBrains Mono, monospace'),
                         xref='x',
                         yref='y'
                     )
                 )
     
-    title_text = f'{etf_name} - {matrix_type} Matrix Period {start_year}-{end_year}'
+    # Professional title style
+    title_text = f'{etf_name} /// {matrix_type} MATRIX /// PERIOD: {start_year}-{end_year}'
     if matrix_type == "CAGR":
-        title_text = f'{etf_name} - Compound Annual Growth Rate Matrix Period {start_year}-{end_year}'
+        title_text = f'{etf_name} /// COMPOUND ANNUAL GROWTH RATE /// PERIOD: {start_year}-{end_year}'
     
     fig.update_layout(
         title=dict(
-            text=title_text,
+            text=title_text.upper(),
             x=0.5,
             xanchor='center',
-            font=dict(size=20, color='#1f4e79', family='Arial'),
-            pad=dict(t=20, b=15)
+            font=dict(size=18, color='#ff6600', family='Orbitron, monospace'),
+            pad=dict(t=20, b=20)
         ),
         xaxis=dict(
             title=None,
             side='top',
-            tickfont=dict(size=12, color='#1f4e79'),
+            tickfont=dict(size=12, color='#ff6600', family='JetBrains Mono'),
             dtick=1,
             tick0=start_year,
-            showgrid=False,
+            showgrid=True,
+            gridcolor='rgba(255,102,0,0.1)',
             zeroline=False,
             showline=True,
             linewidth=2,
-            linecolor='#1f4e79'
+            linecolor='#ff6600'
         ),
         yaxis=dict(
             title=dict(
-                text='To the end of',
-                font=dict(size=16, color='#1f4e79', family='Arial'),
+                text='◀ TO END OF',
+                font=dict(size=14, color='#ff6600', family='Orbitron'),
                 standoff=20
             ),
-            tickfont=dict(size=12, color='#1f4e79'),
+            tickfont=dict(size=12, color='#ff6600', family='JetBrains Mono'),
             dtick=1,
             tick0=start_year,
-            showgrid=False,
+            showgrid=True,
+            gridcolor='rgba(255,102,0,0.1)',
             zeroline=False,
             autorange='reversed',
             showline=True,
             linewidth=2,
-            linecolor='#1f4e79'
+            linecolor='#ff6600'
         ),
-        plot_bgcolor='white',
-        paper_bgcolor='white',
+        plot_bgcolor='#0a0a0a',
+        paper_bgcolor='#141414',
         width=None,
         height=650,
         margin=dict(l=120, r=180, t=140, b=80),
