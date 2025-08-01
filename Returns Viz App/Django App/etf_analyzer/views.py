@@ -4,7 +4,7 @@ from django.views.decorators.csrf import csrf_exempt, ensure_csrf_cookie
 import json
 import pandas as pd
 import numpy as np
-from .utils import create_cagr_matrix, create_total_return_matrix, create_cagr_heatmap
+from .utils import create_cagr_matrix, create_total_return_matrix, create_simple_annualized_return_matrix, create_cagr_heatmap
 from .fmp_api import FMPDataProvider
 from .performance_metrics import calculate_performance_metrics
 import plotly.io as pio
@@ -157,6 +157,8 @@ def get_data(request):
                 
             if matrix_type == 'Total Return':
                 matrix = create_total_return_matrix(annual_returns, actual_start_year, actual_end_year)
+            elif matrix_type == 'Simple Annualized Return':
+                matrix = create_simple_annualized_return_matrix(annual_returns, actual_start_year, actual_end_year)
             else:
                 matrix = create_cagr_matrix(annual_returns, actual_start_year, actual_end_year)
             
@@ -348,6 +350,8 @@ def download_matrix(request):
                 
             if matrix_type == 'Total Return':
                 matrix = create_total_return_matrix(annual_returns, start_year, end_year)
+            elif matrix_type == 'Simple Annualized Return':
+                matrix = create_simple_annualized_return_matrix(annual_returns, start_year, end_year)
             else:
                 matrix = create_cagr_matrix(annual_returns, start_year, end_year)
             

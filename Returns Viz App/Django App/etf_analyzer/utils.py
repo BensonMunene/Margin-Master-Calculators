@@ -86,6 +86,54 @@ def create_total_return_matrix(annual_returns_series, start_year=None, end_year=
     return matrix
 
 
+def create_simple_annualized_return_matrix(annual_returns_series, start_year=None, end_year=None):
+    """
+    Creates a matrix of Simple Annualized Returns between different year ranges.
+    Simple Annualized Return = Total Return ÷ Number of Years
+    
+    Parameters:
+    annual_returns_series: Series with annual returns as percentages, indexed by year
+    start_year: First year to include (default: earliest year in data)
+    end_year: Last year to include (default: latest year in data)
+    
+    Returns:
+    DataFrame where columns are starting years, rows are ending years,
+    and values are simple annualized return percentages
+    """
+    returns_decimal = annual_returns_series / 100
+    
+    if start_year is None:
+        start_year = returns_decimal.index.min()
+    if end_year is None:
+        end_year = returns_decimal.index.max()
+    
+    returns_filtered = returns_decimal.loc[start_year:end_year]
+    years = returns_filtered.index.tolist()
+    
+    matrix = pd.DataFrame(index=years, columns=years, dtype=float)
+    
+    for start_yr in years:
+        for end_yr in years:
+            if end_yr >= start_yr:
+                period_returns = returns_filtered.loc[start_yr:end_yr]
+                num_years = len(period_returns)
+                
+                if num_years == 1:
+                    # For single year periods, simple annualized return equals the single year return
+                    simple_annualized_return = period_returns.loc[start_yr] * 100
+                else:
+                    # Calculate total return first
+                    cumulative_return = (1 + period_returns).prod()
+                    total_return = (cumulative_return - 1) * 100
+                    
+                    # Simple annualized return = Total return ÷ number of years
+                    simple_annualized_return = total_return / num_years
+                
+                matrix.loc[end_yr, start_yr] = simple_annualized_return
+    
+    return matrix
+
+
 def load_etf_data():
     """Load and process ETF data to calculate annual returns"""
     

@@ -41,6 +41,12 @@ class PerformanceMetrics:
             return 0.0
         return (1 + self.total_return) ** (1 / self.num_years) - 1
     
+    def simple_annualized_return(self) -> float:
+        """Simple Annualized Return (Total Return ÷ Number of Years)"""
+        if self.num_years <= 0:
+            return 0.0
+        return self.total_return / self.num_years
+    
     def volatility(self, annualized: bool = True) -> float:
         """Volatility (standard deviation of returns)"""
         vol = self.daily_returns.std()
@@ -246,6 +252,7 @@ class PerformanceMetrics:
             # Return Metrics
             'cagr': self.cagr(),
             'total_return': self.total_return,
+            'simple_annualized': self.simple_annualized_return(),
             'annualized_return': self.cagr(),
             
             # Risk Metrics
