@@ -1,0 +1,54 @@
+name: Margin App CI/CD
+
+on:
+  push:
+    branches: [ main, master ]
+    paths:
+      - 'Margin App/**'
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+      
+      - name: Configure SSH
+        run: |
+          mkdir -p ~/.ssh
+          
+          # Copy PEM key from repository
+          cp marginapp.pem ~/.ssh/marginapp.pem
+          
+          chmod 600 ~/.ssh/marginapp.pem
+          
+          # Configure SSH with the exact hostname
+          cat > ~/.ssh/config << EOL
+          Host margin-ec2
+            HostName ec2-13-218-253-207.compute-1.amazonaws.com
+            User ec2-user
+            IdentityFile ~/.ssh/marginapp.pem
+            StrictHostKeyChecking no
+          EOL
+      
+      - name: Deploy to EC2
+        run: |
+          cd "Margin App"
+          # Fix permissions on EC2 first
+          ssh -i ~/.ssh/marginapp.pem ec2-user@margin-ec2 << 'ENDSSH'
+            sudo chown -R ec2-user:ec2-user /home/ec2-user/Margin-Master-Calculators/
+            mkdir -p /home/ec2-user/Margin-Master-Calculators/Margin\ App
+          ENDSSH
+          
+          # Use rsync with --no-group and --no-perms to avoid permission issues
+          rsync -avz --no-group --no-perms -e "ssh -i ~/.ssh/marginapp.pem" --exclude="__pycache__" --exclude="*.pyc" --exclude=".terraform" ./ ec2-user@margin-ec2:/home/ec2-user/Margin-Master-Calculators/Margin\ App/
+          
+          # Deploy with Docker
+          ssh -i ~/.ssh/marginapp.pem ec2-user@margin-ec2 << 'ENDSSH'
+            cd /home/ec2-user/Margin-Master-Calculators/Margin\ App
+            docker-compose down
+            docker-compose up -d --build
+            echo "Deployment completed at $(date)"
+          ENDSSH

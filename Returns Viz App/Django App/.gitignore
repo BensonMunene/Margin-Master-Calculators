@@ -24,9 +24,6 @@ staticfiles/
 .env.local
 .env.*.local
 
-# Authentication
-auth/.htpasswd
-*.htpasswd
 
 # SSL certificates
 ssl/*.pem
