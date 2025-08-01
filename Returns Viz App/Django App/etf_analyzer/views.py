@@ -4,7 +4,10 @@ from django.views.decorators.csrf import csrf_exempt, ensure_csrf_cookie
 import json
 import pandas as pd
 import numpy as np
-from .utils import create_cagr_matrix, create_total_return_matrix, create_simple_annualized_return_matrix, create_cagr_heatmap
+from .utils import (
+    create_cagr_matrix, create_total_return_matrix, create_simple_annualized_return_matrix, 
+    create_difference_matrix, create_ratio_matrix, create_cagr_heatmap
+)
 from .fmp_api import FMPDataProvider
 from .performance_metrics import calculate_performance_metrics
 import plotly.io as pio
@@ -81,23 +84,37 @@ def get_data(request):
             start_year = int(data.get('start_year'))
             end_year = int(data.get('end_year'))
             matrix_type = data.get('matrix_type', 'CAGR')  # Default to CAGR
+            analysis_mode = data.get('analysis_mode', 'Single')  # Single or Comparative
+            benchmark_ticker = data.get('benchmark_ticker', 'SPY').strip().upper() if analysis_mode == 'Comparative' else None
             
             if not ticker:
                 return JsonResponse({'error': 'Please enter a ticker symbol'}, status=400)
             
+            if analysis_mode == 'Comparative' and not benchmark_ticker:
+                return JsonResponse({'error': 'Please enter a benchmark ticker for comparative analysis'}, status=400)
+            
+            if analysis_mode == 'Comparative' and ticker == benchmark_ticker:
+                return JsonResponse({'error': 'Primary and benchmark tickers must be different'}, status=400)
+            
             # Initialize FMP provider
             fmp = FMPDataProvider()
             
-            # Validate ticker first
+            # Validate primary ticker
             if not fmp.validate_ticker(ticker):
                 return JsonResponse({
                     'error': f'Invalid ticker: "{ticker}". Please enter a valid stock or ETF symbol.'
                 }, status=400)
             
+            # Validate benchmark ticker if in comparative mode
+            if analysis_mode == 'Comparative' and not fmp.validate_ticker(benchmark_ticker):
+                return JsonResponse({
+                    'error': f'Invalid benchmark ticker: "{benchmark_ticker}". Please enter a valid stock or ETF symbol.'
+                }, status=400)
+            
             # Get ticker info
             ticker_info = fmp.get_ticker_info(ticker)
             
-            # Calculate annual returns
+            # Calculate annual returns for primary ticker
             try:
                 annual_returns = fmp.calculate_annual_returns(ticker)
                 
@@ -105,7 +122,13 @@ def get_data(request):
                 if not isinstance(annual_returns.index, pd.Index):
                     return JsonResponse({'error': 'Invalid data structure returned from API'}, status=500)
                 
-                    
+                # Get benchmark returns if in comparative mode
+                benchmark_returns = None
+                if analysis_mode == 'Comparative':
+                    benchmark_returns = fmp.calculate_annual_returns(benchmark_ticker)
+                    if not isinstance(benchmark_returns.index, pd.Index):
+                        return JsonResponse({'error': 'Invalid data structure returned from benchmark API'}, status=500)
+                        
             except ValueError as e:
                 return JsonResponse({'error': str(e)}, status=400)
             except Exception as e:
@@ -143,7 +166,7 @@ def get_data(request):
                     'error': f'No data available for {ticker}'
                 }, status=400)
             
-            # Generate matrix based on type
+            # Generate matrix based on analysis mode and type
             # Ensure annual_returns is a Series with integer year index
             if isinstance(annual_returns, pd.Series):
                 # Make sure index is integer type
@@ -154,16 +177,56 @@ def get_data(request):
                         return JsonResponse({'error': 'Invalid year data in returns'}, status=500)
             else:
                 return JsonResponse({'error': 'Invalid returns data structure'}, status=500)
+            
+            # Same for benchmark returns if applicable
+            if analysis_mode == 'Comparative' and benchmark_returns is not None:
+                if isinstance(benchmark_returns, pd.Series):
+                    if not pd.api.types.is_integer_dtype(benchmark_returns.index):
+                        try:
+                            benchmark_returns.index = benchmark_returns.index.astype(int)
+                        except:
+                            return JsonResponse({'error': 'Invalid year data in benchmark returns'}, status=500)
+                else:
+                    return JsonResponse({'error': 'Invalid benchmark returns data structure'}, status=500)
+            
+            # Generate matrix based on analysis mode and type
+            try:
+                if analysis_mode == 'Single':
+                    # Single ticker analysis (existing logic)
+                    if matrix_type == 'Total Return':
+                        matrix = create_total_return_matrix(annual_returns, actual_start_year, actual_end_year)
+                    elif matrix_type == 'Simple Annualized Return':
+                        matrix = create_simple_annualized_return_matrix(annual_returns, actual_start_year, actual_end_year)
+                    else:  # CAGR
+                        matrix = create_cagr_matrix(annual_returns, actual_start_year, actual_end_year)
+                    
+                    matrix_title = f"{ticker} - {matrix_type}"
                 
-            if matrix_type == 'Total Return':
-                matrix = create_total_return_matrix(annual_returns, actual_start_year, actual_end_year)
-            elif matrix_type == 'Simple Annualized Return':
-                matrix = create_simple_annualized_return_matrix(annual_returns, actual_start_year, actual_end_year)
-            else:
-                matrix = create_cagr_matrix(annual_returns, actual_start_year, actual_end_year)
+                else:  # Comparative analysis
+                    base_type = matrix_type.replace(' Difference', '').replace(' Ratio', '')
+                    
+                    if 'Difference' in matrix_type:
+                        # Difference matrices (Primary - Benchmark)
+                        matrix = create_difference_matrix(annual_returns, benchmark_returns, base_type, actual_start_year, actual_end_year)
+                        matrix_title = f"{ticker} - {benchmark_ticker} ({base_type} Difference)"
+                    
+                    elif 'Ratio' in matrix_type:
+                        # Ratio matrices (Primary ÷ Benchmark)
+                        matrix = create_ratio_matrix(annual_returns, benchmark_returns, base_type, actual_start_year, actual_end_year)
+                        matrix_title = f"{ticker} ÷ {benchmark_ticker} ({base_type} Ratio)"
+                    
+                    else:
+                        return JsonResponse({'error': f'Unknown comparative matrix type: {matrix_type}'}, status=400)
+            
+            except ValueError as e:
+                return JsonResponse({'error': f'Error creating comparative matrix: {str(e)}'}, status=400)
+            except Exception as e:
+                import traceback
+                print(f"Error creating matrix: {traceback.format_exc()}")
+                return JsonResponse({'error': f'Error creating matrix: {str(e)}'}, status=500)
             
             # Create heatmap
-            heatmap_fig = create_cagr_heatmap(matrix, ticker, actual_start_year, actual_end_year, matrix_type)
+            heatmap_fig = create_cagr_heatmap(matrix, matrix_title, actual_start_year, actual_end_year, matrix_type)
             heatmap_json = pio.to_json(heatmap_fig)
             
             # Calculate statistics
@@ -334,9 +397,14 @@ def download_matrix(request):
             start_year = int(data.get('start_year'))
             end_year = int(data.get('end_year'))
             matrix_type = data.get('matrix_type', 'CAGR')  # Default to CAGR
+            analysis_mode = data.get('analysis_mode', 'Single')  # Single or Comparative
+            benchmark_ticker = data.get('benchmark_ticker', 'SPY').strip().upper() if analysis_mode == 'Comparative' else None
             
             if not ticker:
                 return JsonResponse({'error': 'Please provide a ticker symbol'}, status=400)
+            
+            if analysis_mode == 'Comparative' and not benchmark_ticker:
+                return JsonResponse({'error': 'Please provide a benchmark ticker for comparative analysis'}, status=400)
             
             # Initialize FMP provider
             fmp = FMPDataProvider()
@@ -347,13 +415,41 @@ def download_matrix(request):
             # Ensure proper index type
             if not pd.api.types.is_integer_dtype(annual_returns.index):
                 annual_returns.index = annual_returns.index.astype(int)
+            
+            # Get benchmark returns if in comparative mode
+            benchmark_returns = None
+            if analysis_mode == 'Comparative':
+                benchmark_returns = fmp.calculate_annual_returns(benchmark_ticker)
+                if not pd.api.types.is_integer_dtype(benchmark_returns.index):
+                    benchmark_returns.index = benchmark_returns.index.astype(int)
+            
+            # Generate matrix based on analysis mode and type
+            if analysis_mode == 'Single':
+                # Single ticker analysis
+                if matrix_type == 'Total Return':
+                    matrix = create_total_return_matrix(annual_returns, start_year, end_year)
+                elif matrix_type == 'Simple Annualized Return':
+                    matrix = create_simple_annualized_return_matrix(annual_returns, start_year, end_year)
+                else:  # CAGR
+                    matrix = create_cagr_matrix(annual_returns, start_year, end_year)
                 
-            if matrix_type == 'Total Return':
-                matrix = create_total_return_matrix(annual_returns, start_year, end_year)
-            elif matrix_type == 'Simple Annualized Return':
-                matrix = create_simple_annualized_return_matrix(annual_returns, start_year, end_year)
-            else:
-                matrix = create_cagr_matrix(annual_returns, start_year, end_year)
+                filename_prefix = f"PearsonCreek_{ticker}"
+            
+            else:  # Comparative analysis
+                base_type = matrix_type.replace(' Difference', '').replace(' Ratio', '')
+                
+                if 'Difference' in matrix_type:
+                    # Difference matrices (Primary - Benchmark)
+                    matrix = create_difference_matrix(annual_returns, benchmark_returns, base_type, start_year, end_year)
+                    filename_prefix = f"PearsonCreek_{ticker}_minus_{benchmark_ticker}"
+                
+                elif 'Ratio' in matrix_type:
+                    # Ratio matrices (Primary ÷ Benchmark)
+                    matrix = create_ratio_matrix(annual_returns, benchmark_returns, base_type, start_year, end_year)
+                    filename_prefix = f"PearsonCreek_{ticker}_divided_by_{benchmark_ticker}"
+                
+                else:
+                    return JsonResponse({'error': f'Unknown comparative matrix type: {matrix_type}'}, status=400)
             
             # Convert to CSV
             display_matrix = matrix.round(2).fillna('')
@@ -362,7 +458,7 @@ def download_matrix(request):
             # Create CSV response
             response = HttpResponse(content_type='text/csv')
             matrix_name = matrix_type.replace(' ', '_')
-            response['Content-Disposition'] = f'attachment; filename="PearsonCreek_{ticker}_{matrix_name}_Matrix_{start_year}_{end_year}.csv"'
+            response['Content-Disposition'] = f'attachment; filename="{filename_prefix}_{matrix_name}_Matrix_{start_year}_{end_year}.csv"'
             
             display_matrix_reversed.to_csv(response)
             return response

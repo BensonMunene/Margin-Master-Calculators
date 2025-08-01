@@ -417,6 +417,37 @@
     box-shadow: 0 0 10px var(--bloomberg-orange);
 }
 
+/* Comparative Analysis Formula Themes */
+.formula-item.cagr-difference-theme::before {
+    background: var(--data-green);
+    box-shadow: 0 0 10px var(--data-green);
+}
+
+.formula-item.total-return-difference-theme::before {
+    background: var(--data-green);
+    box-shadow: 0 0 10px var(--data-green);
+}
+
+.formula-item.simple-annualized-difference-theme::before {
+    background: var(--data-green);
+    box-shadow: 0 0 10px var(--data-green);
+}
+
+.formula-item.cagr-ratio-theme::before {
+    background: #00b4ff;
+    box-shadow: 0 0 10px #00b4ff;
+}
+
+.formula-item.total-return-ratio-theme::before {
+    background: #00b4ff;
+    box-shadow: 0 0 10px #00b4ff;
+}
+
+.formula-item.simple-annualized-ratio-theme::before {
+    background: #00b4ff;
+    box-shadow: 0 0 10px #00b4ff;
+}
+
 .formula-item:hover {
     border-color: var(--bloomberg-orange-dark);
     box-shadow: 
@@ -510,10 +541,51 @@
     position: relative;
 }
 
+/* Matrix Type Group Styling */
+.matrix-type-group {
+    margin-bottom: 15px;
+}
+
+.matrix-subgroup {
+    margin-bottom: 10px;
+}
+
+.matrix-subgroup-label {
+    color: var(--bloomberg-orange);
+    font-size: 0.9rem;
+    font-weight: 600;
+    margin-bottom: 8px;
+    font-family: 'Share Tech Mono', monospace;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+.matrix-subgroup .btn-group {
+    flex-wrap: wrap;
+    gap: 5px;
+}
+
+.matrix-subgroup .btn {
+    font-size: 0.85rem;
+    padding: 8px 12px;
+    font-family: 'JetBrains Mono', monospace;
+}
+
 @media (max-width: 768px) {
     .formula-grid {
         grid-template-columns: 1fr;
         gap: 1rem;
+    }
+    
+    /* Responsive matrix type buttons */
+    .matrix-subgroup .btn-group {
+        display: flex;
+        flex-direction: column;
+        width: 100%;
+    }
+    
+    .matrix-subgroup .btn {
+        margin-bottom: 5px;
     }
 }
 
@@ -559,7 +631,8 @@
             </div>
             
             <div class="overview-content">
-                <div class="formula-grid">
+                <!-- Single Analysis Formulas -->
+                <div class="formula-grid" id="singleFormulas">
                     <div class="formula-item cagr-theme">
                         <div class="formula-label">CAGR Formula</div>
                         <div class="formula-equation">(End Value / Start Value)^(1/Years) - 1</div>
@@ -576,6 +649,47 @@
                         <div class="formula-label">Simple Annualized Return Formula</div>
                         <div class="formula-equation">Total Return ÷ Number of Years</div>
                         <div class="formula-desc">Average annual return without compounding</div>
+                    </div>
+                </div>
+                
+                <!-- Comparative Analysis Formulas -->
+                <div class="formula-grid" id="comparativeFormulas" style="display: none;">
+                    <!-- Difference Formulas -->
+                    <div class="formula-item cagr-difference-theme">
+                        <div class="formula-label">CAGR Difference Formula</div>
+                        <div class="formula-equation">Primary CAGR - Benchmark CAGR</div>
+                        <div class="formula-desc">Absolute outperformance in percentage points</div>
+                    </div>
+                    
+                    <div class="formula-item total-return-difference-theme">
+                        <div class="formula-label">Total Return Difference Formula</div>
+                        <div class="formula-equation">Primary Total Return - Benchmark Total Return</div>
+                        <div class="formula-desc">Absolute cumulative outperformance</div>
+                    </div>
+                    
+                    <div class="formula-item simple-annualized-difference-theme">
+                        <div class="formula-label">Simple Annualized Difference Formula</div>
+                        <div class="formula-equation">Primary Simple Ann. - Benchmark Simple Ann.</div>
+                        <div class="formula-desc">Average annual outperformance without compounding</div>
+                    </div>
+                    
+                    <!-- Ratio Formulas -->
+                    <div class="formula-item cagr-ratio-theme">
+                        <div class="formula-label">CAGR Ratio Formula</div>
+                        <div class="formula-equation">Primary CAGR ÷ Benchmark CAGR</div>
+                        <div class="formula-desc">Relative performance ratio (>1.0 = outperformance)</div>
+                    </div>
+                    
+                    <div class="formula-item total-return-ratio-theme">
+                        <div class="formula-label">Total Return Ratio Formula</div>
+                        <div class="formula-equation">Primary Total Return ÷ Benchmark Total Return</div>
+                        <div class="formula-desc">Cumulative relative performance ratio</div>
+                    </div>
+                    
+                    <div class="formula-item simple-annualized-ratio-theme">
+                        <div class="formula-label">Simple Annualized Ratio Formula</div>
+                        <div class="formula-equation">Primary Simple Ann. ÷ Benchmark Simple Ann.</div>
+                        <div class="formula-desc">Average annual relative performance ratio</div>
                     </div>
                 </div>
                 
@@ -596,13 +710,28 @@
     
     <!-- Control Panel -->
     <div class="control-panel">
+        <!-- Analysis Mode Toggle -->
+        <div class="row mb-4">
+            <div class="col-12">
+                <label class="form-label">Analysis Mode:</label>
+                <div class="btn-group" role="group" id="analysisModeToggle">
+                    <input type="radio" class="btn-check" name="analysisMode" id="singleModeRadio" value="Single" checked>
+                    <label class="btn btn-outline-warning" for="singleModeRadio">Single Ticker Analysis</label>
+                    
+                    <input type="radio" class="btn-check" name="analysisMode" id="comparativeModeRadio" value="Comparative">
+                    <label class="btn btn-outline-warning" for="comparativeModeRadio">Comparative Analysis</label>
+                </div>
+                <div class="form-text" id="analysisModeDescription">Analyze a single ticker's performance over time</div>
+            </div>
+        </div>
+        
         <div class="row g-3">
             <div class="col-md-3">
-                <label for="tickerInput" class="form-label">Enter Ticker Symbol:</label>
+                <label for="tickerInput" class="form-label">Primary Ticker Symbol:</label>
                 <div class="ticker-input-container">
                     <div class="input-group">
                         <input type="text" class="form-control" id="tickerInput" placeholder="e.g., AAPL, SPY, MSFT" 
-                               value="SPY" autocomplete="off">
+                               value="AAPL" autocomplete="off">
                         <button class="btn btn-outline-secondary" type="button" id="validateTicker">
                             <i class="bi bi-check-circle"></i> Validate
                         </button>
@@ -613,8 +742,25 @@
                 <div class="invalid-feedback" id="tickerError" style="display: none;"></div>
             </div>
             
+            <!-- Benchmark Ticker Input (for Comparative Mode) -->
+            <div class="col-md-3" id="benchmarkTickerContainer" style="display: none;">
+                <label for="benchmarkTickerInput" class="form-label">Benchmark Ticker Symbol:</label>
+                <div class="ticker-input-container">
+                    <div class="input-group">
+                        <input type="text" class="form-control" id="benchmarkTickerInput" placeholder="e.g., SPY, QQQ, VTI" 
+                               value="SPY" autocomplete="off">
+                        <button class="btn btn-outline-secondary" type="button" id="validateBenchmarkTicker">
+                            <i class="bi bi-check-circle"></i> Validate
+                        </button>
+                    </div>
+                    <div id="benchmarkTickerSuggestions" class="ticker-suggestions" style="display: none;"></div>
+                </div>
+                <div class="form-text" id="benchmarkTickerInfo"></div>
+                <div class="invalid-feedback" id="benchmarkTickerError" style="display: none;"></div>
+            </div>
+            
             <div class="col-md-3">
-                <label for="periodSelect" class="form-label">📅 Time Period:</label>
+                <label for="periodSelect" class="form-label">Time Period:</label>
                 <select class="form-select" id="periodSelect">
                     {% for period, values in time_periods.items %}
                         <option value="{{ period }}" {% if forloop.first %}selected{% endif %}>{{ period }}</option>
@@ -644,16 +790,54 @@
         <div class="row mt-3">
             <div class="col-12">
                 <label class="form-label">Matrix Type:</label>
-                <div class="btn-group" role="group" id="matrixTypeToggle">
-                    <input type="radio" class="btn-check" name="matrixType" id="cagrRadio" value="CAGR" checked>
-                    <label class="btn btn-outline-primary" for="cagrRadio">CAGR</label>
-                    
-                    <input type="radio" class="btn-check" name="matrixType" id="totalReturnRadio" value="Total Return">
-                    <label class="btn btn-outline-primary" for="totalReturnRadio">Total Return</label>
-                    
-                    <input type="radio" class="btn-check" name="matrixType" id="simpleAnnualizedRadio" value="Simple Annualized Return">
-                    <label class="btn btn-outline-primary" for="simpleAnnualizedRadio">Simple Annualized</label>
+                
+                <!-- Single Analysis Matrix Types -->
+                <div id="singleMatrixTypes" class="matrix-type-group">
+                    <div class="btn-group" role="group">
+                        <input type="radio" class="btn-check" name="matrixType" id="cagrRadio" value="CAGR" checked>
+                        <label class="btn btn-outline-primary" for="cagrRadio">CAGR</label>
+                        
+                        <input type="radio" class="btn-check" name="matrixType" id="totalReturnRadio" value="Total Return">
+                        <label class="btn btn-outline-primary" for="totalReturnRadio">Total Return</label>
+                        
+                        <input type="radio" class="btn-check" name="matrixType" id="simpleAnnualizedRadio" value="Simple Annualized Return">
+                        <label class="btn btn-outline-primary" for="simpleAnnualizedRadio">Simple Annualized</label>
+                    </div>
                 </div>
+                
+                <!-- Comparative Analysis Matrix Types -->
+                <div id="comparativeMatrixTypes" class="matrix-type-group" style="display: none;">
+                    <!-- Difference Metrics -->
+                    <div class="matrix-subgroup mb-3">
+                        <div class="matrix-subgroup-label">Difference (Primary - Benchmark):</div>
+                        <div class="btn-group" role="group">
+                            <input type="radio" class="btn-check" name="matrixType" id="cagrDifferenceRadio" value="CAGR Difference">
+                            <label class="btn btn-outline-success" for="cagrDifferenceRadio">CAGR Diff</label>
+                            
+                            <input type="radio" class="btn-check" name="matrixType" id="totalReturnDifferenceRadio" value="Total Return Difference">
+                            <label class="btn btn-outline-success" for="totalReturnDifferenceRadio">Total Return Diff</label>
+                            
+                            <input type="radio" class="btn-check" name="matrixType" id="simpleAnnualizedDifferenceRadio" value="Simple Annualized Return Difference">
+                            <label class="btn btn-outline-success" for="simpleAnnualizedDifferenceRadio">Simple Ann. Diff</label>
+                        </div>
+                    </div>
+                    
+                    <!-- Ratio Metrics -->
+                    <div class="matrix-subgroup">
+                        <div class="matrix-subgroup-label">Ratio (Primary ÷ Benchmark):</div>
+                        <div class="btn-group" role="group">
+                            <input type="radio" class="btn-check" name="matrixType" id="cagrRatioRadio" value="CAGR Ratio">
+                            <label class="btn btn-outline-info" for="cagrRatioRadio">CAGR Ratio</label>
+                            
+                            <input type="radio" class="btn-check" name="matrixType" id="totalReturnRatioRadio" value="Total Return Ratio">
+                            <label class="btn btn-outline-info" for="totalReturnRatioRadio">Total Return Ratio</label>
+                            
+                            <input type="radio" class="btn-check" name="matrixType" id="simpleAnnualizedRatioRadio" value="Simple Annualized Return Ratio">
+                            <label class="btn btn-outline-info" for="simpleAnnualizedRatioRadio">Simple Ann. Ratio</label>
+                        </div>
+                    </div>
+                </div>
+                
                 <div class="form-text" id="matrixTypeInfo">
                     <span id="matrixTypeDescription">CAGR shows annualized returns between periods</span>
                 </div>
@@ -810,7 +994,7 @@
             <!-- Relative Performance Card -->
             <div class="bloomberg-metric-card" data-metric-type="relative">
                 <div class="bloomberg-card-header">
-                    <span class="bloomberg-card-title">VS S&P 500</span>
+                    <span class="bloomberg-card-title" id="relative-performance-title">AAPL Performance</span>
                 </div>
                 <div class="bloomberg-card-body">
                     <div class="bloomberg-metric-item">
@@ -1357,6 +1541,19 @@
         document.getElementById('downloadMatrix').addEventListener('click', downloadMatrix);
         document.getElementById('downloadReturns').addEventListener('click', downloadReturns);
         
+        // Analysis Mode Toggle Handlers
+        document.getElementById('singleModeRadio').addEventListener('change', function() {
+            if (this.checked) {
+                switchToSingleMode();
+            }
+        });
+        
+        document.getElementById('comparativeModeRadio').addEventListener('change', function() {
+            if (this.checked) {
+                switchToComparativeMode();
+            }
+        });
+        
         // Matrix type toggle handlers
         document.getElementById('cagrRadio').addEventListener('change', function() {
             if (this.checked) {
@@ -1385,6 +1582,69 @@
                 document.getElementById('matrixTypeDescription').textContent = 'Simple Annualized Return shows average annual returns without compounding';
                 updateStatisticLabels('Simple Annualized Return');
                 // Auto-update if we have valid data
+                if (isValidTicker && document.getElementById('heatmapContainer').style.display !== 'none') {
+                    updateAnalysis();
+                }
+            }
+        });
+        
+        // Comparative Analysis Matrix Type Handlers
+        // Difference Matrix Types
+        document.getElementById('cagrDifferenceRadio').addEventListener('change', function() {
+            if (this.checked) {
+                document.getElementById('matrixTypeDescription').textContent = 'CAGR Difference shows how much the primary ticker outperformed the benchmark (positive = outperformance)';
+                updateStatisticLabels('CAGR Difference');
+                if (isValidTicker && document.getElementById('heatmapContainer').style.display !== 'none') {
+                    updateAnalysis();
+                }
+            }
+        });
+        
+        document.getElementById('totalReturnDifferenceRadio').addEventListener('change', function() {
+            if (this.checked) {
+                document.getElementById('matrixTypeDescription').textContent = 'Total Return Difference shows cumulative outperformance vs benchmark (positive = outperformance)';
+                updateStatisticLabels('Total Return Difference');
+                if (isValidTicker && document.getElementById('heatmapContainer').style.display !== 'none') {
+                    updateAnalysis();
+                }
+            }
+        });
+        
+        document.getElementById('simpleAnnualizedDifferenceRadio').addEventListener('change', function() {
+            if (this.checked) {
+                document.getElementById('matrixTypeDescription').textContent = 'Simple Annualized Difference shows average annual outperformance vs benchmark';
+                updateStatisticLabels('Simple Annualized Return Difference');
+                if (isValidTicker && document.getElementById('heatmapContainer').style.display !== 'none') {
+                    updateAnalysis();
+                }
+            }
+        });
+        
+        // Ratio Matrix Types
+        document.getElementById('cagrRatioRadio').addEventListener('change', function() {
+            if (this.checked) {
+                document.getElementById('matrixTypeDescription').textContent = 'CAGR Ratio shows relative performance vs benchmark (>1.0 = outperformance, <1.0 = underperformance)';
+                updateStatisticLabels('CAGR Ratio');
+                if (isValidTicker && document.getElementById('heatmapContainer').style.display !== 'none') {
+                    updateAnalysis();
+                }
+            }
+        });
+        
+        document.getElementById('totalReturnRatioRadio').addEventListener('change', function() {
+            if (this.checked) {
+                document.getElementById('matrixTypeDescription').textContent = 'Total Return Ratio shows cumulative relative performance vs benchmark (>1.0 = outperformance)';
+                updateStatisticLabels('Total Return Ratio');
+                if (isValidTicker && document.getElementById('heatmapContainer').style.display !== 'none') {
+                    updateAnalysis();
+                }
+            }
+        });
+        
+        document.getElementById('simpleAnnualizedRatioRadio').addEventListener('change', function() {
+            if (this.checked) {
+                document.getElementById('matrixTypeDescription').textContent = 'Simple Annualized Ratio shows average annual relative performance vs benchmark';
+                updateStatisticLabels('Simple Annualized Return Ratio');
                 if (isValidTicker && document.getElementById('heatmapContainer').style.display !== 'none') {
                     updateAnalysis();
                 }
@@ -1608,6 +1868,9 @@
                 
                 tickerInfo.innerHTML = infoText;
                 
+                // Update the relative performance title with the new ticker
+                updateRelativePerformanceTitle(ticker.trim().toUpperCase());
+                
                 // Update Full Period option if it's currently selected
                 if (document.getElementById('periodSelect').value === 'Full Period' && tickerDateRange) {
                     document.getElementById('startYear').value = tickerDateRange.start_year;
@@ -1641,6 +1904,36 @@
             validateTicker();
         }
     });
+    
+    // Update title when benchmark ticker changes
+    const benchmarkTickerInput = document.getElementById('benchmarkTickerInput');
+    if (benchmarkTickerInput) {
+        benchmarkTickerInput.addEventListener('input', function() {
+            const primaryTicker = document.getElementById('tickerInput').value.trim().toUpperCase();
+            if (primaryTicker) {
+                updateRelativePerformanceTitle(primaryTicker);
+            }
+        });
+    }
+    
+    // Update Relative Performance Title Function
+    function updateRelativePerformanceTitle(primaryTicker) {
+        const analysisMode = document.querySelector('input[name="analysisMode"]:checked').value;
+        const titleElement = document.getElementById('relative-performance-title');
+        
+        if (analysisMode === 'Single') {
+            // For single mode, show "{TICKER} vs S&P 500"
+            titleElement.textContent = `${primaryTicker} vs S&P 500`;
+        } else {
+            // For comparative mode, show "{PRIMARY} vs {BENCHMARK}"
+            const benchmarkTicker = document.getElementById('benchmarkTickerInput').value.trim().toUpperCase();
+            if (benchmarkTicker) {
+                titleElement.textContent = `${primaryTicker} vs ${benchmarkTicker}`;
+            } else {
+                titleElement.textContent = `${primaryTicker} vs Benchmark`;
+            }
+        }
+    }
     
     // Performance Overview Update Function
     function updatePerformanceOverview(performanceData, ticker, startYear, endYear) {
@@ -1834,13 +2127,83 @@
             const perfPeriodInfo = document.getElementById('perf-period-info');
             perfPeriodInfo.textContent = `${ticker} from ${startYear} to ${endYear} (${performanceData.period_info.num_years.toFixed(1)} years, ${performanceData.period_info.num_observations} observations)`;
         }
+        
+        // Update the relative performance title based on analysis mode
+        updateRelativePerformanceTitle(ticker);
+    }
+    
+    function switchToSingleMode() {
+        // Update UI for single mode
+        document.getElementById('analysisModeDescription').textContent = 'Analyze a single ticker\'s performance over time';
+        document.getElementById('benchmarkTickerContainer').style.display = 'none';
+        document.getElementById('singleMatrixTypes').style.display = 'block';
+        document.getElementById('comparativeMatrixTypes').style.display = 'none';
+        
+        // Show/hide formula cards
+        document.getElementById('singleFormulas').style.display = 'grid';
+        document.getElementById('comparativeFormulas').style.display = 'none';
+        
+        // Reset to CAGR as default for single mode
+        document.getElementById('cagrRadio').checked = true;
+        document.getElementById('matrixTypeDescription').textContent = 'CAGR shows annualized returns between periods';
+        
+        // Clear any comparative selections
+        document.querySelectorAll('#comparativeMatrixTypes input[type="radio"]').forEach(radio => {
+            radio.checked = false;
+        });
+        
+        // Update title for single mode
+        const currentTicker = document.getElementById('tickerInput').value.trim().toUpperCase();
+        if (currentTicker) {
+            updateRelativePerformanceTitle(currentTicker);
+        }
+        
+        // Auto-update if we have valid data
+        if (isValidTicker && document.getElementById('heatmapContainer').style.display !== 'none') {
+            updateAnalysis();
+        }
+    }
+    
+    function switchToComparativeMode() {
+        // Update UI for comparative mode
+        document.getElementById('analysisModeDescription').textContent = 'Compare two tickers to analyze relative performance';
+        document.getElementById('benchmarkTickerContainer').style.display = 'block';
+        document.getElementById('singleMatrixTypes').style.display = 'none';
+        document.getElementById('comparativeMatrixTypes').style.display = 'block';
+        
+        // Show/hide formula cards
+        document.getElementById('singleFormulas').style.display = 'none';
+        document.getElementById('comparativeFormulas').style.display = 'grid';
+        
+        // Reset to CAGR Difference as default for comparative mode
+        document.getElementById('cagrDifferenceRadio').checked = true;
+        document.getElementById('matrixTypeDescription').textContent = 'CAGR Difference shows how much the primary ticker outperformed the benchmark (positive = outperformance)';
+        
+        // Clear any single mode selections
+        document.querySelectorAll('#singleMatrixTypes input[type="radio"]').forEach(radio => {
+            radio.checked = false;
+        });
+        
+        // Update title for comparative mode
+        const currentTicker = document.getElementById('tickerInput').value.trim().toUpperCase();
+        if (currentTicker) {
+            updateRelativePerformanceTitle(currentTicker);
+        }
+        
+        // Auto-update if we have valid data
+        if (isValidTicker && document.getElementById('heatmapContainer').style.display !== 'none') {
+            updateAnalysis();
+        }
     }
     
     function updateAnalysis() {
-        const ticker = tickerInput.value.trim().toUpperCase();
+        // Get ticker value directly from DOM to avoid caching issues
+        const ticker = document.getElementById('tickerInput').value.trim().toUpperCase();
         const period = document.getElementById('periodSelect').value;
         const startYear = document.getElementById('startYear').value;
         const endYear = document.getElementById('endYear').value;
+        
+
         
         if (!ticker) {
             tickerError.textContent = 'Please enter a ticker symbol';
@@ -1863,8 +2226,29 @@
         document.getElementById('performanceContainer').style.display = 'none';
         document.getElementById('downloadSection').style.display = 'none';
         
-        // Get selected matrix type
+        // Get selected analysis mode and matrix type
+        const analysisMode = document.querySelector('input[name="analysisMode"]:checked').value;
         const matrixType = document.querySelector('input[name="matrixType"]:checked').value;
+        
+        // Get benchmark ticker if in comparative mode
+        let benchmarkTicker = null;
+        if (analysisMode === 'Comparative') {
+            benchmarkTicker = document.getElementById('benchmarkTickerInput').value.trim().toUpperCase();
+
+            
+            if (!benchmarkTicker) {
+                document.getElementById('errorAlert').style.display = 'block';
+                document.getElementById('errorAlert').textContent = 'Please enter a benchmark ticker for comparative analysis';
+                document.getElementById('loadingSpinner').style.display = 'none';
+                return;
+            }
+            if (benchmarkTicker === ticker) {
+                document.getElementById('errorAlert').style.display = 'block';
+                document.getElementById('errorAlert').textContent = `Primary and benchmark tickers must be different (Primary: "${ticker}", Benchmark: "${benchmarkTicker}")`;
+                document.getElementById('loadingSpinner').style.display = 'none';
+                return;
+            }
+        }
         
         // Prepare request data
         const requestData = {
@@ -1872,8 +2256,14 @@
             period: period,
             start_year: startYear,
             end_year: endYear,
-            matrix_type: matrixType
+            matrix_type: matrixType,
+            analysis_mode: analysisMode
         };
+        
+        // Add benchmark ticker if in comparative mode
+        if (analysisMode === 'Comparative') {
+            requestData.benchmark_ticker = benchmarkTicker;
+        }
         
         // Make API request
         fetch('/api/get-data/', {
@@ -2018,22 +2408,46 @@
     }
     
     function downloadMatrix() {
-        const ticker = tickerInput.value.trim().toUpperCase();
+        // Get ticker value directly from DOM to avoid caching issues
+        const ticker = document.getElementById('tickerInput').value.trim().toUpperCase();
         const startYear = document.getElementById('startYear').value;
         const endYear = document.getElementById('endYear').value;
         const matrixType = document.querySelector('input[name="matrixType"]:checked').value;
+        const analysisMode = document.querySelector('input[name="analysisMode"]:checked').value;
         
         if (!ticker || !isValidTicker) {
             alert('Please enter and validate a ticker symbol first');
             return;
         }
         
+        // Check benchmark ticker for comparative mode
+        let benchmarkTicker = null;
+        if (analysisMode === 'Comparative') {
+            benchmarkTicker = document.getElementById('benchmarkTickerInput').value.trim().toUpperCase();
+
+            
+            if (!benchmarkTicker) {
+                alert('Please enter a benchmark ticker for comparative analysis');
+                return;
+            }
+            if (benchmarkTicker === ticker) {
+                alert(`Primary and benchmark tickers must be different (Primary: "${ticker}", Benchmark: "${benchmarkTicker}")`);
+                return;
+            }
+        }
+        
         const requestData = {
             ticker: ticker,
             start_year: startYear,
             end_year: endYear,
-            matrix_type: matrixType
+            matrix_type: matrixType,
+            analysis_mode: analysisMode
         };
+        
+        // Add benchmark ticker if in comparative mode
+        if (analysisMode === 'Comparative') {
+            requestData.benchmark_ticker = benchmarkTicker;
+        }
         
         fetch('/api/download-matrix/', {
             method: 'POST',

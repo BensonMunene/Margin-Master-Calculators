@@ -134,6 +134,109 @@ def create_simple_annualized_return_matrix(annual_returns_series, start_year=Non
     return matrix
 
 
+def align_ticker_data(primary_returns, benchmark_returns):
+    """
+    Align two ticker return series to have the same year index (intersection of both)
+    
+    Parameters:
+    primary_returns: Series with annual returns for primary ticker
+    benchmark_returns: Series with annual returns for benchmark ticker
+    
+    Returns:
+    Tuple of (aligned_primary, aligned_benchmark) with same year index
+    """
+    # Find intersection of years
+    common_years = primary_returns.index.intersection(benchmark_returns.index)
+    
+    if len(common_years) == 0:
+        raise ValueError("No overlapping years found between the two tickers")
+    
+    # Sort years
+    common_years = sorted(common_years)
+    
+    # Return aligned data
+    aligned_primary = primary_returns.loc[common_years]
+    aligned_benchmark = benchmark_returns.loc[common_years]
+    
+    return aligned_primary, aligned_benchmark
+
+
+def create_difference_matrix(primary_returns, benchmark_returns, matrix_type="CAGR", start_year=None, end_year=None):
+    """
+    Creates a matrix showing the difference between primary and benchmark returns
+    Difference = Primary - Benchmark (positive means primary outperformed)
+    
+    Parameters:
+    primary_returns: Series with annual returns for primary ticker (e.g., AAPL)
+    benchmark_returns: Series with annual returns for benchmark ticker (e.g., SPY)
+    matrix_type: Type of return calculation ("CAGR", "Total Return", "Simple Annualized Return")
+    start_year: First year to include
+    end_year: Last year to include
+    
+    Returns:
+    DataFrame where values are differences (primary - benchmark)
+    """
+    # Align the data
+    primary_aligned, benchmark_aligned = align_ticker_data(primary_returns, benchmark_returns)
+    
+    # Create matrices for both tickers using the same function
+    if matrix_type == "CAGR":
+        primary_matrix = create_cagr_matrix(primary_aligned, start_year, end_year)
+        benchmark_matrix = create_cagr_matrix(benchmark_aligned, start_year, end_year)
+    elif matrix_type == "Total Return":
+        primary_matrix = create_total_return_matrix(primary_aligned, start_year, end_year)
+        benchmark_matrix = create_total_return_matrix(benchmark_aligned, start_year, end_year)
+    elif matrix_type == "Simple Annualized Return":
+        primary_matrix = create_simple_annualized_return_matrix(primary_aligned, start_year, end_year)
+        benchmark_matrix = create_simple_annualized_return_matrix(benchmark_aligned, start_year, end_year)
+    else:
+        raise ValueError(f"Unknown matrix type: {matrix_type}")
+    
+    # Calculate difference (primary - benchmark)
+    difference_matrix = primary_matrix - benchmark_matrix
+    
+    return difference_matrix
+
+
+def create_ratio_matrix(primary_returns, benchmark_returns, matrix_type="CAGR", start_year=None, end_year=None):
+    """
+    Creates a matrix showing the ratio between primary and benchmark returns
+    Ratio = Primary ÷ Benchmark (>1.0 means primary outperformed)
+    
+    Parameters:
+    primary_returns: Series with annual returns for primary ticker (e.g., AAPL)
+    benchmark_returns: Series with annual returns for benchmark ticker (e.g., SPY)
+    matrix_type: Type of return calculation ("CAGR", "Total Return", "Simple Annualized Return")
+    start_year: First year to include
+    end_year: Last year to include
+    
+    Returns:
+    DataFrame where values are ratios (primary ÷ benchmark)
+    """
+    # Align the data
+    primary_aligned, benchmark_aligned = align_ticker_data(primary_returns, benchmark_returns)
+    
+    # Create matrices for both tickers using the same function
+    if matrix_type == "CAGR":
+        primary_matrix = create_cagr_matrix(primary_aligned, start_year, end_year)
+        benchmark_matrix = create_cagr_matrix(benchmark_aligned, start_year, end_year)
+    elif matrix_type == "Total Return":
+        primary_matrix = create_total_return_matrix(primary_aligned, start_year, end_year)
+        benchmark_matrix = create_total_return_matrix(benchmark_aligned, start_year, end_year)
+    elif matrix_type == "Simple Annualized Return":
+        primary_matrix = create_simple_annualized_return_matrix(primary_aligned, start_year, end_year)
+        benchmark_matrix = create_simple_annualized_return_matrix(benchmark_aligned, start_year, end_year)
+    else:
+        raise ValueError(f"Unknown matrix type: {matrix_type}")
+    
+    # Calculate ratio (primary ÷ benchmark)
+    # Handle division by zero by replacing with NaN
+    ratio_matrix = primary_matrix / benchmark_matrix
+    ratio_matrix = ratio_matrix.replace([np.inf, -np.inf], np.nan)
+    
+    return ratio_matrix
+
+
 def load_etf_data():
     """Load and process ETF data to calculate annual returns"""
     
