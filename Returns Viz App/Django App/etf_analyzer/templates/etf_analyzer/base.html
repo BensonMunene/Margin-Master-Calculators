@@ -317,6 +317,47 @@
             color: var(--bloomberg-orange-bright);
         }
         
+        /* BLOOMBERG YEAR INPUT BOXES */
+        .control-panel .year-input {
+            background: var(--terminal-black);
+            border: 2px solid var(--bloomberg-orange-dark);
+            border-radius: 0;
+            color: var(--data-green);
+            font-family: 'JetBrains Mono', monospace;
+            font-weight: 600;
+            font-size: 1.1rem;
+            padding: 12px 20px;
+            text-align: center;
+            transition: all 0.2s ease;
+            box-shadow: 
+                inset 0 0 15px rgba(0, 0, 0, 0.5),
+                0 0 10px rgba(255, 102, 0, 0.2);
+            text-transform: none;
+            letter-spacing: 2px;
+        }
+        
+        .control-panel .year-input:focus {
+            background: var(--terminal-darker);
+            border-color: var(--bloomberg-orange);
+            box-shadow: 
+                inset 0 0 20px rgba(255, 102, 0, 0.1),
+                0 0 30px rgba(255, 102, 0, 0.4),
+                var(--glow-orange);
+            outline: none;
+            color: var(--bloomberg-orange-bright);
+            text-shadow: 0 0 10px rgba(255, 102, 0, 0.6);
+        }
+        
+        .control-panel .year-display {
+            color: var(--data-green);
+            font-family: 'JetBrains Mono', monospace;
+            font-weight: 500;
+            font-size: 0.9rem;
+            text-align: center;
+            margin-top: 5px;
+            opacity: 0.8;
+        }
+        
         .control-panel .form-select {
             background: var(--terminal-black);
             border: 1px solid var(--bloomberg-orange-dark);

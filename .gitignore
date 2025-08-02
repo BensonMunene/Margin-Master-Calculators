@@ -1,0 +1,9 @@
+# Folders to ignore
+Ben Insights/
+Codes and Notebooks/
+Data/
+Excel workbooks/
+word document files/
+
+# Files to ignore
+App Logic.pdf

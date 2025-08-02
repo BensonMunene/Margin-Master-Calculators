@@ -1,8 +1,0 @@
-Parameter_Name,Backtest_Mode,Export_Date,profit_threshold,Total_Return_Pct,CAGR_Pct,Final_Equity,Max_Drawdown_Pct,Sharpe_Ratio,Sortino_Ratio,Annual_Volatility_Pct,Total_Liquidations,Time_in_Market_Pct,Max_Drawdown_Duration,Total_Interest_Paid,Net_Interest_Cost,Avg_Days_Between_Liquidations,Worst_Single_Loss_Pct,Backtest_Days,Backtest_Years,Total_Rebalances,Profit_Rebalances
-profit_threshold,profit_threshold,2025-07-02 03:31:55,25.0,2611.671,24.001,1355835672.0,-59.91,0.663,0,36.202,0,0,0,159227687.0,-25955788.4,0,0,3866,15.34,8,0
-profit_threshold,profit_threshold,2025-07-02 03:31:55,50.0,2213.221,22.723,1156610606.0,-63.908,0.626,0,36.275,0,0,0,131877622.0,-26088355.71,0,0,3866,15.34,4,0
-profit_threshold,profit_threshold,2025-07-02 03:31:55,75.0,2025.747,22.048,1062873599.0,-59.91,0.665,0,33.169,0,0,0,95373464.0,-41159259.77,0,0,3866,15.34,3,0
-profit_threshold,profit_threshold,2025-07-02 03:31:55,100.0,1850.07,21.364,975035146.0,-48.362,0.7,0,30.519,0,0,0,83268246.0,-44704362.57,0,0,3866,15.34,2,0
-profit_threshold,profit_threshold,2025-07-02 03:31:55,150.0,1634.923,20.443,867461731.0,-53.116,0.677,0,30.181,0,0,0,70559667.0,-42080608.23,0,0,3866,15.34,2,0
-profit_threshold,profit_threshold,2025-07-02 03:31:55,200.0,1553.612,20.067,826806174.0,-59.038,0.643,0,31.191,0,0,0,55712659.0,-49546710.8,0,0,3866,15.34,1,0
-profit_threshold,profit_threshold,2025-07-02 03:31:55,300.0,1466.718,19.645,783359176.0,-40.441,0.714,0,27.507,0,0,0,59531942.0,-39942976.28,0,0,3866,15.34,1,0

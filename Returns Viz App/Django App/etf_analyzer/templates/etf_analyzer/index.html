@@ -571,6 +571,23 @@
     font-family: 'JetBrains Mono', monospace;
 }
 
+/* Year Input Styling */
+.year-input {
+    font-size: 1.2rem;
+    font-weight: 600;
+    text-align: center;
+    font-family: 'JetBrains Mono', monospace;
+}
+
+.year-display {
+    font-size: 1.1rem;
+    font-weight: 700;
+    text-align: center;
+    color: var(--bloomberg-orange);
+    font-family: 'JetBrains Mono', monospace;
+    letter-spacing: 1px;
+}
+
 @media (max-width: 768px) {
     .formula-grid {
         grid-template-columns: 1fr;
@@ -587,6 +604,8 @@
     .matrix-subgroup .btn {
         margin-bottom: 5px;
     }
+    
+
 }
 
 @media (min-width: 769px) and (max-width: 1024px) {
@@ -725,9 +744,10 @@
             </div>
         </div>
         
-        <div class="row g-3">
+        <!-- Single Mode Layout: All in one row -->
+        <div class="row g-3" id="singleModeControls">
             <div class="col-md-3">
-                <label for="tickerInput" class="form-label">Primary Ticker Symbol:</label>
+                <label for="tickerInput" class="form-label">Ticker Symbol:</label>
                 <div class="ticker-input-container">
                     <div class="input-group">
                         <input type="text" class="form-control" id="tickerInput" placeholder="e.g., AAPL, SPY, MSFT" 
@@ -742,23 +762,6 @@
                 <div class="invalid-feedback" id="tickerError" style="display: none;"></div>
             </div>
             
-            <!-- Benchmark Ticker Input (for Comparative Mode) -->
-            <div class="col-md-3" id="benchmarkTickerContainer" style="display: none;">
-                <label for="benchmarkTickerInput" class="form-label">Benchmark Ticker Symbol:</label>
-                <div class="ticker-input-container">
-                    <div class="input-group">
-                        <input type="text" class="form-control" id="benchmarkTickerInput" placeholder="e.g., SPY, QQQ, VTI" 
-                               value="SPY" autocomplete="off">
-                        <button class="btn btn-outline-secondary" type="button" id="validateBenchmarkTicker">
-                            <i class="bi bi-check-circle"></i> Validate
-                        </button>
-                    </div>
-                    <div id="benchmarkTickerSuggestions" class="ticker-suggestions" style="display: none;"></div>
-                </div>
-                <div class="form-text" id="benchmarkTickerInfo"></div>
-                <div class="invalid-feedback" id="benchmarkTickerError" style="display: none;"></div>
-            </div>
-            
             <div class="col-md-3">
                 <label for="periodSelect" class="form-label">Time Period:</label>
                 <select class="form-select" id="periodSelect">
@@ -770,14 +773,77 @@
             
             <div class="col-md-3">
                 <label class="form-label">Start Year:</label>
-                <input type="number" class="form-control" id="startYear" value="2014" min="1990" max="2025">
-                <div class="form-text" id="startYearDisplay">2014</div>
+                <input type="number" class="form-control year-input" id="startYear" value="2014" min="1990" max="2025">
+                <div class="form-text year-display" id="startYearDisplay">2014</div>
             </div>
             
             <div class="col-md-3">
                 <label class="form-label">End Year:</label>
-                <input type="number" class="form-control" id="endYear" value="2025" min="1990" max="2025">
-                <div class="form-text" id="endYearDisplay">2025</div>
+                <input type="number" class="form-control year-input" id="endYear" value="2025" min="1990" max="2025">
+                <div class="form-text year-display" id="endYearDisplay">2025</div>
+            </div>
+        </div>
+
+        <!-- Comparative Mode Layout: 2 rows -->
+        <div id="comparativeModeControls" style="display: none;">
+            <!-- Row 1: Ticker Inputs -->
+            <div class="row g-3 mb-3">
+                <div class="col-md-6">
+                    <label for="tickerInput2" class="form-label">Primary Ticker Symbol:</label>
+                    <div class="ticker-input-container">
+                        <div class="input-group">
+                            <input type="text" class="form-control" id="tickerInput2" placeholder="e.g., AAPL, SPY, MSFT" 
+                                   value="AAPL" autocomplete="off">
+                            <button class="btn btn-outline-secondary" type="button" id="validateTicker2">
+                                <i class="bi bi-check-circle"></i> Validate
+                            </button>
+                        </div>
+                        <div id="tickerSuggestions2" class="ticker-suggestions" style="display: none;"></div>
+                    </div>
+                    <div class="form-text" id="tickerInfo2"></div>
+                    <div class="invalid-feedback" id="tickerError2" style="display: none;"></div>
+                </div>
+                
+                <!-- Benchmark Ticker Input -->
+                <div class="col-md-6" id="benchmarkTickerContainer">
+                    <label for="benchmarkTickerInput" class="form-label">Benchmark Ticker Symbol:</label>
+                    <div class="ticker-input-container">
+                        <div class="input-group">
+                            <input type="text" class="form-control" id="benchmarkTickerInput" placeholder="e.g., SPY, QQQ, VTI" 
+                                   value="SPY" autocomplete="off">
+                            <button class="btn btn-outline-secondary" type="button" id="validateBenchmarkTicker">
+                                <i class="bi bi-check-circle"></i> Validate
+                            </button>
+                        </div>
+                        <div id="benchmarkTickerSuggestions" class="ticker-suggestions" style="display: none;"></div>
+                    </div>
+                    <div class="form-text" id="benchmarkTickerInfo"></div>
+                    <div class="invalid-feedback" id="benchmarkTickerError" style="display: none;"></div>
+                </div>
+            </div>
+            
+            <!-- Row 2: Time Period and Years -->
+            <div class="row g-3">
+                <div class="col-md-4">
+                    <label for="periodSelect2" class="form-label">Time Period:</label>
+                    <select class="form-select" id="periodSelect2">
+                        {% for period, values in time_periods.items %}
+                            <option value="{{ period }}" {% if forloop.first %}selected{% endif %}>{{ period }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                
+                <div class="col-md-4">
+                    <label class="form-label">Start Year:</label>
+                    <input type="number" class="form-control year-input" id="startYear2" value="2014" min="1990" max="2025">
+                    <div class="form-text year-display" id="startYearDisplay2">2014</div>
+                </div>
+                
+                <div class="col-md-4">
+                    <label class="form-label">End Year:</label>
+                    <input type="number" class="form-control year-input" id="endYear2" value="2025" min="1990" max="2025">
+                    <div class="form-text year-display" id="endYearDisplay2">2025</div>
+                </div>
             </div>
         </div>
         
@@ -794,15 +860,15 @@
                 <!-- Single Analysis Matrix Types -->
                 <div id="singleMatrixTypes" class="matrix-type-group">
                     <div class="btn-group" role="group">
-                        <input type="radio" class="btn-check" name="matrixType" id="cagrRadio" value="CAGR" checked>
-                        <label class="btn btn-outline-primary" for="cagrRadio">CAGR</label>
-                        
-                        <input type="radio" class="btn-check" name="matrixType" id="totalReturnRadio" value="Total Return">
-                        <label class="btn btn-outline-primary" for="totalReturnRadio">Total Return</label>
+                    <input type="radio" class="btn-check" name="matrixType" id="cagrRadio" value="CAGR" checked>
+                    <label class="btn btn-outline-primary" for="cagrRadio">CAGR</label>
+                    
+                    <input type="radio" class="btn-check" name="matrixType" id="totalReturnRadio" value="Total Return">
+                    <label class="btn btn-outline-primary" for="totalReturnRadio">Total Return</label>
                         
                         <input type="radio" class="btn-check" name="matrixType" id="simpleAnnualizedRadio" value="Simple Annualized Return">
                         <label class="btn btn-outline-primary" for="simpleAnnualizedRadio">Simple Annualized</label>
-                    </div>
+                </div>
                 </div>
                 
                 <!-- Comparative Analysis Matrix Types -->
@@ -912,24 +978,24 @@
             <div class="bloomberg-metric-card" data-metric-type="returns">
                 <div class="bloomberg-card-header">
                     <span class="bloomberg-card-title">RETURN METRICS</span>
-                </div>
+                        </div>
                 <div class="bloomberg-card-body">
                     <div class="bloomberg-metric-item">
                         <span class="bloomberg-metric-name">CAGR</span>
                         <span class="bloomberg-metric-value" id="perf-cagr">-</span>
-                    </div>
+                        </div>
                     <div class="bloomberg-metric-item">
                         <span class="bloomberg-metric-name">TOTAL RETURN</span>
                         <span class="bloomberg-metric-value" id="perf-total-return">-</span>
-                    </div>
+                        </div>
                     <div class="bloomberg-metric-item">
                         <span class="bloomberg-metric-name">SIMPLE ANNUALIZED</span>
                         <span class="bloomberg-metric-value" id="perf-simple-annualized">-</span>
-                    </div>
+                        </div>
                     <div class="bloomberg-metric-item">
                         <span class="bloomberg-metric-name">BEST YEAR</span>
                         <span class="bloomberg-metric-value" id="perf-best-year">-</span>
-                    </div>
+                        </div>
                     <div class="bloomberg-metric-item">
                         <span class="bloomberg-metric-name">WORST YEAR</span>
                         <span class="bloomberg-metric-value" id="perf-worst-year">-</span>
@@ -945,24 +1011,24 @@
             <div class="bloomberg-metric-card" data-metric-type="risk">
                 <div class="bloomberg-card-header">
                     <span class="bloomberg-card-title">RISK METRICS</span>
-                </div>
+                        </div>
                 <div class="bloomberg-card-body">
                     <div class="bloomberg-metric-item">
                         <span class="bloomberg-metric-name">VOLATILITY</span>
                         <span class="bloomberg-metric-value" id="perf-volatility">-</span>
-                    </div>
+                        </div>
                     <div class="bloomberg-metric-item">
                         <span class="bloomberg-metric-name">MAX DRAWDOWN</span>
                         <span class="bloomberg-metric-value" id="perf-max-dd">-</span>
-                    </div>
+                        </div>
                     <div class="bloomberg-metric-item">
                         <span class="bloomberg-metric-name">RECOVERY DAYS</span>
                         <span class="bloomberg-metric-value" id="perf-recovery">-</span>
-                    </div>
+                        </div>
                     <div class="bloomberg-metric-item">
                         <span class="bloomberg-metric-name">VAR (5%)</span>
                         <span class="bloomberg-metric-value" id="perf-var">-</span>
-                    </div>
+                        </div>
                     <div class="bloomberg-metric-item">
                         <span class="bloomberg-metric-name">PAIN INDEX</span>
                         <span class="bloomberg-metric-value" id="perf-pain">-</span>
@@ -974,16 +1040,16 @@
             <div class="bloomberg-metric-card" data-metric-type="adjusted">
                 <div class="bloomberg-card-header">
                     <span class="bloomberg-card-title">RISK-ADJUSTED RETURNS</span>
-                </div>
+                        </div>
                 <div class="bloomberg-card-body">
                     <div class="bloomberg-metric-item">
                         <span class="bloomberg-metric-name">SHARPE RATIO</span>
                         <span class="bloomberg-metric-value" id="perf-sharpe">-</span>
-                    </div>
+                        </div>
                     <div class="bloomberg-metric-item">
                         <span class="bloomberg-metric-name">SORTINO RATIO</span>
                         <span class="bloomberg-metric-value" id="perf-sortino">-</span>
-                    </div>
+                        </div>
                     <div class="bloomberg-metric-item">
                         <span class="bloomberg-metric-name">CALMAR RATIO</span>
                         <span class="bloomberg-metric-value" id="perf-calmar">-</span>
@@ -995,24 +1061,24 @@
             <div class="bloomberg-metric-card" data-metric-type="relative">
                 <div class="bloomberg-card-header">
                     <span class="bloomberg-card-title" id="relative-performance-title">AAPL Performance</span>
-                </div>
+                        </div>
                 <div class="bloomberg-card-body">
                     <div class="bloomberg-metric-item">
                         <span class="bloomberg-metric-name">BETA</span>
                         <span class="bloomberg-metric-value" id="perf-beta">-</span>
-                    </div>
+                        </div>
                     <div class="bloomberg-metric-item">
                         <span class="bloomberg-metric-name">ALPHA</span>
                         <span class="bloomberg-metric-value" id="perf-alpha">-</span>
-                    </div>
+                        </div>
                     <div class="bloomberg-metric-item">
                         <span class="bloomberg-metric-name">R-SQUARED</span>
                         <span class="bloomberg-metric-value" id="perf-r-squared">-</span>
-                    </div>
+                        </div>
                     <div class="bloomberg-metric-item">
                         <span class="bloomberg-metric-name">TREYNOR RATIO</span>
                         <span class="bloomberg-metric-value" id="perf-treynor">-</span>
-                    </div>
+                        </div>
                     <div class="bloomberg-metric-item">
                         <span class="bloomberg-metric-name">INFO RATIO</span>
                         <span class="bloomberg-metric-value" id="perf-info-ratio">-</span>
@@ -2135,11 +2201,14 @@
     function switchToSingleMode() {
         // Update UI for single mode
         document.getElementById('analysisModeDescription').textContent = 'Analyze a single ticker\'s performance over time';
-        document.getElementById('benchmarkTickerContainer').style.display = 'none';
+        
+        // Show single mode controls, hide comparative mode controls
+        document.getElementById('singleModeControls').style.display = 'block';
+        document.getElementById('comparativeModeControls').style.display = 'none';
+        
+        // Show/hide matrix types and formulas
         document.getElementById('singleMatrixTypes').style.display = 'block';
         document.getElementById('comparativeMatrixTypes').style.display = 'none';
-        
-        // Show/hide formula cards
         document.getElementById('singleFormulas').style.display = 'grid';
         document.getElementById('comparativeFormulas').style.display = 'none';
         
@@ -2167,11 +2236,17 @@
     function switchToComparativeMode() {
         // Update UI for comparative mode
         document.getElementById('analysisModeDescription').textContent = 'Compare two tickers to analyze relative performance';
-        document.getElementById('benchmarkTickerContainer').style.display = 'block';
+        
+        // Hide single mode controls, show comparative mode controls
+        document.getElementById('singleModeControls').style.display = 'none';
+        document.getElementById('comparativeModeControls').style.display = 'block';
+        
+        // Sync values from single mode to comparative mode
+        syncControlValues();
+        
+        // Show/hide matrix types and formulas
         document.getElementById('singleMatrixTypes').style.display = 'none';
         document.getElementById('comparativeMatrixTypes').style.display = 'block';
-        
-        // Show/hide formula cards
         document.getElementById('singleFormulas').style.display = 'none';
         document.getElementById('comparativeFormulas').style.display = 'grid';
         
@@ -2196,12 +2271,34 @@
         }
     }
     
+    function syncControlValues() {
+        // Sync values from single mode to comparative mode
+        document.getElementById('tickerInput2').value = document.getElementById('tickerInput').value;
+        document.getElementById('periodSelect2').value = document.getElementById('periodSelect').value;
+        document.getElementById('startYear2').value = document.getElementById('startYear').value;
+        document.getElementById('endYear2').value = document.getElementById('endYear').value;
+        document.getElementById('startYearDisplay2').textContent = document.getElementById('startYearDisplay').textContent;
+        document.getElementById('endYearDisplay2').textContent = document.getElementById('endYearDisplay').textContent;
+    }
+    
     function updateAnalysis() {
-        // Get ticker value directly from DOM to avoid caching issues
-        const ticker = document.getElementById('tickerInput').value.trim().toUpperCase();
-        const period = document.getElementById('periodSelect').value;
-        const startYear = document.getElementById('startYear').value;
-        const endYear = document.getElementById('endYear').value;
+        // Get values from the active control set
+        const analysisMode = document.querySelector('input[name="analysisMode"]:checked').value;
+        const isComparative = analysisMode === 'Comparative';
+        
+        // Read from appropriate inputs based on mode
+        const ticker = isComparative ? 
+            document.getElementById('tickerInput2').value.trim().toUpperCase() :
+            document.getElementById('tickerInput').value.trim().toUpperCase();
+        const period = isComparative ? 
+            document.getElementById('periodSelect2').value :
+            document.getElementById('periodSelect').value;
+        const startYear = isComparative ? 
+            document.getElementById('startYear2').value :
+            document.getElementById('startYear').value;
+        const endYear = isComparative ? 
+            document.getElementById('endYear2').value :
+            document.getElementById('endYear').value;
         
 
         
@@ -2226,13 +2323,12 @@
         document.getElementById('performanceContainer').style.display = 'none';
         document.getElementById('downloadSection').style.display = 'none';
         
-        // Get selected analysis mode and matrix type
-        const analysisMode = document.querySelector('input[name="analysisMode"]:checked').value;
+        // Get selected matrix type
         const matrixType = document.querySelector('input[name="matrixType"]:checked').value;
         
         // Get benchmark ticker if in comparative mode
         let benchmarkTicker = null;
-        if (analysisMode === 'Comparative') {
+        if (isComparative) {
             benchmarkTicker = document.getElementById('benchmarkTickerInput').value.trim().toUpperCase();
 
             
@@ -2257,11 +2353,11 @@
             start_year: startYear,
             end_year: endYear,
             matrix_type: matrixType,
-            analysis_mode: analysisMode
+            analysis_mode: isComparative ? 'Comparative' : 'Single'
         };
         
         // Add benchmark ticker if in comparative mode
-        if (analysisMode === 'Comparative') {
+        if (isComparative) {
             requestData.benchmark_ticker = benchmarkTicker;
         }
         
