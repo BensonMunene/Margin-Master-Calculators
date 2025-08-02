@@ -7,11 +7,23 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 This repository contains three independent financial analysis applications:
 
 1. **Margin App** - Professional margin trading analytics terminal with Bloomberg Terminal-style UI
-2. **ADE App** - Financial terminal application (ADE Financial Terminal)  
+   - Comprehensive margin calculator with Reg-T and Portfolio Margin support
+   - Historical backtesting with liquidation simulation
+   - Parameter sweep optimization and cushion analysis
+   
+2. **ADE App** - Financial terminal application (ADE Financial Terminal)
+   - Intraday (1-minute) and daily OHLC data analysis
+   - Located in `ADE App/` directory
+   
 3. **Returns Viz App** - ETF CAGR visualization platform with two implementations (Streamlit, Django SQLite)
+   - CAGR matrix calculations for multi-year holding periods
+   - Performance metrics including Sharpe ratio, Sortino ratio, and Max Drawdown
+   - Three implementations: Streamlit (prototype), Django SQLite (web), Django PostgreSQL (API-based)
 
 Additionally, there is a Django implementation of the Margin App:
 - **Margin_Django_App** - Django version of Margin App with PostgreSQL support
+  - Full feature parity with Streamlit version
+  - Multi-user web deployment capabilities
 
 ## Common Development Commands
 
@@ -95,6 +107,13 @@ venv\Scripts\activate
 
 # Activate on macOS/Linux
 source venv/bin/activate
+
+# Install dependencies for specific app
+cd "Margin App" && pip install -r requirements.txt
+# OR
+cd "Returns Viz App/Django App" && pip install -r requirements.txt
+# OR
+cd "Margin_Django_App" && pip install -r requirements.txt
 ```
 
 ## Data Configuration
@@ -239,16 +258,13 @@ P_call = (Margin_Loan / Shares) / (1 - Maintenance_Margin_%)
 
 ### Django PostgreSQL (Margin Django App)
 ```bash
-# Option 1: Manual setup
+# Manual setup
 psql -U postgres
 CREATE DATABASE margin_calculator_db;
 CREATE USER margin_user WITH PASSWORD 'your_password';
 GRANT ALL PRIVILEGES ON DATABASE margin_calculator_db TO margin_user;
 
-# Option 2: Automated setup (if setup_database.py exists)
-python setup_database.py
-
-# Configure .env file
+# Configure .env file (create in Margin_Django_App/ directory)
 DB_NAME=margin_calculator_db
 DB_USER=margin_user
 DB_PASSWORD=your_password
@@ -257,6 +273,11 @@ DB_PORT=5432
 
 # Alternative database name from README_POSTGRES.md
 DB_NAME=margin_calculator  # simpler name used in docs
+
+# Run migrations and import data
+cd Margin_Django_App
+python manage.py migrate
+python manage.py import_data --clear  # Import from CSV files
 ```
 
 ### Django Management Commands
@@ -340,3 +361,6 @@ docker-compose logs -f app
 - **API Testing**: Always run `test_fmp_api.py` before deploying to validate API integration
 - **Cache Management**: Use `python manage.py clear_cache` when troubleshooting data issues
 - **Performance Testing**: Use standalone test scripts to isolate and debug specific functionality
+- **Git Status**: Check `git status` for uncommitted changes before deployment
+- **CSV Data**: Ensure date columns are in YYYY-MM-DD format and sorted ascending
+- **Environment**: Always activate virtual environment before running commands
