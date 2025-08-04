@@ -19,7 +19,6 @@ def run_parameter_sweep(
     end_date: str,
     initial_investment: float,
     account_type: str,
-    excel_data: pd.DataFrame,
     backtest_mode: str = "liquidation_reentry",
     parameter_name: str = "leverage",
     parameter_values: List[float] = None,
@@ -43,6 +42,19 @@ def run_parameter_sweep(
         run_margin_restart_backtest, 
         run_profit_threshold_backtest
     )
+    
+    # Use the global FMP data provider instance
+    from fmp_data_provider import fmp_provider
+    
+    # Fetch data once for all parameter sweeps
+    with st.spinner(f"Fetching data for {etf}..."):
+        prices_df, dividends_df, fed_funds_df = fmp_provider.get_combined_data(
+            etf, start_date, end_date
+        )
+    
+    if prices_df.empty:
+        st.error(f"No data available for {etf} in the specified date range.")
+        return pd.DataFrame()
     
     if parameter_values is None:
         if parameter_name == "leverage":
@@ -76,7 +88,9 @@ def run_parameter_sweep(
                     initial_investment=current_investment,
                     leverage=current_leverage,
                     account_type=account_type,
-                    excel_data=excel_data
+                    prices_df=prices_df,
+                    dividends_df=dividends_df,
+                    fed_funds_df=fed_funds_df
                 )
             elif backtest_mode == "fresh_capital":
                 df_results, metrics, round_analysis = run_margin_restart_backtest(
@@ -86,7 +100,9 @@ def run_parameter_sweep(
                     initial_investment=current_investment,
                     leverage=current_leverage,
                     account_type=account_type,
-                    excel_data=excel_data
+                    prices_df=prices_df,
+                    dividends_df=dividends_df,
+                    fed_funds_df=fed_funds_df
                 )
             elif backtest_mode == "profit_threshold":
                 df_results, metrics, round_analysis = run_profit_threshold_backtest(
@@ -96,8 +112,10 @@ def run_parameter_sweep(
                     initial_investment=current_investment,
                     target_leverage=current_leverage,
                     account_type=account_type,
-                    excel_data=excel_data,
-                    profit_threshold_pct=current_profit_threshold
+                    profit_threshold_pct=current_profit_threshold,
+                    prices_df=prices_df,
+                    dividends_df=dividends_df,
+                    fed_funds_df=fed_funds_df
                 )
             
             # Extract key metrics
@@ -392,9 +410,10 @@ def export_sweep_results(sweep_df: pd.DataFrame, parameter_name: str, backtest_m
     
     return f'<a href="data:file/csv;base64,{b64}" download="{filename}">📊 Download Parameter Sweep Results (CSV)</a>'
 
-def render_parameter_sweep_section(etf_choice, start_date, end_date, equity, leverage, account_type, excel_data):
+def render_parameter_sweep_section(etf_choice, start_date, end_date, equity, leverage, account_type, excel_data=None):
     """
     Render the parameter sweep section UI
+    Note: excel_data parameter is kept for backward compatibility but is no longer used
     """
     
     # PARAMETER SWEEP SECTION
@@ -542,7 +561,6 @@ def render_parameter_sweep_section(etf_choice, start_date, end_date, equity, lev
                 end_date=str(end_date),
                 initial_investment=base_investment,
                 account_type=account_type,
-                excel_data=excel_data,
                 backtest_mode=sweep_mode,
                 parameter_name=parameter_name,
                 parameter_values=parameter_values,
