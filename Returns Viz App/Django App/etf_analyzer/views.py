@@ -195,7 +195,7 @@ def get_data(request):
                     # Single ticker analysis (existing logic)
                     if matrix_type == 'Total Return':
                         matrix = create_total_return_matrix(annual_returns, actual_start_year, actual_end_year)
-                    elif matrix_type == 'Simple Annualized Return':
+                    elif matrix_type == 'Simple Ann. Return' or matrix_type == 'Simple Annualized Return':
                         matrix = create_simple_annualized_return_matrix(annual_returns, actual_start_year, actual_end_year)
                     else:  # CAGR
                         matrix = create_cagr_matrix(annual_returns, actual_start_year, actual_end_year)
@@ -428,7 +428,7 @@ def download_matrix(request):
                 # Single ticker analysis
                 if matrix_type == 'Total Return':
                     matrix = create_total_return_matrix(annual_returns, start_year, end_year)
-                elif matrix_type == 'Simple Annualized Return':
+                elif matrix_type == 'Simple Ann. Return' or matrix_type == 'Simple Annualized Return':
                     matrix = create_simple_annualized_return_matrix(annual_returns, start_year, end_year)
                 else:  # CAGR
                     matrix = create_cagr_matrix(annual_returns, start_year, end_year)

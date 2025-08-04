@@ -11,13 +11,13 @@
     --terminal-grid: #262626;
     --terminal-border: #333333;
     
-    --bloomberg-orange: #ff6600;
-    --bloomberg-orange-bright: #ff8533;
-    --bloomberg-orange-glow: #ff9d4d;
-    --bloomberg-orange-dark: #cc5200;
+    --bloomberg-amber: #FFFF00;
+    --bloomberg-amber-bright: #FFC233;
+    --bloomberg-amber-glow: #FFD466;
+    --bloomberg-amber-dark: #CC8F00;
     
-    --data-green: #00ff41;
-    --data-red: #ff0040;
+    --data-green: #39FF14;
+    --data-red: #FF1744;
     --data-blue: #00b4ff;
     --data-yellow: #ffcc00;
     --data-purple: #cc00ff;
@@ -27,9 +27,9 @@
     --text-tertiary: #808080;
     --text-quaternary: #666666;
     
-    --glow-orange: 0 0 20px rgba(255, 102, 0, 0.6);
-    --glow-green: 0 0 15px rgba(0, 255, 65, 0.5);
-    --glow-red: 0 0 15px rgba(255, 0, 64, 0.5);
+    --glow-amber: 0 0 20px rgba(255, 176, 0, 0.6);
+    --glow-green: 0 0 15px rgba(57, 255, 20, 0.5);
+    --glow-red: 0 0 15px rgba(255, 23, 68, 0.5);
     --glow-blue: 0 0 15px rgba(0, 180, 255, 0.5);
     --glow-purple: 0 0 15px rgba(204, 0, 255, 0.5);
 }
@@ -81,22 +81,22 @@
 
 .performance-card-risk {
     background: var(--terminal-dark);
-    border: 1px solid var(--bloomberg-orange-dark);
-    border-left: 3px solid var(--bloomberg-orange);
+    border: 1px solid var(--bloomberg-amber-dark);
+    border-left: 3px solid var(--bloomberg-amber);
     box-shadow: 
-        inset 0 0 20px rgba(255, 102, 0, 0.05),
-        0 0 15px rgba(255, 102, 0, 0.1);
+        inset 0 0 20px rgba(255, 176, 0, 0.05),
+        0 0 15px rgba(255, 176, 0, 0.1);
     transition: all 0.2s ease;
     position: relative;
     overflow: hidden;
 }
 
 .performance-card-risk:hover {
-    border-color: var(--bloomberg-orange);
+    border-color: var(--bloomberg-amber);
     box-shadow: 
-        inset 0 0 30px rgba(255, 102, 0, 0.1),
-        0 0 30px rgba(255, 102, 0, 0.2),
-        var(--glow-orange);
+        inset 0 0 30px rgba(255, 176, 0, 0.1),
+        0 0 30px rgba(255, 176, 0, 0.2),
+        var(--glow-amber);
 }
 
 .performance-card-risk::before {
@@ -105,23 +105,23 @@
     top: -12px;
     left: 10px;
     background: var(--terminal-dark);
-    color: var(--bloomberg-orange);
+    color: var(--bloomberg-amber);
     padding: 2px 8px;
     font-size: 9px;
     font-family: 'Orbitron', monospace;
     font-weight: 700;
     letter-spacing: 2px;
-    border: 1px solid var(--bloomberg-orange-dark);
+    border: 1px solid var(--bloomberg-amber-dark);
     z-index: 10;
 }
 
 .performance-card-risk .performance-card-header {
-    color: var(--bloomberg-orange);
+    color: var(--bloomberg-amber);
     font-family: 'Orbitron', monospace;
     font-weight: 700;
     text-transform: uppercase;
     letter-spacing: 1px;
-    text-shadow: 0 0 10px rgba(255, 102, 0, 0.5);
+    text-shadow: 0 0 10px rgba(255, 176, 0, 0.5);
 }
 
 .performance-card-adjusted {
@@ -220,8 +220,8 @@
     text-shadow: 0 0 5px rgba(0, 255, 65, 0.3);
 }
 .performance-card-risk .metric-value { 
-    color: var(--bloomberg-orange); 
-    text-shadow: 0 0 5px rgba(255, 102, 0, 0.3);
+    color: var(--bloomberg-amber); 
+    text-shadow: 0 0 5px rgba(255, 176, 0, 0.3);
 }
 .performance-card-adjusted .metric-value { 
     color: var(--data-blue); 
@@ -263,14 +263,14 @@
 
 .overview-card {
     background: var(--terminal-dark);
-    border: 2px solid var(--bloomberg-orange-dark);
+    border: 2px solid var(--bloomberg-amber-dark);
     border-radius: 0;
     padding: 30px;
     position: relative;
     overflow: visible;
     box-shadow: 
-        inset 0 0 30px rgba(255, 102, 0, 0.1),
-        0 0 40px rgba(255, 102, 0, 0.15);
+        inset 0 0 30px rgba(255, 176, 0, 0.1),
+        0 0 40px rgba(255, 176, 0, 0.15);
     transform: translateY(0);
     transition: all 0.3s ease;
 }
@@ -282,23 +282,23 @@
     top: -2px;
     left: -2px;
     background: var(--terminal-black);
-    color: var(--bloomberg-orange);
+    color: var(--bloomberg-amber);
     padding: 5px 20px;
     font-size: 11px;
     font-weight: 700;
     font-family: 'Orbitron', monospace;
     letter-spacing: 2px;
-    border: 2px solid var(--bloomberg-orange-dark);
+    border: 2px solid var(--bloomberg-amber-dark);
     border-bottom: none;
     z-index: 10;
 }
 
 .overview-card:hover {
     box-shadow: 
-        inset 0 0 40px rgba(255, 102, 0, 0.15),
-        0 0 60px rgba(255, 102, 0, 0.2),
-        var(--glow-orange);
-    border-color: var(--bloomberg-orange);
+        inset 0 0 40px rgba(255, 176, 0, 0.15),
+        0 0 60px rgba(255, 176, 0, 0.2),
+        var(--glow-amber);
+    border-color: var(--bloomberg-amber);
 }
 
 /* Data Stream Animation */
@@ -310,7 +310,7 @@
     right: 0;
     bottom: 0;
     background-image: 
-        linear-gradient(0deg, transparent 0%, rgba(255, 102, 0, 0.05) 50%, transparent 100%);
+        linear-gradient(0deg, transparent 0%, rgba(255, 176, 0, 0.05) 50%, transparent 100%);
     background-size: 100% 20px;
     animation: dataFlow 2s linear infinite;
     pointer-events: none;
@@ -331,22 +331,22 @@
 
 .overview-icon {
     background: var(--terminal-black);
-    border: 2px solid var(--bloomberg-orange-dark);
+    border: 2px solid var(--bloomberg-amber-dark);
     border-radius: 0;
     padding: 15px;
     margin-right: 20px;
     box-shadow: 
-        inset 0 0 15px rgba(255, 102, 0, 0.2),
-        0 0 20px rgba(255, 102, 0, 0.1);
+        inset 0 0 15px rgba(255, 176, 0, 0.2),
+        0 0 20px rgba(255, 176, 0, 0.1);
     position: relative;
 }
 
 .overview-svg {
     width: 30px;
     height: 30px;
-    color: var(--bloomberg-orange);
+    color: var(--bloomberg-amber);
     stroke-width: 2;
-    filter: drop-shadow(0 0 10px rgba(255, 102, 0, 0.6));
+    filter: drop-shadow(0 0 10px rgba(255, 176, 0, 0.6));
     animation: iconPulse 2s ease-in-out infinite;
 }
 
@@ -356,16 +356,14 @@
 }
 
 .overview-title {
-    color: var(--bloomberg-orange);
+    color: var(--bloomberg-amber);
     font-size: 1.8rem;
     font-weight: 800;
     margin: 0;
     font-family: 'Orbitron', monospace;
     text-transform: uppercase;
     letter-spacing: 3px;
-    text-shadow: 
-        0 0 10px var(--bloomberg-orange),
-        0 0 20px var(--bloomberg-orange-dark);
+    text-shadow: none;
 }
 
 .overview-content {
@@ -413,8 +411,8 @@
 }
 
 .formula-item.simple-annualized-theme::before {
-    background: var(--bloomberg-orange);
-    box-shadow: 0 0 10px var(--bloomberg-orange);
+    background: var(--bloomberg-amber);
+    box-shadow: 0 0 10px var(--bloomberg-amber);
 }
 
 /* Comparative Analysis Formula Themes */
@@ -449,14 +447,14 @@
 }
 
 .formula-item:hover {
-    border-color: var(--bloomberg-orange-dark);
+    border-color: var(--bloomberg-amber-dark);
     box-shadow: 
-        inset 0 0 25px rgba(255, 102, 0, 0.1),
-        0 0 20px rgba(255, 102, 0, 0.1);
+        inset 0 0 25px rgba(255, 176, 0, 0.1),
+        0 0 20px rgba(255, 176, 0, 0.1);
 }
 
 .formula-label {
-    color: var(--bloomberg-orange);
+    color: var(--bloomberg-amber);
     font-weight: 700;
     font-size: 0.85rem;
     margin-bottom: 10px;
@@ -513,15 +511,15 @@
     top: 0;
     bottom: 0;
     width: 3px;
-    background: var(--bloomberg-orange);
+    background: var(--bloomberg-amber);
     transition: width 0.3s ease;
 }
 
 .metrics-badge:hover {
-    border-color: var(--bloomberg-orange-dark);
+    border-color: var(--bloomberg-amber-dark);
     box-shadow: 
-        inset 0 0 20px rgba(255, 102, 0, 0.1),
-        0 0 15px rgba(255, 102, 0, 0.1);
+        inset 0 0 20px rgba(255, 176, 0, 0.1),
+        0 0 15px rgba(255, 176, 0, 0.1);
 }
 
 .metrics-badge:hover::before {
@@ -551,7 +549,7 @@
 }
 
 .matrix-subgroup-label {
-    color: var(--bloomberg-orange);
+    color: var(--bloomberg-amber);
     font-size: 0.9rem;
     font-weight: 600;
     margin-bottom: 8px;
@@ -583,7 +581,7 @@
     font-size: 1.1rem;
     font-weight: 700;
     text-align: center;
-    color: var(--bloomberg-orange);
+    color: var(--bloomberg-amber);
     font-family: 'JetBrains Mono', monospace;
     letter-spacing: 1px;
 }
@@ -630,6 +628,143 @@
         min-width: 100%;
     }
 }
+
+/* Disable scanline effects for clean UI */
+body::before {
+    display: none !important;
+    visibility: hidden !important;
+    opacity: 0 !important;
+    z-index: -1 !important;
+}
+
+/* Clean static body background */
+body {
+    background: #0e0e0e !important;
+    background-image: none !important;
+}
+
+/* Ensure no scanlines or animated effects show through on any element */
+* {
+    background-attachment: initial !important;
+}
+
+/* Force clean background for title area specifically */
+.company-header {
+    position: relative;
+    z-index: 10 !important;
+    isolation: isolate;
+}
+
+/* Remove scanline animations but keep other necessary animations */
+body::after,
+.main-container::before,
+.main-container::after {
+    display: none !important;
+}
+
+/* Clean static backgrounds for all cards */
+.overview-card,
+.performance-card,
+.performance-card-returns,
+.performance-card-risk,
+.performance-card-adjusted,
+.performance-card-relative,
+.formula-item,
+.metrics-card {
+    background: #0e0e0e !important;
+    background-image: none !important;
+}
+
+/* Remove all pseudo-element backgrounds that create animated effects */
+.overview-card::before,
+.overview-card::after,
+.performance-card::before,
+.performance-card::after,
+.performance-card-returns::before,
+.performance-card-returns::after,
+.performance-card-risk::before,
+.performance-card-risk::after,
+.performance-card-adjusted::before,
+.performance-card-adjusted::after,
+.performance-card-relative::before,
+.performance-card-relative::after,
+.formula-item::before,
+.formula-item::after {
+    background: none !important;
+    background-image: none !important;
+    animation: none !important;
+}
+
+/* Disable specific animations that create distracting effects */
+.overview-icon,
+.overview-card,
+.performance-card,
+.heatmap-container,
+.terminal-header {
+    animation: none !important;
+}
+
+/* Remove data flow animations */
+.overview-content::after {
+    display: none !important;
+}
+
+/* Company Header Styling with Neon Yellow Glow */
+.company-header {
+    text-align: center;
+    padding: 2rem 0;
+    margin-bottom: 2rem;
+    background: #0e0e0e !important;
+    border: 2px solid var(--terminal-border);
+    border-bottom: 2px solid var(--terminal-border);
+    position: relative;
+    z-index: 10;
+    isolation: isolate;
+    transition: all 0.3s ease;
+}
+
+/* Add hover glow effect to match Investment Performance Analytics card */
+.company-header:hover {
+    box-shadow: 
+        inset 0 0 40px rgba(255, 176, 0, 0.15),
+        0 0 60px rgba(255, 176, 0, 0.2),
+        var(--glow-amber);
+    border-color: var(--bloomberg-amber);
+}
+
+/* Add solid overlay to completely block any inherited scanline effects */
+.company-header::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: #0e0e0e;
+    z-index: -1;
+}
+
+.company-name {
+    font-family: 'Orbitron', monospace;
+    font-size: 2.5rem;
+    font-weight: 900;
+    letter-spacing: 3px;
+    color: var(--data-yellow);
+    text-transform: uppercase;
+    text-shadow: none;
+    animation: none;
+    margin-bottom: 0.5rem;
+}
+
+
+.company-tagline {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 1rem;
+    font-weight: 400;
+    color: var(--text-secondary);
+    letter-spacing: 2px;
+    margin: 0;
+}
 </style>
     <!-- Company Header -->
     <div class="company-header">
@@ -655,7 +790,7 @@
                     <div class="formula-item cagr-theme">
                         <div class="formula-label">CAGR Formula</div>
                         <div class="formula-equation">(End Value / Start Value)^(1/Years) - 1</div>
-                        <div class="formula-desc">Annualized growth rate over multiple periods</div>
+                        <div class="formula-desc">Ann. growth rate over multiple periods</div>
                     </div>
                     
                     <div class="formula-item total-return-theme">
@@ -665,7 +800,7 @@
                     </div>
                     
                     <div class="formula-item simple-annualized-theme">
-                        <div class="formula-label">Simple Annualized Return Formula</div>
+                        <div class="formula-label">Simple Ann. Return Formula</div>
                         <div class="formula-equation">Total Return ÷ Number of Years</div>
                         <div class="formula-desc">Average annual return without compounding</div>
                     </div>
@@ -687,7 +822,7 @@
                     </div>
                     
                     <div class="formula-item simple-annualized-difference-theme">
-                        <div class="formula-label">Simple Annualized Difference Formula</div>
+                        <div class="formula-label">Simple Ann. Difference Formula</div>
                         <div class="formula-equation">Primary Simple Ann. - Benchmark Simple Ann.</div>
                         <div class="formula-desc">Average annual outperformance without compounding</div>
                     </div>
@@ -706,7 +841,7 @@
                     </div>
                     
                     <div class="formula-item simple-annualized-ratio-theme">
-                        <div class="formula-label">Simple Annualized Ratio Formula</div>
+                        <div class="formula-label">Simple Ann. Ratio Formula</div>
                         <div class="formula-equation">Primary Simple Ann. ÷ Benchmark Simple Ann.</div>
                         <div class="formula-desc">Average annual relative performance ratio</div>
                     </div>
@@ -862,8 +997,8 @@
                     <input type="radio" class="btn-check" name="matrixType" id="totalReturnRadio" value="Total Return">
                     <label class="btn btn-outline-primary" for="totalReturnRadio">Total Return</label>
                         
-                        <input type="radio" class="btn-check" name="matrixType" id="simpleAnnualizedRadio" value="Simple Annualized Return">
-                        <label class="btn btn-outline-primary" for="simpleAnnualizedRadio">Simple Annualized</label>
+                                                    <input type="radio" class="btn-check" name="matrixType" id="simpleAnnualizedRadio" value="Simple Ann. Return">
+                            <label class="btn btn-outline-primary" for="simpleAnnualizedRadio">Simple Ann.</label>
                 </div>
                 </div>
                 
@@ -879,7 +1014,7 @@
                             <input type="radio" class="btn-check" name="matrixType" id="totalReturnDifferenceRadio" value="Total Return Difference">
                             <label class="btn btn-outline-success" for="totalReturnDifferenceRadio">Total Return Diff</label>
                             
-                            <input type="radio" class="btn-check" name="matrixType" id="simpleAnnualizedDifferenceRadio" value="Simple Annualized Return Difference">
+                            <input type="radio" class="btn-check" name="matrixType" id="simpleAnnualizedDifferenceRadio" value="Simple Ann. Return Difference">
                             <label class="btn btn-outline-success" for="simpleAnnualizedDifferenceRadio">Simple Ann. Diff</label>
                         </div>
                     </div>
@@ -894,7 +1029,7 @@
                             <input type="radio" class="btn-check" name="matrixType" id="totalReturnRatioRadio" value="Total Return Ratio">
                             <label class="btn btn-outline-info" for="totalReturnRatioRadio">Total Return Ratio</label>
                             
-                            <input type="radio" class="btn-check" name="matrixType" id="simpleAnnualizedRatioRadio" value="Simple Annualized Return Ratio">
+                            <input type="radio" class="btn-check" name="matrixType" id="simpleAnnualizedRatioRadio" value="Simple Ann. Return Ratio">
                             <label class="btn btn-outline-info" for="simpleAnnualizedRatioRadio">Simple Ann. Ratio</label>
                         </div>
                     </div>
@@ -965,9 +1100,9 @@
     </div>
     
     <!-- Performance Overview -->
-    <div id="performanceContainer" class="mt-5" style="display: none; background: #1a1a1a; padding: 20px; border: 2px solid #ff6600;">
+    <div id="performanceContainer" class="mt-5" style="display: none; background: #1a1a1a; padding: 20px; border: 2px solid #FFB000;">
 
-        <h3 style="color: var(--bloomberg-orange); font-family: 'Orbitron', monospace; text-transform: uppercase; letter-spacing: 2px;">Performance Overview</h3>
+        <h3 style="color: var(--bloomberg-amber); font-family: 'Orbitron', monospace; text-transform: uppercase; letter-spacing: 2px;">Performance Overview</h3>
         <!-- NEW BLOOMBERG PERFORMANCE CARDS -->
         <div class="performance-grid">
             <!-- Return Metrics Card -->
@@ -985,8 +1120,8 @@
                         <span class="bloomberg-metric-value" id="perf-total-return">-</span>
                         </div>
                     <div class="bloomberg-metric-item">
-                        <span class="bloomberg-metric-name">SIMPLE ANNUALIZED</span>
-                        <span class="bloomberg-metric-value" id="perf-simple-annualized">-</span>
+                                                            <span class="bloomberg-metric-name">SIMPLE ANN.</span>
+                                    <span class="bloomberg-metric-value" id="perf-simple-annualized">-</span>
                         </div>
                     <div class="bloomberg-metric-item">
                         <span class="bloomberg-metric-name">BEST YEAR</span>
@@ -1248,12 +1383,12 @@
     
     .bloomberg-metric-card {
         background: #0a0a0a;
-        border: 2px solid #ff6600;
+        border: 2px solid #FFB000;
         padding: 0;
         position: relative;
         box-shadow: 
-            0 0 20px rgba(255, 102, 0, 0.3),
-            inset 0 0 20px rgba(255, 102, 0, 0.1);
+            0 0 20px rgba(255, 176, 0, 0.3),
+            inset 0 0 20px rgba(255, 176, 0, 0.1);
         animation: terminalBoot 0.5s ease-out;
     }
     
@@ -1264,7 +1399,7 @@
         left: -1px;
         right: -1px;
         bottom: -1px;
-        background: linear-gradient(45deg, #ff6600, #ff3300, #ff6600);
+        background: linear-gradient(45deg, #FFB000, #ff3300, #FFB000);
         opacity: 0;
         z-index: -1;
         transition: opacity 0.3s ease;
@@ -1275,7 +1410,7 @@
     }
     
     .bloomberg-card-header {
-        background: #ff6600;
+        background: #FFB000;
         color: #000;
         padding: 12px 20px;
         display: flex;
@@ -1318,27 +1453,27 @@
     }
     
     .bloomberg-metric-value {
-        color: #ff6600;
+        color: #FFB000;
         font-family: 'JetBrains Mono', monospace;
         font-size: 1.2rem;
         font-weight: 700;
-        text-shadow: 0 0 10px rgba(255, 102, 0, 0.5);
+        text-shadow: 0 0 10px rgba(255, 176, 0, 0.5);
         transition: all 0.3s ease;
     }
     
     .bloomberg-metric-value:hover {
         transform: scale(1.05);
-        text-shadow: 0 0 20px rgba(255, 102, 0, 0.8);
+        text-shadow: 0 0 20px rgba(255, 176, 0, 0.8);
     }
     
     /* Data type specific colors */
     .bloomberg-metric-card[data-metric-type="returns"] .bloomberg-metric-value {
-        color: #00ff41;
+        color: #39FF14;
         text-shadow: 0 0 10px rgba(0, 255, 65, 0.5);
     }
     
     .bloomberg-metric-card[data-metric-type="risk"] .bloomberg-metric-value {
-        color: #ff0040;
+        color: #FF1744;
         text-shadow: 0 0 10px rgba(255, 0, 64, 0.5);
     }
     
@@ -1372,29 +1507,25 @@
     #heatmapPlot .plotly .xtick text,
     #heatmapPlot .plotly .ytick text,
     #heatmapPlot .plotly .axis text {
-        font-weight: 900 !important;
+        font-weight: normal !important;
         color: #ffffff !important;
-        text-shadow: 
-            0 0 8px rgba(0, 0, 0, 1),
-            0 0 15px rgba(0, 0, 0, 0.9),
-            2px 2px 4px rgba(0, 0, 0, 1),
-            -1px -1px 2px rgba(0, 0, 0, 0.8) !important;
+        text-shadow: none !important;
         font-family: 'JetBrains Mono', monospace !important;
-        font-size: 11px !important;
-        stroke: rgba(0, 0, 0, 0.8) !important;
-        stroke-width: 0.5px !important;
+        font-size: 14px !important;
+        stroke: none !important;
+        stroke-width: 0 !important;
     }
     
     /* Heatmap Container Professional Styling */
     #heatmapContainer {
         background: linear-gradient(135deg, var(--terminal-dark) 0%, var(--terminal-black) 100%);
-        border: 2px solid var(--bloomberg-orange);
+        border: 2px solid var(--bloomberg-amber);
         border-radius: 8px;
         padding: 1.5rem;
         margin: 2rem 0;
         box-shadow: 
-            inset 0 0 30px rgba(255, 102, 0, 0.1),
-            0 0 30px rgba(255, 102, 0, 0.15),
+            inset 0 0 30px rgba(255, 176, 0, 0.1),
+            0 0 30px rgba(255, 176, 0, 0.15),
             0 10px 40px rgba(0, 0, 0, 0.3);
         position: relative;
         overflow: hidden;
@@ -1409,22 +1540,22 @@
         height: 3px;
         background: linear-gradient(90deg, 
             transparent 0%, 
-            var(--bloomberg-orange) 20%, 
+            var(--bloomberg-amber) 20%, 
             var(--data-green) 50%, 
-            var(--bloomberg-orange) 80%, 
+            var(--bloomberg-amber) 80%, 
             transparent 100%);
-        box-shadow: 0 0 15px var(--bloomberg-orange);
+        box-shadow: 0 0 15px var(--bloomberg-amber);
         animation: heatmapGlow 3s ease-in-out infinite;
     }
     
     @keyframes heatmapGlow {
         0%, 100% { 
             opacity: 0.6; 
-            box-shadow: 0 0 15px var(--bloomberg-orange);
+            box-shadow: 0 0 15px var(--bloomberg-amber);
         }
         50% { 
             opacity: 1; 
-            box-shadow: 0 0 25px var(--bloomberg-orange-bright);
+            box-shadow: 0 0 25px var(--bloomberg-amber-bright);
         }
     }
     
@@ -1438,52 +1569,57 @@
     
     /* Plotly Toolbar Professional Styling */
     #heatmapPlot .modebar {
-        background: rgba(255, 102, 0, 0.1) !important;
-        border: 1px solid var(--bloomberg-orange) !important;
+        background: rgba(255, 176, 0, 0.1) !important;
+        border: 1px solid var(--bloomberg-amber) !important;
         border-radius: 4px !important;
     }
     
     #heatmapPlot .modebar-btn svg {
-        fill: var(--bloomberg-orange) !important;
+        fill: var(--bloomberg-amber) !important;
     }
     
     #heatmapPlot .modebar-btn:hover {
-        background: rgba(255, 102, 0, 0.2) !important;
+        background: rgba(255, 176, 0, 0.2) !important;
     }
     
     /* Colorbar Professional Styling */
     #heatmapPlot .colorbar {
-        border: 2px solid var(--bloomberg-orange) !important;
+        border: 2px solid var(--bloomberg-amber) !important;
         border-radius: 4px !important;
     }
     
     /* 🔥 MASSIVE AXIS LABELS AND TITLES - NUCLEAR VISIBILITY 🔥 */
     #heatmapPlot .plotly .xaxislayer-above text,
     #heatmapPlot .plotly .yaxislayer-above text {
-        font-weight: 900 !important;
-        color: var(--bloomberg-orange) !important;
-        text-shadow: 0 0 15px rgba(255, 102, 0, 0.8) !important;
+        font-weight: normal !important;
+        color: #ffffff !important;
+        text-shadow: none !important;
         font-family: 'JetBrains Mono', monospace !important;
         font-size: 14px !important;
     }
     
-    /* MAIN TITLE - NUCLEAR SIZE */
+    /* MAIN TITLE - CLEAN PROFESSIONAL */
     #heatmapPlot .plotly .gtitle {
         font-weight: 900 !important;
-        color: var(--bloomberg-orange) !important;
-        text-shadow: 0 0 20px rgba(255, 102, 0, 0.8) !important;
+        color: var(--bloomberg-amber) !important;
+        text-shadow: none !important;
         font-family: 'Orbitron', monospace !important;
-        font-size: 28px !important;
+        font-size: 27px !important;
     }
     
-    /* AXIS TITLES - PERFECTLY SIZED TWINS */
+    /* AXIS TITLES - CLEAN PROFESSIONAL */
     #heatmapPlot .plotly .xtitle,
     #heatmapPlot .plotly .ytitle {
         font-weight: 900 !important;
-        color: var(--bloomberg-orange) !important;
-        text-shadow: 0 0 15px rgba(255, 102, 0, 0.6) !important;
+        color: var(--bloomberg-amber) !important;
+        text-shadow: none !important;
         font-family: 'Orbitron', monospace !important;
         font-size: 18px !important;
+    }
+    
+    /* 🙏 BLESSED X-AXIS TITLE SPACING 🙏 */
+    #heatmapPlot .plotly .xtitle {
+        font-size: 14px !important;
     }
     
     /* Grid Lines Professional Styling */
@@ -1496,11 +1632,11 @@
     .performance-card:hover {
         box-shadow: 
             inset 0 0 20px rgba(0, 0, 0, 0.7),
-            0 0 10px rgba(255, 102, 0, 0.1);
+            0 0 10px rgba(255, 176, 0, 0.1);
     }
     
     .performance-card-header {
-        color: var(--bloomberg-orange);
+        color: var(--bloomberg-amber);
         font-weight: 700;
         margin-bottom: 20px;
         padding-bottom: 10px;
@@ -1523,12 +1659,12 @@
         justify-content: space-between;
         align-items: center;
         padding: 8px 0;
-        border-bottom: 1px solid rgba(255, 102, 0, 0.1);
+        border-bottom: 1px solid rgba(255, 176, 0, 0.1);
         transition: all 0.2s ease;
     }
     
     .metric-row:hover {
-        background: rgba(255, 102, 0, 0.05);
+        background: rgba(255, 176, 0, 0.05);
         padding-left: 10px;
         padding-right: 10px;
         margin-left: -10px;
@@ -1551,13 +1687,13 @@
     
     .metric-value {
         font-weight: 700;
-        color: var(--bloomberg-orange) !important;
+        color: var(--bloomberg-amber) !important;
         text-align: right;
         font-family: 'JetBrains Mono', monospace;
         min-width: 100px;
         font-size: 1.1rem;
         letter-spacing: 1px;
-        text-shadow: 0 0 8px rgba(255, 102, 0, 0.5);
+        text-shadow: 0 0 8px rgba(255, 176, 0, 0.5);
     }
     
     .metric-value.positive {
@@ -1611,12 +1747,12 @@
     /* Matrix container styling */
     .matrix-container {
         background: var(--terminal-dark);
-        border: 2px solid var(--bloomberg-orange-dark);
+        border: 2px solid var(--bloomberg-amber-dark);
         border-radius: 0;
         padding: 20px;
         box-shadow: 
-            inset 0 0 30px rgba(255, 102, 0, 0.1),
-            0 0 40px rgba(255, 102, 0, 0.1);
+            inset 0 0 30px rgba(255, 176, 0, 0.1),
+            0 0 40px rgba(255, 176, 0, 0.1);
         overflow: visible;
         position: relative;
         min-height: 700px;
@@ -1633,21 +1769,21 @@
         background: var(--terminal-black);
         padding: 50px;
         border-radius: 0;
-        border: 2px solid var(--bloomberg-orange);
+        border: 2px solid var(--bloomberg-amber);
         animation: pulse 1s ease-in-out infinite;
     }
     
     @keyframes pulse {
         0%, 100% {
-            box-shadow: 0 0 30px rgba(255, 102, 0, 0.3);
+            box-shadow: 0 0 30px rgba(255, 176, 0, 0.3);
         }
         50% {
-            box-shadow: 0 0 60px rgba(255, 102, 0, 0.6);
+            box-shadow: 0 0 60px rgba(255, 176, 0, 0.6);
         }
     }
     
     .spinner-border {
-        border-color: var(--bloomberg-orange);
+        border-color: var(--bloomberg-amber);
         border-right-color: transparent;
     }
     
@@ -1669,7 +1805,7 @@
     /* Ticker input Bloomberg style */
     #tickerInput {
         background: var(--terminal-black) !important;
-        border: 1px solid var(--bloomberg-orange-dark) !important;
+        border: 1px solid var(--bloomberg-amber-dark) !important;
         color: var(--data-green) !important;
         font-family: 'JetBrains Mono', monospace !important;
         text-transform: uppercase !important;
@@ -1677,8 +1813,8 @@
     }
     
     #tickerInput:focus {
-        box-shadow: var(--glow-orange) !important;
-        border-color: var(--bloomberg-orange) !important;
+        box-shadow: var(--glow-amber) !important;
+        border-color: var(--bloomberg-amber) !important;
     }
     
     /* Download buttons Bloomberg style */
@@ -1704,7 +1840,7 @@
     .terminal-cursor::after {
         content: '_';
         animation: blink 1s infinite;
-        color: var(--bloomberg-orange);
+        color: var(--bloomberg-amber);
         font-weight: bold;
     }
     
@@ -1792,24 +1928,24 @@
     /* BLOOMBERG TERMINAL DOWNLOAD SECTION - NUCLEAR STYLING */
     .bloomberg-download-section {
         background: var(--terminal-dark);
-        border: 2px solid var(--bloomberg-orange-dark);
+        border: 2px solid var(--bloomberg-amber-dark);
         border-radius: 8px;
         padding: 0;
         margin: 2rem 0;
         box-shadow: 
-            inset 0 0 30px rgba(255, 102, 0, 0.1),
-            0 0 30px rgba(255, 102, 0, 0.15);
+            inset 0 0 30px rgba(255, 176, 0, 0.1),
+            0 0 30px rgba(255, 176, 0, 0.15);
         position: relative;
         overflow: hidden;
     }
     
     .bloomberg-download-header {
-        background: linear-gradient(90deg, var(--bloomberg-orange-dark), var(--bloomberg-orange));
+        background: linear-gradient(90deg, var(--bloomberg-amber-dark), var(--bloomberg-amber));
         padding: 1rem 1.5rem;
         display: flex;
         justify-content: space-between;
         align-items: center;
-        border-bottom: 1px solid var(--bloomberg-orange);
+        border-bottom: 1px solid var(--bloomberg-amber);
     }
     
     .bloomberg-download-title {
@@ -1861,10 +1997,10 @@
     }
     
     .bloomberg-download-card:hover {
-        border-color: var(--bloomberg-orange);
+        border-color: var(--bloomberg-amber);
         box-shadow: 
-            inset 0 0 20px rgba(255, 102, 0, 0.1),
-            0 0 20px rgba(255, 102, 0, 0.2);
+            inset 0 0 20px rgba(255, 176, 0, 0.1),
+            0 0 20px rgba(255, 176, 0, 0.2);
         transform: translateY(-2px);
     }
     
@@ -1875,7 +2011,7 @@
         left: 0;
         width: 100%;
         height: 2px;
-        background: linear-gradient(90deg, transparent, var(--bloomberg-orange), transparent);
+        background: linear-gradient(90deg, transparent, var(--bloomberg-amber), transparent);
         opacity: 0;
         transition: opacity 0.3s ease;
     }
@@ -1914,7 +2050,7 @@
     
     .bloomberg-download-btn {
         width: 100%;
-        background: linear-gradient(135deg, var(--bloomberg-orange-dark), var(--bloomberg-orange));
+        background: linear-gradient(135deg, var(--bloomberg-amber-dark), var(--bloomberg-amber));
         border: none;
         border-radius: 4px;
         padding: 0.8rem 1rem;
@@ -1927,9 +2063,9 @@
     }
     
     .bloomberg-download-btn:hover {
-        background: linear-gradient(135deg, var(--bloomberg-orange), var(--bloomberg-orange-bright));
+        background: linear-gradient(135deg, var(--bloomberg-amber), var(--bloomberg-amber-bright));
         transform: translateY(-1px);
-        box-shadow: 0 4px 15px rgba(255, 102, 0, 0.4);
+        box-shadow: 0 4px 15px rgba(255, 176, 0, 0.4);
     }
     
     .bloomberg-download-btn:active {
@@ -1986,7 +2122,7 @@
     /* BLOOMBERG TERMINAL FOOTER - NUCLEAR PROFESSIONAL STYLING */
     .bloomberg-footer-container {
         background: linear-gradient(180deg, var(--terminal-dark) 0%, var(--terminal-black) 100%);
-        border-top: 2px solid var(--bloomberg-orange);
+        border-top: 2px solid var(--bloomberg-amber);
         position: relative;
         margin-top: 3rem;
         padding: 0;
@@ -1997,11 +2133,11 @@
         height: 1px;
         background: linear-gradient(90deg, 
             transparent 0%, 
-            var(--bloomberg-orange) 20%, 
-            var(--bloomberg-orange-bright) 50%, 
-            var(--bloomberg-orange) 80%, 
+            var(--bloomberg-amber) 20%, 
+            var(--bloomberg-amber-bright) 50%, 
+            var(--bloomberg-amber) 80%, 
             transparent 100%);
-        box-shadow: 0 0 10px var(--bloomberg-orange);
+        box-shadow: 0 0 10px var(--bloomberg-amber);
         animation: footerPulse 3s ease-in-out infinite;
     }
     
@@ -2034,7 +2170,7 @@
     .bloomberg-footer-tagline {
         font-family: 'Share Tech Mono', monospace;
         font-size: 0.8rem;
-        color: var(--bloomberg-orange);
+        color: var(--bloomberg-amber);
         text-transform: uppercase;
         letter-spacing: 2px;
         opacity: 0.9;
@@ -2046,8 +2182,8 @@
     }
     
     .bloomberg-footer-warning {
-        background: rgba(255, 102, 0, 0.05);
-        border: 1px solid rgba(255, 102, 0, 0.2);
+        background: rgba(255, 176, 0, 0.05);
+        border: 1px solid rgba(255, 176, 0, 0.2);
         border-radius: 4px;
         padding: 1rem;
         position: relative;
@@ -2058,12 +2194,12 @@
         top: -8px;
         left: 12px;
         background: var(--terminal-dark);
-        color: var(--bloomberg-orange);
+        color: var(--bloomberg-amber);
         font-family: 'Orbitron', monospace;
         font-size: 0.7rem;
         font-weight: 700;
         padding: 2px 8px;
-        border: 1px solid var(--bloomberg-orange);
+        border: 1px solid var(--bloomberg-amber);
         letter-spacing: 1px;
     }
     
@@ -2101,19 +2237,19 @@
         height: 2px;
         background: linear-gradient(90deg, 
             transparent 0%, 
-            var(--bloomberg-orange) 30%, 
+            var(--bloomberg-amber) 30%, 
             var(--data-green) 70%, 
             transparent 100%);
-        box-shadow: 0 0 8px var(--bloomberg-orange);
+        box-shadow: 0 0 8px var(--bloomberg-amber);
     }
     
     @keyframes footerPulse {
         0%, 100% { 
-            box-shadow: 0 0 10px var(--bloomberg-orange);
+            box-shadow: 0 0 10px var(--bloomberg-amber);
             opacity: 1; 
         }
         50% { 
-            box-shadow: 0 0 20px var(--bloomberg-orange-bright);
+            box-shadow: 0 0 20px var(--bloomberg-amber-bright);
             opacity: 0.8; 
         }
     }
@@ -2236,7 +2372,7 @@
         // Matrix type toggle handlers
         document.getElementById('cagrRadio').addEventListener('change', function() {
             if (this.checked) {
-                document.getElementById('matrixTypeDescription').textContent = 'CAGR shows annualized returns between periods';
+                document.getElementById('matrixTypeDescription').textContent = 'CAGR shows ann. returns between periods';
                 updateStatisticLabels('CAGR');
                 // Auto-update if we have valid data
                 if (isValidTicker && document.getElementById('heatmapContainer').style.display !== 'none') {
@@ -2258,8 +2394,8 @@
         
         document.getElementById('simpleAnnualizedRadio').addEventListener('change', function() {
             if (this.checked) {
-                document.getElementById('matrixTypeDescription').textContent = 'Simple Annualized Return shows average annual returns without compounding';
-                updateStatisticLabels('Simple Annualized Return');
+                                        document.getElementById('matrixTypeDescription').textContent = 'Simple Ann. Return shows average annual returns without compounding';
+                        updateStatisticLabels('Simple Ann. Return');
                 // Auto-update if we have valid data
                 if (isValidTicker && document.getElementById('heatmapContainer').style.display !== 'none') {
                     updateAnalysis();
@@ -2291,8 +2427,8 @@
         
         document.getElementById('simpleAnnualizedDifferenceRadio').addEventListener('change', function() {
             if (this.checked) {
-                document.getElementById('matrixTypeDescription').textContent = 'Simple Annualized Difference shows average annual outperformance vs benchmark';
-                updateStatisticLabels('Simple Annualized Return Difference');
+                                        document.getElementById('matrixTypeDescription').textContent = 'Simple Ann. Difference shows average annual outperformance vs benchmark';
+                        updateStatisticLabels('Simple Ann. Return Difference');
                 if (isValidTicker && document.getElementById('heatmapContainer').style.display !== 'none') {
                     updateAnalysis();
                 }
@@ -2322,8 +2458,8 @@
         
         document.getElementById('simpleAnnualizedRatioRadio').addEventListener('change', function() {
             if (this.checked) {
-                document.getElementById('matrixTypeDescription').textContent = 'Simple Annualized Ratio shows average annual relative performance vs benchmark';
-                updateStatisticLabels('Simple Annualized Return Ratio');
+                                        document.getElementById('matrixTypeDescription').textContent = 'Simple Ann. Ratio shows average annual relative performance vs benchmark';
+                        updateStatisticLabels('Simple Ann. Return Ratio');
                 if (isValidTicker && document.getElementById('heatmapContainer').style.display !== 'none') {
                     updateAnalysis();
                 }
@@ -2495,8 +2631,8 @@
             if (cellDescription) {
                 if (matrixType === 'Total Return') {
                     cellDescription.innerHTML = '<strong>Cell Values:</strong> Total Return percentage for that specific time period';
-                } else if (matrixType === 'Simple Annualized Return') {
-                    cellDescription.innerHTML = '<strong>Cell Values:</strong> Simple Annualized Return percentage for that specific time period';
+                                        } else if (matrixType === 'Simple Ann. Return') {
+                            cellDescription.innerHTML = '<strong>Cell Values:</strong> Simple Ann. Return percentage for that specific time period';
                 } else {
                     cellDescription.innerHTML = '<strong>Cell Values:</strong> Compound Annual Growth Rate (CAGR) for that specific time period';
                 }
@@ -2813,36 +2949,36 @@
             
             console.log('Setting CAGR value:', formatPercent(performanceData.return_metrics.cagr));
             perfCagr.textContent = formatPercent(performanceData.return_metrics.cagr);
-            perfCagr.style.color = '#00ff41';  // Use direct color
+            perfCagr.style.color = '#39FF14';  // Use direct color
             perfCagr.style.textShadow = '0 0 8px rgba(0, 255, 65, 0.6)';
             perfCagr.style.display = 'block';
             perfCagr.style.visibility = 'visible';
             
             perfTotalReturn.textContent = formatPercent(performanceData.return_metrics.total_return);
-            perfTotalReturn.style.color = '#00ff41';
+            perfTotalReturn.style.color = '#39FF14';
             perfTotalReturn.style.display = 'block';
             perfTotalReturn.style.visibility = 'visible';
             
             const perfSimpleAnnualized = document.getElementById('perf-simple-annualized');
             if (perfSimpleAnnualized && performanceData.return_metrics.simple_annualized !== undefined && performanceData.return_metrics.simple_annualized !== null) {
                 perfSimpleAnnualized.textContent = formatPercent(performanceData.return_metrics.simple_annualized);
-                perfSimpleAnnualized.style.color = '#00ff41';
+                perfSimpleAnnualized.style.color = '#39FF14';
                 perfSimpleAnnualized.style.display = 'block';
                 perfSimpleAnnualized.style.visibility = 'visible';
             }
             
             perfBestYear.textContent = `${formatPercent(performanceData.return_metrics.best_year)} (${performanceData.return_metrics.best_year_date})`;
-            perfBestYear.style.color = '#00ff41';
+            perfBestYear.style.color = '#39FF14';
             perfBestYear.style.display = 'block';
             perfBestYear.style.visibility = 'visible';
             
             perfWorstYear.textContent = `${formatPercent(performanceData.return_metrics.worst_year)} (${performanceData.return_metrics.worst_year_date})`;
-            perfWorstYear.style.color = '#ff0040';
+            perfWorstYear.style.color = '#FF1744';
             perfWorstYear.style.display = 'block';
             perfWorstYear.style.visibility = 'visible';
             
             perfWinRate.textContent = formatPercent(performanceData.return_metrics.win_rate);
-            perfWinRate.style.color = '#00ff41';
+            perfWinRate.style.color = '#39FF14';
             perfWinRate.style.display = 'block';
             perfWinRate.style.visibility = 'visible';
             
@@ -2866,27 +3002,27 @@
             const perfPain = document.getElementById('perf-pain');
             
             perfVolatility.textContent = formatPercent(performanceData.risk_metrics.volatility);
-            perfVolatility.style.color = '#ff6600';
+            perfVolatility.style.color = '#FFB000';
             perfVolatility.style.display = 'block';
             perfVolatility.style.visibility = 'visible';
             
             perfMaxDD.textContent = formatPercent(performanceData.risk_metrics.maximum_drawdown);
-            perfMaxDD.style.color = '#ff0040';
+            perfMaxDD.style.color = '#FF1744';
             perfMaxDD.style.display = 'block';
             perfMaxDD.style.visibility = 'visible';
             
             perfRecovery.textContent = formatDays(performanceData.risk_metrics.recovery_days);
-            perfRecovery.style.color = '#ff6600';
+            perfRecovery.style.color = '#FFB000';
             perfRecovery.style.display = 'block';
             perfRecovery.style.visibility = 'visible';
             
             perfVar.textContent = formatPercent(performanceData.risk_metrics.var_5);
-            perfVar.style.color = '#ff0040';
+            perfVar.style.color = '#FF1744';
             perfVar.style.display = 'block';
             perfVar.style.visibility = 'visible';
             
             perfPain.textContent = formatPercent(performanceData.risk_metrics.pain_index);
-            perfPain.style.color = '#ff0040';
+            perfPain.style.color = '#FF1744';
             perfPain.style.display = 'block';
             perfPain.style.visibility = 'visible';
         }
@@ -2927,7 +3063,7 @@
             perfBeta.style.visibility = 'visible';
             
             perfAlpha.textContent = formatPercent(performanceData.relative_metrics.alpha);
-            perfAlpha.style.color = performanceData.relative_metrics.alpha > 0 ? '#00ff41' : '#ff0040';
+            perfAlpha.style.color = performanceData.relative_metrics.alpha > 0 ? '#39FF14' : '#FF1744';
             perfAlpha.style.display = 'block';
             perfAlpha.style.visibility = 'visible';
             
@@ -2942,7 +3078,7 @@
             perfTreynor.style.visibility = 'visible';
             
             perfInfoRatio.textContent = formatNumber(performanceData.relative_metrics.information_ratio);
-            perfInfoRatio.style.color = performanceData.relative_metrics.information_ratio > 0 ? '#00ff41' : '#ff0040';
+            perfInfoRatio.style.color = performanceData.relative_metrics.information_ratio > 0 ? '#39FF14' : '#FF1744';
             perfInfoRatio.style.display = 'block';
             perfInfoRatio.style.visibility = 'visible';
         }
@@ -2973,7 +3109,7 @@
         
         // Reset to CAGR as default for single mode
         document.getElementById('cagrRadio').checked = true;
-        document.getElementById('matrixTypeDescription').textContent = 'CAGR shows annualized returns between periods';
+        document.getElementById('matrixTypeDescription').textContent = 'CAGR shows ann. returns between periods';
         
         // Clear any comparative selections
         document.querySelectorAll('#comparativeMatrixTypes input[type="radio"]').forEach(radio => {
@@ -3178,17 +3314,17 @@
             
             // Create ultra-professional Bloomberg terminal colorscale
             const bloombergColorscale = [
-                [0.0, '#ff0040'],     // Deep red for worst losses
+                [0.0, '#FF1744'],     // Deep red for worst losses
                 [0.1, '#ff1a2e'],     // Bright red
                 [0.2, '#ff3d1a'],     // Red-orange
                 [0.3, '#ff5500'],     // Orange-red
-                [0.4, '#ff6600'],     // Bloomberg orange (neutral)
-                [0.5, '#ff8533'],     // Light orange (slightly positive)
+                [0.4, '#FFB000'],     // Bloomberg orange (neutral)
+                [0.5, '#FFC233'],     // Light orange (slightly positive)
                 [0.6, '#14532d'],     // Dark muted green
                 [0.7, '#166534'],     // Darker green
-                [0.8, '#22c55e'],     // Muted green
-                [0.9, '#4ade80'],     // Soft green
-                [1.0, '#a7f3d0']      // Very light green
+                [0.8, '#0f5132'],     // Darker green for readability
+                [0.9, '#0d4a2b'],     // Even darker green for high values
+                [1.0, '#0a3d23']      // Very dark green for extreme values
             ];
             
             // Advanced terminal layout with professional grid and styling
@@ -3204,21 +3340,20 @@
                 },
                 xaxis: {
                     ...data.heatmap.layout.xaxis,
-                    color: '#ff6600',
+                    color: '#ffffff',
                     gridcolor: '#333333',
                     gridwidth: 1,
-                    linecolor: '#ff6600',
-                    linewidth: 2,
+                    linecolor: '#333333',
+                    linewidth: 1,
                     tickfont: {
-                        color: '#ff6600',
+                        color: '#ffffff',
                         family: 'JetBrains Mono, monospace',
-                        size: 14,
-                        weight: 700
+                        size: 14
                     },
                     title: {
                         ...data.heatmap.layout.xaxis.title,
                         font: {
-                            color: '#ff6600',
+                            color: '#FFFF00',
                             family: 'Orbitron, monospace',
                             size: 18,
                             weight: 900
@@ -3227,21 +3362,20 @@
                 },
                 yaxis: {
                     ...data.heatmap.layout.yaxis,
-                    color: '#ff6600',
+                    color: '#ffffff',
                     gridcolor: '#333333',
                     gridwidth: 1,
-                    linecolor: '#ff6600',
-                    linewidth: 2,
+                    linecolor: '#333333',
+                    linewidth: 1,
                     tickfont: {
-                        color: '#ff6600',
+                        color: '#ffffff',
                         family: 'JetBrains Mono, monospace',
-                        size: 14,
-                        weight: 700
+                        size: 14
                     },
                     title: {
                         ...data.heatmap.layout.yaxis.title,
                         font: {
-                            color: '#ff6600',
+                            color: '#FFFF00',
                             family: 'Orbitron, monospace',
                             size: 18,
                             weight: 900
@@ -3251,7 +3385,7 @@
                 coloraxis: {
                     colorbar: {
                         bgcolor: 'rgba(20, 20, 20, 0.9)',
-                        bordercolor: '#ff6600',
+                        bordercolor: '#FFFF00',
                         borderwidth: 2,
                         thickness: 20,
                         len: 0.8,
@@ -3263,7 +3397,7 @@
                         },
                         title: {
                             font: {
-                                color: '#ff6600',
+                                color: '#FFFF00',
                                 family: 'Orbitron, monospace',
                                 size: 12,
                                 weight: 700
@@ -3275,12 +3409,24 @@
                 title: {
                     ...data.heatmap.layout.title,
                     font: {
-                        color: '#ff6600',
+                        color: '#FFFF00',
                         family: 'Orbitron, monospace',
-                        size: 28,
+                        size: 27,
                         weight: 900
                     }
-                }
+                },
+                hoverlabel: {
+                    bgcolor: '#ffffff',
+                    bordercolor: '#333333',
+                    font: {
+                        family: 'JetBrains Mono, monospace',
+                        size: 14,
+                        color: '#000000'
+                    },
+                    align: 'left',
+                    namelength: -1
+                },
+                hovermode: 'closest'
             };
             
             // Nuclear data transformation with Bloomberg terminal colorscale
@@ -3289,18 +3435,16 @@
                     ...trace,
                     // Override any existing colorscale with Bloomberg terminal colors
                     colorscale: bloombergColorscale,
-                    // Enhanced hover template with Bloomberg styling
-                    hovertemplate: '<b style="color: #ff6600; font-family: Orbitron, monospace; font-weight: 900;">PERIOD ANALYSIS</b><br>' +
-                                   '<span style="color: #00ff41; font-family: JetBrains Mono, monospace; font-weight: 700;">FROM %{x} → %{y}</span><br>' +
-                                   '<span style="color: #ffffff; font-family: JetBrains Mono, monospace; font-weight: 700;">CAGR: %{z:.1f}%</span>' +
-                                   '<extra></extra>',
+                    // Keep the original dynamic hover template from Python
+                    // hovertemplate is already set correctly in Python with dynamic matrix_type
                     // Ensure text is always visible with strong contrast
                     textfont: {
-                        color: '#ffffff',
+                        color: '#FFFFFF',
                         family: 'JetBrains Mono, monospace',
-                        size: 11,
-                        weight: 900
+                        size: 12
                     },
+                    texttemplate: '%{z:.1f}',
+                    showtext: true,
                     // Add subtle border for professional grid effect
                     line: {
                         color: '#333333',
@@ -3350,53 +3494,54 @@
                         const heatmapTexts = document.querySelectorAll('#heatmapPlot text');
                         heatmapTexts.forEach(text => {
                             if (text) {
-                                text.style.fill = '#ffffff';
+                                text.style.fill = '#FFFFFF';
                                 text.style.fontWeight = '900';
                                 text.style.fontFamily = 'JetBrains Mono, monospace';
-                                text.style.fontSize = '11px';
+                                text.style.fontSize = '12px';
                                 text.style.textShadow = `
-                                    0 0 8px rgba(0, 0, 0, 1),
-                                    0 0 15px rgba(0, 0, 0, 0.9),
-                                    2px 2px 4px rgba(0, 0, 0, 1),
-                                    -1px -1px 2px rgba(0, 0, 0, 0.8)
+                                    0 0 3px rgba(0, 0, 0, 1),
+                                    0 0 6px rgba(0, 0, 0, 1),
+                                    1px 1px 2px rgba(0, 0, 0, 1),
+                                    -1px -1px 2px rgba(0, 0, 0, 1)
                                 `;
-                                text.setAttribute('stroke', 'rgba(0, 0, 0, 0.8)');
-                                text.setAttribute('stroke-width', '0.5');
+                                text.setAttribute('stroke', '#000000');
+                                text.setAttribute('stroke-width', '1.5');
+                                text.setAttribute('paint-order', 'stroke');
                             }
                         });
                         
-                        // 🔥 NUCLEAR TITLE AND AXIS LABEL RESTORATION 🔥
+                        // 🔥 CLEAN TITLE STYLING 🔥
                         const axisTitles = document.querySelectorAll('#heatmapPlot .gtitle');
                         axisTitles.forEach(title => {
                             if (title) {
-                                title.style.fill = '#ff6600';
+                                title.style.fill = '#FFFF00';
                                 title.style.fontWeight = '900';
                                 title.style.fontFamily = 'Orbitron, monospace';
-                                title.style.fontSize = '28px';
-                                title.style.textShadow = '0 0 20px rgba(255, 102, 0, 0.8)';
+                                title.style.fontSize = '27px';
+                                title.style.textShadow = 'none';
                             }
                         });
                         
-                        // 🎯 PERFECTLY MATCHED AXIS TITLES - TWIN PERFECTION
+                        // 🙏 BLESSED X-AXIS TITLE STYLING 
                         const xAxisTitles = document.querySelectorAll('#heatmapPlot .xtitle');
                         xAxisTitles.forEach(title => {
                             if (title) {
-                                title.style.fill = '#ff6600';
+                                title.style.fill = '#FFFF00';
                                 title.style.fontWeight = '900';
                                 title.style.fontFamily = 'Orbitron, monospace';
-                                title.style.fontSize = '18px';
-                                title.style.textShadow = '0 0 15px rgba(255, 102, 0, 0.6)';
+                                title.style.fontSize = '14px';
+                                title.style.textShadow = 'none';
                             }
                         });
                         
                         const yAxisTitles = document.querySelectorAll('#heatmapPlot .ytitle');
                         yAxisTitles.forEach(title => {
                             if (title) {
-                                title.style.fill = '#ff6600';
+                                title.style.fill = '#FFFF00';
                                 title.style.fontWeight = '900';
                                 title.style.fontFamily = 'Orbitron, monospace';
                                 title.style.fontSize = '18px';
-                                title.style.textShadow = '0 0 15px rgba(255, 102, 0, 0.6)';
+                                title.style.textShadow = 'none';
                             }
                         });
                         

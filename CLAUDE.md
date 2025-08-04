@@ -15,10 +15,11 @@ This repository contains three independent financial analysis applications:
    - Intraday (1-minute) and daily OHLC data analysis
    - Located in `ADE App/` directory
    
-3. **Returns Viz App** - ETF CAGR visualization platform with two implementations (Streamlit, Django SQLite)
-   - CAGR matrix calculations for multi-year holding periods
-   - Performance metrics including Sharpe ratio, Sortino ratio, and Max Drawdown
+3. **Returns Viz App** - ETF CAGR visualization platform with multiple implementations
+   - CAGR matrix calculations for multi-year holding periods (SPY, QQQ, DIA, VTI)
+   - Performance metrics: Sharpe ratio, Sortino ratio, Max Drawdown, VaR, Beta, Win Rate
    - Three implementations: Streamlit (prototype), Django SQLite (web), Django PostgreSQL (API-based)
+   - Interactive Bloomberg Terminal-style UI with export functionality
 
 Additionally, there is a Django implementation of the Margin App:
 - **Margin_Django_App** - Django version of Margin App with PostgreSQL support
@@ -63,6 +64,9 @@ python manage.py test
 
 # Run specific test
 python manage.py test calculator.tests.TestMarginCalculations
+
+# Test margin calculations specifically
+python manage.py test calculator.tests  # All calculator tests
 
 # Django migrations check (dry run)
 python manage.py makemigrations --check --dry-run
@@ -146,6 +150,10 @@ use_local = True  # Toggle for deployment
 - **FMP API Configuration**: Set `FMP_API_KEY` in Django settings or environment variables
 - **API Caching**: All API responses cached (1 hour for historical data, 24 hours for ticker info)
 - **Ticker Validation**: Automatic validation against FMP search endpoint
+- **API Endpoints (Returns Viz Django)**: 
+  - `/api/get-data/` - Get CAGR matrix and statistics
+  - `/api/download-matrix/` - Download CAGR matrix as CSV
+  - `/api/download-returns/` - Download annual returns as CSV
 
 ## High-Level Architecture
 
@@ -200,7 +208,13 @@ Returns Viz App/Django App/
 - Matrix generation: `create_cagr_matrix()` function in `utils.py`
 - Annual returns from daily data: `(1 + daily_returns).prod() - 1`
 - Multi-year CAGR: `(cumulative_return ^ (1/years)) - 1`
-- Performance metrics: Sharpe ratio, Sortino ratio, Max Drawdown in `performance_metrics.py`
+- Single year returns: Use annual return as-is (no compounding)
+- Performance metrics in `performance_metrics.py`:
+  - Sharpe ratio: `(Return - Risk-Free Rate) / Volatility`
+  - Sortino ratio: `(Return - Risk-Free Rate) / Downside Deviation`
+  - Max Drawdown: Largest peak-to-trough decline
+  - VaR: 5th percentile of daily returns
+  - Beta: Covariance with benchmark / Variance of benchmark
 
 ### Cross-App Patterns
 
@@ -264,20 +278,20 @@ CREATE DATABASE margin_calculator_db;
 CREATE USER margin_user WITH PASSWORD 'your_password';
 GRANT ALL PRIVILEGES ON DATABASE margin_calculator_db TO margin_user;
 
+# Alternative: Use pgAdmin GUI to create database 'margin_calculator'
+
 # Configure .env file (create in Margin_Django_App/ directory)
-DB_NAME=margin_calculator_db
-DB_USER=margin_user
+DB_NAME=margin_calculator_db  # or 'margin_calculator' per README_POSTGRES.md
+DB_USER=margin_user          # or 'postgres' for simpler setup
 DB_PASSWORD=your_password
 DB_HOST=localhost
 DB_PORT=5432
 
-# Alternative database name from README_POSTGRES.md
-DB_NAME=margin_calculator  # simpler name used in docs
-
 # Run migrations and import data
 cd Margin_Django_App
-python manage.py migrate
-python manage.py import_data --clear  # Import from CSV files
+python manage.py makemigrations  # Create migration files if needed
+python manage.py migrate          # Apply migrations
+python manage.py import_data --clear  # Import from CSV files (--clear removes existing data)
 ```
 
 ### Django Management Commands
@@ -327,10 +341,20 @@ docker-compose logs -f app
 - **Margin Calculations**: Verify against `Excel workbooks/WSP-Margin-Call-Price-Calculator_vF.xlsx`
 - **Liquidation Logic**: 2-day cooling period in backtests
 - **CAGR Matrices**: Annual returns from daily data
-- **Interest Calculations**: IBKR formula (Fed Funds + 1.5%)
+- **Interest Calculations**: IBKR formula (Fed Funds + 1.5% for Reg-T, + 2.0% for Portfolio)
 - **API Integration**: FMP API validation, ticker validation, data caching
 - **Performance Metrics**: Sharpe ratio, Sortino ratio, Max Drawdown calculations
 - **Django API Endpoints**: Test with `test_api_endpoint.py` and other test scripts
+
+### Test Script Patterns
+```python
+# Standalone test scripts for Django apps
+import os, sys, django
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'returns_viz.settings')
+django.setup()
+# Then import and test Django components
+```
 
 ### Performance Optimization
 - Streamlit caching: `@st.cache_data(ttl=3600)`
@@ -364,3 +388,7 @@ docker-compose logs -f app
 - **Git Status**: Check `git status` for uncommitted changes before deployment
 - **CSV Data**: Ensure date columns are in YYYY-MM-DD format and sorted ascending
 - **Environment**: Always activate virtual environment before running commands
+- **PostgreSQL Service**: Ensure PostgreSQL service is running before starting Django apps
+- **Migration Checks**: Run `python manage.py makemigrations --check --dry-run` to verify models
+- **Static Files**: Run `python manage.py collectstatic` before deployment (Django apps)
+- **Client Name**: Pearson Creek Capital Management LLC (shown in Margin App headers)

@@ -169,7 +169,7 @@ def create_difference_matrix(primary_returns, benchmark_returns, matrix_type="CA
     Parameters:
     primary_returns: Series with annual returns for primary ticker (e.g., AAPL)
     benchmark_returns: Series with annual returns for benchmark ticker (e.g., SPY)
-    matrix_type: Type of return calculation ("CAGR", "Total Return", "Simple Annualized Return")
+            matrix_type: Type of return calculation ("CAGR", "Total Return", "Simple Ann. Return")
     start_year: First year to include
     end_year: Last year to include
     
@@ -186,7 +186,7 @@ def create_difference_matrix(primary_returns, benchmark_returns, matrix_type="CA
     elif matrix_type == "Total Return":
         primary_matrix = create_total_return_matrix(primary_aligned, start_year, end_year)
         benchmark_matrix = create_total_return_matrix(benchmark_aligned, start_year, end_year)
-    elif matrix_type == "Simple Annualized Return":
+    elif matrix_type == "Simple Ann. Return" or matrix_type == "Simple Annualized Return":
         primary_matrix = create_simple_annualized_return_matrix(primary_aligned, start_year, end_year)
         benchmark_matrix = create_simple_annualized_return_matrix(benchmark_aligned, start_year, end_year)
     else:
@@ -206,7 +206,7 @@ def create_ratio_matrix(primary_returns, benchmark_returns, matrix_type="CAGR", 
     Parameters:
     primary_returns: Series with annual returns for primary ticker (e.g., AAPL)
     benchmark_returns: Series with annual returns for benchmark ticker (e.g., SPY)
-    matrix_type: Type of return calculation ("CAGR", "Total Return", "Simple Annualized Return")
+            matrix_type: Type of return calculation ("CAGR", "Total Return", "Simple Ann. Return")
     start_year: First year to include
     end_year: Last year to include
     
@@ -223,7 +223,7 @@ def create_ratio_matrix(primary_returns, benchmark_returns, matrix_type="CAGR", 
     elif matrix_type == "Total Return":
         primary_matrix = create_total_return_matrix(primary_aligned, start_year, end_year)
         benchmark_matrix = create_total_return_matrix(benchmark_aligned, start_year, end_year)
-    elif matrix_type == "Simple Annualized Return":
+    elif matrix_type == "Simple Ann. Return" or matrix_type == "Simple Annualized Return":
         primary_matrix = create_simple_annualized_return_matrix(primary_aligned, start_year, end_year)
         benchmark_matrix = create_simple_annualized_return_matrix(benchmark_aligned, start_year, end_year)
     else:
@@ -298,7 +298,7 @@ def create_cagr_heatmap(matrix_data, etf_name, start_year, end_year, matrix_type
     display_matrix = matrix_data.iloc[::-1].copy()
     display_matrix_clean = display_matrix.where(pd.notna(display_matrix), None)
     
-    # BLOOMBERG TERMINAL COLORSCALE - NUCLEAR MODE 🔥
+    # BLOOMBERG TERMINAL COLORSCALE - READABLE WHITE TEXT MODE 🔥
     colorscale = [
         [0.0, 'rgb(255,0,64)'],      # Bright red for extreme losses
         [0.2, 'rgb(204,0,51)'],      # Dark red for significant losses
@@ -307,8 +307,8 @@ def create_cagr_heatmap(matrix_data, etf_name, start_year, end_year, matrix_type
         [0.5, 'rgb(20,20,20)'],      # Terminal black for neutral
         [0.55, 'rgb(0,51,25)'],      # Dark green for mild gains
         [0.65, 'rgb(0,102,51)'],     # Medium green for moderate gains
-        [0.8, 'rgb(0,204,102)'],     # Bright green for significant gains
-        [1.0, 'rgb(0,255,65)']       # Neon green for extreme gains
+        [0.8, 'rgb(15,81,50)'],      # Darker green for readability
+        [1.0, 'rgb(10,61,35)']       # Very dark green for extreme values
     ]
     
     flat_values = display_matrix_clean.values.flatten()
@@ -322,9 +322,10 @@ def create_cagr_heatmap(matrix_data, etf_name, start_year, end_year, matrix_type
     else:
         zmin, zmax = -30, 30
     
-    text_matrix = display_matrix_clean.copy()
-    text_colors = []
+    # Clean slate - we'll handle text display simply
     
+    # Create simple text array for display
+    text_array = []
     for i in range(len(display_matrix_clean.index)):
         text_row = []
         for j in range(len(display_matrix_clean.columns)):
@@ -332,11 +333,8 @@ def create_cagr_heatmap(matrix_data, etf_name, start_year, end_year, matrix_type
             if pd.isna(value) or value is None:
                 text_row.append('')
             else:
-                if value < -10 or value > 20:
-                    text_row.append('white')
-                else:
-                    text_row.append('black')
-        text_colors.append(text_row)
+                text_row.append(f'{value:.1f}%')
+        text_array.append(text_row)
     
     fig = go.Figure(data=go.Heatmap(
         z=display_matrix_clean.values,
@@ -345,6 +343,13 @@ def create_cagr_heatmap(matrix_data, etf_name, start_year, end_year, matrix_type
         colorscale=colorscale,
         zmin=zmin,
         zmax=zmax,
+        text=text_array,
+        texttemplate='%{text}',
+        textfont=dict(
+            size=12,
+            color='white',
+            family='JetBrains Mono, monospace'
+        ),
         showscale=True,
         colorbar=dict(
             title=dict(
@@ -361,48 +366,18 @@ def create_cagr_heatmap(matrix_data, etf_name, start_year, end_year, matrix_type
             tickfont=dict(size=12, color='#1f4e79')
         ),
         hoverongaps=False,
-        hovertemplate=f'<b>From %{{x}} to %{{y}}</b><br>{matrix_type}: %{{z:.1f}}%<extra></extra>',
-        text=display_matrix_clean.round(1),
-        texttemplate='%{text}%',
-        textfont=dict(size=11, color='white', family='JetBrains Mono, monospace')
+        hovertemplate=f'<b>From %{{x}} to %{{y}}</b><br>{matrix_type}: %{{z:.1f}}%<extra></extra>'
     ))
     
     annotations = []
     
-    annotations.append(
-        dict(
-            x=0.02,
-            y=1.12,
-            text='▶ FROM START OF',
-            showarrow=False,
-            font=dict(color='#ff6600', size=14, family='Orbitron'),
-            xref='paper',
-            yref='paper',
-            xanchor='left',
-            yanchor='bottom'
-        )
-    )
-    
-    for i, row_year in enumerate(display_matrix_clean.index):
-        for j, col_year in enumerate(display_matrix_clean.columns):
-            value = display_matrix_clean.iloc[i, j]
-            if pd.notna(value) and value is not None:
-                # Bloomberg terminal text colors - WHITE for readability
-                
-                annotations.append(
-                    dict(
-                        x=col_year,
-                        y=row_year,
-                        text=f'{value:.1f}%',
-                        showarrow=False,
-                        font=dict(color='#ffffff', size=12, family='JetBrains Mono, monospace'),
-                        xref='x',
-                        yref='y'
-                    )
-                )
+    # No manual value annotations - we'll use Plotly's built-in text
     
     # Professional title style
-    title_text = f'{etf_name} /// {matrix_type} MATRIX /// PERIOD: {start_year}-{end_year}'
+    # Replace ANNUALIZED with ANN. for shorter titles
+    display_matrix_type = matrix_type.replace("ANNUALIZED", "ANN.")
+    
+    title_text = f'{etf_name} /// {display_matrix_type} MATRIX /// PERIOD: {start_year}-{end_year}'
     if matrix_type == "CAGR":
         title_text = f'{etf_name} /// COMPOUND ANNUAL GROWTH RATE /// PERIOD: {start_year}-{end_year}'
     
@@ -411,38 +386,42 @@ def create_cagr_heatmap(matrix_data, etf_name, start_year, end_year, matrix_type
             text=title_text.upper(),
             x=0.5,
             xanchor='center',
-            font=dict(size=18, color='#ff6600', family='Orbitron, monospace'),
-            pad=dict(t=20, b=20)
+            font=dict(size=17, color='#FFFF00', family='Orbitron, monospace'),
+            pad=dict(t=20, b=50)
         ),
         xaxis=dict(
-            title=None,
+            title=dict(
+                text='▶ FROM START OF',
+                font=dict(size=14, color='#FFFF00', family='Orbitron'),
+                standoff=5
+            ),
             side='top',
-            tickfont=dict(size=12, color='#ff6600', family='JetBrains Mono'),
+            tickfont=dict(size=12, color='#FFFF00', family='JetBrains Mono'),
             dtick=1,
             tick0=start_year,
             showgrid=True,
-            gridcolor='rgba(255,102,0,0.1)',
+            gridcolor='rgba(255,255,0,0.1)',
             zeroline=False,
             showline=True,
             linewidth=2,
-            linecolor='#ff6600'
+            linecolor='#FFFF00'
         ),
         yaxis=dict(
             title=dict(
                 text='◀ TO END OF',
-                font=dict(size=14, color='#ff6600', family='Orbitron'),
+                font=dict(size=14, color='#FFFF00', family='Orbitron'),
                 standoff=20
             ),
-            tickfont=dict(size=12, color='#ff6600', family='JetBrains Mono'),
+            tickfont=dict(size=12, color='#FFFF00', family='JetBrains Mono'),
             dtick=1,
             tick0=start_year,
             showgrid=True,
-            gridcolor='rgba(255,102,0,0.1)',
+            gridcolor='rgba(255,255,0,0.1)',
             zeroline=False,
             autorange='reversed',
             showline=True,
             linewidth=2,
-            linecolor='#ff6600'
+            linecolor='#FFFF00'
         ),
         plot_bgcolor='#0a0a0a',
         paper_bgcolor='#141414',
